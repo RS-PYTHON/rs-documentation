@@ -32,7 +32,6 @@ runs:
     - uses: ./.github/actions/install-python
     - uses: snok/install-poetry@v1
     - run: |
-        poetry install ${{ inputs.options }} # don't use quotes around options
-        poetry run opentelemetry-bootstrap -a install || true # install otel instrumentation packages for dependencies
+        poetry install ${{ inputs.options }} # don't use quotes around options        
       working-directory: ${{ inputs.working-directory }}
       shell: bash
