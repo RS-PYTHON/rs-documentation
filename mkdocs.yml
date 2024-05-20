@@ -1,0 +1,68 @@
+site_name: RS-Python
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections    
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes   
+    - navigation.path   
+    - toc.integrate
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+      primary: teal
+      accent: purple 
+    - scheme: slate 
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: teal
+      accent: lime
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            separate_modules: true
+            
+nav:
+- Home:
+    - index.md
+- RS-Server: 
+  - rs-server/docs/doc/index.md
+  - User Manual: 
+    - rs-server/docs/doc/user_manual.md
+    - Overal Architecture: rs-server/docs/doc/users/architecture.md
+    - Main Functionalities: rs-server/docs/doc/users/functionalities.md
+  - Developer Manual:
+    - rs-server/docs/doc/developer_manual.md
+    - Tutorials: rs-server/docs/doc/dev/environment/installation.md
+    - Guides: rs-server/docs/doc/dev/doc-generation/how-to.md
+    - Technical Information:
+      - Code style: rs-server/docs/doc/dev/code-style.md
+      - API Pyhton: rs-server/docs/doc/api/python/html/index.md
+      - API Rest: rs-server/docs/doc/api/rest/index.md
+    - Python API Library: 
+      - rs-server/gen-doc/index.md
+    - Additional information:
+      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md
+      - Description: rs-server/docs/doc/dev/environment/description.md
+      - Workflow: rs-server/docs/doc/dev/background/workflow.md
+      - CI: rs-server/docs/doc/dev/background/ci.md
+      - Design: rs-server/docs/doc/dev/design/design.md
+      - Description: rs-server/docs/doc/dev/doc-generation/description.md
+
+    
