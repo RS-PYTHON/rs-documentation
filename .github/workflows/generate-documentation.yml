@@ -41,17 +41,11 @@ jobs:
       # The technical documentation uses a dedicated python project to be built
       - uses: ./.github/actions/poetry-install
         with:
-          working-directory: .
-
-      # The order of these steps is important
-      # The technical documentation has to be first
-      # because some fake documentation are then replaced
-      # by the following steps for link purpose.
+          working-directory: ./
 
       - name: Generate Markdown HTML documentation
         run: |
           set -x
-          cd docs
           git clone --no-checkout https://github.com/RS-PYTHON/rs-server.git
           cd rs-server/gen-doc
           poetry run mkdocs build
