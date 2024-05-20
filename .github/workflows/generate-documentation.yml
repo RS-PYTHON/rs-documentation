@@ -37,6 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/poetry-install
         with:
+          options: ""
           working-directory: .
       # # The technical documentation uses a dedicated python project to be built
       # - uses: ./.github/actions/poetry-install
