@@ -56,7 +56,7 @@ jobs:
           poetry run mkdocs build
           cd ../../
           pwd
-          poetry run  build
+          poetry run mkdocs build
         working-directory: ./docs
         shell: bash   
 
