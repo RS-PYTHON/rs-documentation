@@ -47,8 +47,7 @@ jobs:
       - name: Generate Markdown HTML documentation
         run: |
           set -x
-          pwd
-          cd docs/
+          pwd          
           git clone --no-checkout https://github.com/RS-PYTHON/rs-server.git
           cd rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install
