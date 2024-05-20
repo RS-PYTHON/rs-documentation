@@ -51,7 +51,8 @@ jobs:
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git
           cd rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install
-          cd gen-docs
+          ls -all
+          cd gen-doc
           poetry run mkdocs build
           cd ../../
           pwd
