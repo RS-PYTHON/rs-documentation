@@ -56,7 +56,7 @@ jobs:
           ls -all
           cd gen-doc
           poetry run mkdocs build
-          cd ../../
+          cd ../../../
           pwd
           ls -all
           poetry run mkdocs build
