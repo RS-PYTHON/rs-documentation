@@ -15,6 +15,7 @@ readme = "README.md"
 # All the dependencies for release are set in the sub-projects
 [tool.poetry.dependencies]
 python = "^3.11"
+mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.23"
 mkdocstrings = "^0.25.1"
 mkdocstrings-python = "^1.10.2"
