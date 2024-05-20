@@ -48,12 +48,13 @@ jobs:
         run: |
           set -x
           pwd     
-          ls -all     
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git
-          cd docs/rs-server
+          ls -all
+          cd docs
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git          
+          cd rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install
           ls -all
-          cd ../gen-doc
+          cd gen-doc
           poetry run mkdocs build
           cd ../../
           pwd
