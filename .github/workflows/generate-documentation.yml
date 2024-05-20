@@ -49,15 +49,16 @@ jobs:
           set -x
           pwd          
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git
-          cd rs-server
+          cd docs/rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install
           ls -all
-          cd gen-doc
+          cd ../gen-doc
           poetry run mkdocs build
           cd ../../
           pwd
+          ls -all
           poetry run mkdocs build
-        working-directory: ./docs
+        working-directory: .
         shell: bash   
 
       - name: Deploy docs to ghpages
