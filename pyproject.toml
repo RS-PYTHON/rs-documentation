@@ -1,0 +1,23 @@
+[project]
+name = "rs-documentation"
+version = "0.0.0" # see: https://github.com/mtkennerly/poetry-dynamic-versioning
+
+[tool.poetry]
+name = "rs-documentation"
+version = "0.0.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+# This root project is not used in release production.
+# It's only used by the CI/CD to run pytest, pylint, mypy etc... on the whole github project.
+
+# All the dependencies for release are set in the sub-projects
+[tool.poetry.dependencies]
+python = "^3.11"
+mkdocs-material = "^9.5.23"
+mkdocstrings = "^0.25.1"
+mkdocstrings-python = "^1.10.2"
+
+
+

@@ -1,0 +1,74 @@
+# Copyright 2024 CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Generate documentation
+
+# TODO: when to generate the doc ?
+# For now, only for new git tags (including hierarchical tags like v1.0/beta), or manually
+on:
+    push:
+      tags:
+        - '**'
+    workflow_dispatch:
+
+env:
+  PYTHON_VERSION: 3.11
+
+jobs:
+
+  generate-documentation:
+    name: Generate documentation
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read # to pull docker images when running build_aggregated_openapi.sh
+      contents: write # to publish the generated documentation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/poetry-install
+        with:
+          working-directory: ./docs/rs-server
+      # The technical documentation uses a dedicated python project to be built
+      - uses: ./.github/actions/poetry-install
+        with:
+          working-directory: .
+
+      # The order of these steps is important
+      # The technical documentation has to be first
+      # because some fake documentation are then replaced
+      # by the following steps for link purpose.
+
+      - name: Generate Markdown HTML documentation
+        run: |
+          set -x
+          cd docs
+          git clone --no-checkout https://github.com/RS-PYTHON/rs-server.git
+          cd rs-server/gen-doc
+          poetry run mkdocs build
+          cd ../../
+          pwd
+          mkdocs build
+        working-directory: ./docs
+        shell: bash   
+
+      - name: Deploy docs to ghpages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist/doc/output
+
+      # - run: >
+      #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
+      - run: mkdocs gh-deploy --force
+
