@@ -38,10 +38,10 @@ jobs:
       - uses: ./.github/actions/poetry-install
         with:
           working-directory: ./docs/rs-server
-      # The technical documentation uses a dedicated python project to be built
-      - uses: ./.github/actions/poetry-install
-        with:
-          working-directory: ./
+      # # The technical documentation uses a dedicated python project to be built
+      # - uses: ./.github/actions/poetry-install
+      #   with:
+      #     working-directory: ./
 
       - name: Generate Markdown HTML documentation
         run: |
