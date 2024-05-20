@@ -47,6 +47,7 @@ jobs:
       - name: Generate Markdown HTML documentation
         run: |
           set -x
+          pwd
           cd docs/
           git clone --no-checkout https://github.com/RS-PYTHON/rs-server.git
           cd rs-server
