@@ -1,0 +1,28 @@
+{# Logo link generation -#}
+{% if not theme_logo.get("link") %}
+  {% set href = pathto(root_doc) %}
+{% elif hasdoc(theme_logo.get("link")) %}
+  {% set href = pathto(theme_logo.get("link")) %} {# internal page #}
+{% else %}
+  {% set href = theme_logo.get("link") %} {# external url #}
+{% endif %}
+
+{#- Logo HTML and image #}
+
+{#- The 'navbar-brand' and 'logo' classes puts each image on a separate line. #}
+<a href="https://www.copernicus.eu/"
+  target="_blank" class="navbar-brand logo" rel="noopener" data-bs-toggle="tooltip" data-bs-placement="bottom">
+  {#- Source: https://creodias.eu/dias-theme/images/copernicus-logo2.png #}
+  <img src="{{ pathto("_static/copernicus-logo2.png", 1) }}" class="logo__image only-light"
+       alt="Copernicus" />
+</a>
+<a href="https://www.esa.int/"
+  target="_blank" class="navbar-brand logo" rel="noopener" data-bs-toggle="tooltip" data-bs-placement="top">
+  <img src="{{ pathto("_static/esa-102x64.jpg", 1) }}" class="logo__image only-light"
+       alt="ESA" />
+</a>
+<a class="navbar-brand logo" href="{{ href }}">
+  {% if not is_logo or theme_logo.get("text") %}
+    <p class="title logo__title">{{ theme_logo.get("text") or docstitle }}</p>
+  {% endif %}
+</a>

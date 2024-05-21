@@ -30,6 +30,7 @@ theme:
         name: Switch to light mode    
       primary: teal
       accent: lime
+
 plugins:
   - search
   - mkdocstrings:
@@ -56,7 +57,16 @@ nav:
       - API Pyhton: rs-server/docs/doc/api/python/html/index.md
       - API Rest: rs-server/docs/doc/api/rest/index.md
     - Python API Library: 
-      - rs-server/gen-doc/index.md
+      - generate_src_doc/index.md
+      - RS-Server:
+        - generate_src_doc/rs-server/index.md
+        - ADGS: generate_src_doc/rs-server/adgs.md
+        - CADIP: generate_src_doc/rs-server/cadip.md        
+        - Catalog: generate_src_doc/rs-server/catalog.md
+        - Common: generate_src_doc/rs-server/common.md
+        - Frontend: generate_src_doc/rs-server/frontend.md
+      - RS-Client:
+        - generate_src_doc/rs-client/index.md
     - Additional information:
       - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md
       - Description: rs-server/docs/doc/dev/environment/description.md

@@ -39,24 +39,42 @@ jobs:
         with:
           options: ""
           working-directory: .
-      # # The technical documentation uses a dedicated python project to be built
-      # - uses: ./.github/actions/poetry-install
-      #   with:
-      #     working-directory: ./
+      # The technical documentation uses a dedicated python project to be built
+      - uses: ./.github/actions/poetry-install
+        with:
+          working-directory: ./docs/rs-server/
+      # To pull ghcr.io/rs-python/apikey-manager
+      # TODO: to be changed when the apikey manager will have its own container registry.
+      - name: Log into Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate REST API (Swagger) HTML documentation
+        run: |
+          set -x          
+          pwd
+          ls -all
+          sleep 2
+          # Generate the aggregated openapi.json/swagger
+          echo 'Generate the aggregated openapi.json/swagger'
+          ./services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
+
+          # Copy it beside the index.html
+          cp ./services/frontend/resources/openapi.json rs-server/docs/doc/api/rest/
+        shell: bash
 
       - name: Generate Markdown HTML documentation
         run: |
           set -x           
           pwd     
-          ls -all
-          rm -rf poetry.lock && poetry lock --no-update && poetry install
+          ls -all          
           cd docs
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git          
-          cd rs-server
-          rm -rf poetry.lock && poetry lock --no-update && poetry install --with-dev
-          ls -all
-          cd gen-doc
-          poetry run mkdocs build
+          cd rs-server          
+          ls -all                    
           cd ../../../
           pwd
           ls -all
@@ -69,7 +87,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./dist/doc/output
+          publish_dir: ./site
 
       # - run: >
       #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
