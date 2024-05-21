@@ -75,7 +75,7 @@ jobs:
           echo 'Copy openapi.json in rest directory'
           cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
         shell: bash
-        
+
       - name: Deploy docs to ghpages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -95,7 +95,7 @@ jobs:
           cd docs/rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
           cd ../../
-          poetry mkdocs gh-deploy --force
+          poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
 
