@@ -79,14 +79,7 @@ jobs:
       - name: Generate Markdown HTML documentation
         run: |
           set -x           
-          pwd     
-          ls -all          
-          cd docs
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git          
-          cd rs-server          
-          ls -all                    
-          cd ../../../
-          pwd
+          pwd          
           ls -all
           poetry run mkdocs build
         working-directory: .
