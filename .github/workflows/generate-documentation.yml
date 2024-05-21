@@ -65,12 +65,13 @@ jobs:
           pwd
           ls -all
           sleep 2
+          cd docs/rs-server/
           # Generate the aggregated openapi.json/swagger
           echo 'Generate the aggregated openapi.json/swagger'
           ./services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
 
           # Copy it beside the index.html
-          cp ./services/frontend/resources/openapi.json rs-server/docs/doc/api/rest/
+          cp ./services/frontend/resources/openapi.json docs/rs-server/docs/doc/api/rest/
         shell: bash
 
       - name: Generate Markdown HTML documentation
