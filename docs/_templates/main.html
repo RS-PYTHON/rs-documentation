@@ -7,11 +7,24 @@
       width: auto;
       height: 100px;
       margin-left: -15px;
+      position: relative;
+      top: -30px;
+    }
+
+    .custom2-logo-container {
+      display: flex;
+      align-items: center;
+      margin-top: 10px; /* Adjust as needed */
+    }
+
+    .custom-logo-text {
+      margin-right: 10px; /* Adjust as needed */
+      font-size: 1.2em; /* Adjust as needed */
     }
 
     .custom2-logo img {
       width: auto;
-      height: 100px;
+      height: 50px;
     }
   </style>
   <script>
@@ -24,7 +37,7 @@
     });
 
     document.addEventListener("DOMContentLoaded", function() {
-      var logo = document.querySelector('.custom2-logo');
+      var logo = document.querySelector('.custom2-logo-container');
       var target = document.querySelector('.md-sidebar__scrollwrap');
       if (logo && target) {
         target.insertAdjacentElement('afterend', logo);
@@ -41,10 +54,15 @@
     </a>
   </div>
 
-  <div class="custom2-logo">
-    <a href="https://www.csgroup.eu/en/" target="_blank">
-      <img src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png" alt="ESA Logo" />
-    </a>
+  <div class="custom2-logo-container">
+    <div class="custom-logo-text">
+      Operated by
+    </div>
+    <div class="custom2-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png" alt="ESA Logo" />
+      </a>
+    </div>
   </div>
 
 {% endblock %}
