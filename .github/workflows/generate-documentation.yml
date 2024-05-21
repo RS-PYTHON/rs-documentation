@@ -81,6 +81,10 @@ jobs:
           set -x           
           pwd          
           ls -all
+          rm -rf poetry.lock && poetry lock --no-update && poetry install --no-root
+          cd docs/rs-server
+          rm -rf poetry.lock && poetry lock --no-update && poetry install --with-dev
+          cd ../../
           poetry run mkdocs build
         working-directory: .
         shell: bash   
