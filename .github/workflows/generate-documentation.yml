@@ -31,7 +31,12 @@ jobs:
     permissions:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
-    steps:
+    steps:      
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/poetry-install
+        with:
+          options: ""
+          working-directory: .
       - name: Checkout RS-Server
         run: |
           set -x           
@@ -40,12 +45,7 @@ jobs:
           cd docs
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git          
         working-directory: .
-        shell: bash
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/poetry-install
-        with:
-          options: ""
-          working-directory: .
+        shell: bash        
       # The technical documentation uses a dedicated python project to be built
       - uses: ./.github/actions/poetry-install
         with:
