@@ -99,9 +99,4 @@ jobs:
         working-directory: .
         shell: bash   
 
-      
-
-      # - run: >
-      #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
-      
 
