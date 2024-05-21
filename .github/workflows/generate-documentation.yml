@@ -75,6 +75,13 @@ jobs:
           echo 'Copy openapi.json in rest directory'
           cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
         shell: bash
+        
+      - name: Deploy docs to ghpages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./site
 
       - name: Generate Markdown HTML documentation
         run: |
@@ -92,12 +99,7 @@ jobs:
         working-directory: .
         shell: bash   
 
-      - name: Deploy docs to ghpages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./site
+      
 
       # - run: >
       #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
