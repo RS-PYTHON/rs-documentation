@@ -50,6 +50,7 @@ jobs:
       - uses: ./.github/actions/poetry-install
         with:
           working-directory: ./docs/rs-server/
+
       # To pull ghcr.io/rs-python/apikey-manager
       # TODO: to be changed when the apikey manager will have its own container registry.
       - name: Log into Docker registry
@@ -71,7 +72,8 @@ jobs:
           ./services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
 
           # Copy it beside the index.html
-          cp ./services/frontend/resources/openapi.json docs/rs-server/docs/doc/api/rest/
+          echo 'Copy openapi.json in rest directory'
+          cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
         shell: bash
 
       - name: Generate Markdown HTML documentation
