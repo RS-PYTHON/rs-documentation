@@ -81,6 +81,9 @@ jobs:
           set -x           
           pwd          
           ls -all
+          python -m venv ./venv_mkdocs/
+          sleep 2
+          source venv_mkdocs/bin/activate
           rm -rf poetry.lock && poetry lock --no-update && poetry install
           cd docs/rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
