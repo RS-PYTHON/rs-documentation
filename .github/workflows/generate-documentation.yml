@@ -101,5 +101,7 @@ jobs:
 
       # - run: >
       #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
+      - run: pip install mkdocs-material
+      - run: pip install pillow cairosvg
       - run: mkdocs gh-deploy --force
 
