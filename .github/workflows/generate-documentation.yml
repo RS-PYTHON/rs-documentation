@@ -88,7 +88,7 @@ jobs:
           cd docs/rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
           cd ../../
-          poetry run mkdocs build
+          poetry mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
 
@@ -101,7 +101,5 @@ jobs:
 
       # - run: >
       #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
-      - run: pip install mkdocs-material
-      - run: pip install pillow cairosvg
-      - run: mkdocs gh-deploy --force
+      
 
