@@ -17,9 +17,7 @@ name: Generate documentation
 # TODO: when to generate the doc ?
 # For now, only for new git tags (including hierarchical tags like v1.0/beta), or manually
 on:
-    push:
-      tags:
-        - '**'
+    push:      
     workflow_dispatch:
 
 env:
