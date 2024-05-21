@@ -1,6 +1,7 @@
 site_name: RS-Python
 theme:
   name: material
+  custom_dir: docs/_templates
   features:
     - navigation.tabs
     - navigation.tabs.sticky

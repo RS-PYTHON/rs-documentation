@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <style>
+    .custom-logo img {
+      width: auto;
+      height: 100px;
+      margin-left: -15px;
+    }
+
+    .custom2-logo img {
+      width: auto;
+      height: 100px;
+    }
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var logo = document.querySelector('.custom-logo');
+      var target = document.querySelector('.md-sidebar--primary');
+      if (logo && target) {
+        target.insertBefore(logo, target.firstChild);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var logo = document.querySelector('.custom2-logo');
+      var target = document.querySelector('.md-sidebar__scrollwrap');
+      if (logo && target) {
+        target.insertAdjacentElement('afterend', logo);
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block header %}
+  {{ super() }}
+  <div class="custom-logo">
+    <a href="https://www.esa.int" target="_blank">
+      <img src="{{ base_url }}/_static/esa.jpg" alt="ESA Logo" />
+    </a>
+  </div>
+
+  <div class="custom2-logo">
+    <a href="https://www.csgroup.eu/en/" target="_blank">
+      <img src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png" alt="ESA Logo" />
+    </a>
+  </div>
+
+{% endblock %}
