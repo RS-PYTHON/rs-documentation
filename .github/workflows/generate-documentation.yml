@@ -96,9 +96,14 @@ jobs:
           rm -rf poetry.lock && poetry lock --no-update && poetry install
           cd docs/rs-server
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
+          pwd
+          ls -all          
           cd ../rs-client
+          pwd
+          ls -all
+          sleep 2
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
-          cd ../../
+          cd ../../          
           poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
