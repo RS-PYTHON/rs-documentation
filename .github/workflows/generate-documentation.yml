@@ -37,13 +37,14 @@ jobs:
         with:
           options: ""
           working-directory: .
-      - name: Checkout RS-Server
+      - name: Checkout RS-Server/RS-Client
         run: |
           set -x           
           pwd     
           ls -all          
           cd docs
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git          
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git       
         working-directory: .
         shell: bash        
       # The technical documentation uses a dedicated python project to be built
