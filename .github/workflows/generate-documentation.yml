@@ -45,6 +45,7 @@ jobs:
           cd docs
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git       
+          ls -all
         working-directory: .
         shell: bash        
       # The technical documentation uses a dedicated python project to be built
@@ -77,12 +78,12 @@ jobs:
           cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
         shell: bash
 
-      - name: Deploy docs to ghpages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./site
+      # - name: Deploy docs to ghpages
+      #   uses: peaceiris/actions-gh-pages@v4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_branch: gh-pages
+      #     publish_dir: ./site
 
       - name: Generate Markdown HTML documentation
         run: |
