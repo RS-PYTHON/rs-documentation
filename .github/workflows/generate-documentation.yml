@@ -98,7 +98,7 @@ jobs:
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
           pwd
           ls -all          
-          cd ../rs-client
+          cd ../rs-client-libraries
           pwd
           ls -all
           sleep 2
