@@ -32,6 +32,10 @@ jobs:
       contents: write # to publish the generated documentation
     steps:      
       - uses: actions/checkout@v4      
+      - uses: ./.github/actions/poetry-install
+        with:
+          options: --no-root
+          working-directory: .
       - name: Clone RS-Server/RS-Client
         run: |
           set -x           
@@ -79,10 +83,7 @@ jobs:
       #     github_token: ${{ secrets.GITHUB_TOKEN }}
       #     publish_branch: gh-pages
       #     publish_dir: ./site
-      - uses: ./.github/actions/poetry-install
-        with:
-          options: "--no-root"
-          working-directory: .
+      
       - uses: ./.github/actions/poetry-install
         with:          
           working-directory: ./docs/rs-server    
