@@ -20,6 +20,5 @@ runs:
     - uses: snok/install-poetry@v1
       with:        
         virtualenvs-create: true
-        virtualenvs-in-project: false
-        virtualenvs-path: ~/env_rs_doc
+        virtualenvs-in-project: true        
         installer-parallel: true

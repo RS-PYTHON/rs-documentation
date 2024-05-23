@@ -31,8 +31,7 @@ runs:
   steps:
     - uses: ./.github/actions/install-python
     - uses: ./.github/actions/install-poetry
-    - run: |
-        source ~/env_rs_doc/bin/activate
+    - run: |        
         poetry install ${{ inputs.options }} # don't use quotes around options        
       working-directory: ${{ inputs.working-directory }}
       shell: bash
