@@ -48,10 +48,10 @@ jobs:
           ls -all
         working-directory: .
         shell: bash        
-      # The technical documentation uses a dedicated python project to be built
-      - uses: ./.github/actions/poetry-install
-        with:
-          working-directory: ./docs/rs-server/
+      # # The technical documentation uses a dedicated python project to be built
+      # - uses: ./.github/actions/poetry-install
+      #   with:
+      #     working-directory: ./docs/rs-server/
 
       # To pull ghcr.io/rs-python/apikey-manager
       # TODO: to be changed when the apikey manager will have its own container registry.
@@ -95,6 +95,7 @@ jobs:
           source venv_mkdocs/bin/activate
           rm -rf poetry.lock && poetry lock --no-update && poetry install
           cd docs/rs-server
+          poetry lock --no-update
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
           pwd
           ls -all          
@@ -102,6 +103,7 @@ jobs:
           pwd
           ls -all
           sleep 2
+          poetry lock --no-update
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
           cd ../../          
           poetry run mkdocs gh-deploy --force
