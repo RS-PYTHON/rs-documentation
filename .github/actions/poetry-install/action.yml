@@ -20,6 +20,11 @@ inputs:
     description: "'poetry install' options e.g. '--with dev'"
     required: false
     default: --with dev
+  
+  venv:
+    description: "use the specificed virtual environment"
+    required: false
+    default: .venv
 
   working-directory:
     description: "the working directory in which poetry is run."
@@ -30,8 +35,10 @@ runs:
   using: "composite"
   steps:
     - uses: ./.github/actions/install-python
-    - uses: ./.github/actions/install-poetry
-    - run: |        
+    - uses: snok/install-poetry@v1
+    - run: |
+        source ${{ inputs.venv }}/bin/activate
+        poetry lock --no-update
         poetry install ${{ inputs.options }} # don't use quotes around options        
       working-directory: ${{ inputs.working-directory }}
       shell: bash

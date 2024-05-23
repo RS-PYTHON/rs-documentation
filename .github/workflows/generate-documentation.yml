@@ -31,10 +31,17 @@ jobs:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
     steps:      
-      - uses: actions/checkout@v4      
+      - uses: ./.github/actions/install-python
+      - uses: actions/checkout@v4         
+      - name: Create the virtual env   
+        run: |
+          python -m venv ~/env_rs_doc
+        working-directory: .
+        shell: bash
       - uses: ./.github/actions/poetry-install
         with:
           options: --no-root
+          venv: ~/env_rs_doc
           working-directory: .
       - name: Clone RS-Server/RS-Client
         run: |
@@ -86,9 +93,11 @@ jobs:
       
       - uses: ./.github/actions/poetry-install
         with:          
+          venv: ~/env_rs_doc
           working-directory: ./docs/rs-server    
       - uses: ./.github/actions/poetry-install
         with:          
+          venv: ~/env_rs_doc
           working-directory: ./docs/rs-client-libraries
       - name: Generate Markdown HTML documentation
         run: |
