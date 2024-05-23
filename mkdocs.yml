@@ -34,7 +34,7 @@ theme:
         name: Switch to light mode    
       primary: teal
       accent: lime
-
+extra_css: [sidebar_width.css]
 plugins:
   - search
   - mkdocstrings:
@@ -77,8 +77,7 @@ nav:
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
   - Developer Manual:
     - rs-server/docs/doc/developer_manual.md
-    - Tutorials: rs-server/docs/doc/dev/environment/installation.md
-    - Guides: rs-server/docs/doc/dev/doc-generation/how-to.md
+    - Tutorials: rs-server/docs/doc/dev/environment/installation.md    
     - Technical Information:
       - Code style: rs-server/docs/doc/dev/code-style.md
       - API Pyhton: rs-server/docs/doc/api/python/html/index.md
@@ -91,12 +90,10 @@ nav:
       - Common: generate_src_doc/rs-server/common.md
       - Frontend: generate_src_doc/rs-server/frontend.md
     - Additional information:
-      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md
-      - Description: rs-server/docs/doc/dev/environment/description.md
+      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md      
       - Workflow: rs-server/docs/doc/dev/background/workflow.md
       - CI: rs-server/docs/doc/dev/background/ci.md
-      - Design: rs-server/docs/doc/dev/design/design.md
-      - Description: rs-server/docs/doc/dev/doc-generation/description.md
+      - Design: rs-server/docs/doc/dev/design/design.md      
 - RS-Client:
   - rs-client-libraries/docs/doc/index.md
   - Python API Library:
