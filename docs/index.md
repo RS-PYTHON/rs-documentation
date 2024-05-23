@@ -6,6 +6,8 @@ The RS-Python documentation is composed from:
 
 # Homepage
 
-The documentation for RS-Server may be found here: [RS-Server](rs-server/docs/doc/index.md)
+The documentation for RS-Server may be found here: [RS-Server](rs-server/docs/doc/index.md).
 
-The documentation for RS-Client may be found here: [RS-Client-Libraries](rs-client-libraries/docs/doc/index.md)
+The documentation for RS-Client may be found here: [RS-Client-Libraries](rs-client-libraries/docs/doc/index.md).
+
+You may also check [how to generate](how_to.md) the documentation.

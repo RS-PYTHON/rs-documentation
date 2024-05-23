@@ -42,7 +42,29 @@ plugins:
         python:
           options:
             separate_modules: true
-            
+  # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
+  # - spellcheck:      
+  #     known_words: spellchecker_ignore.txt    
+  #     # ignore words in <code> tags
+  #     ignore_code: yes
+
+  #     # minimum length of words to consider
+  #     min_length: 2
+
+  #     # maximum number of capital letters in a word
+  #     max_capital: 1
+
+  #     # keep unicode characters
+  #     allow_unicode: no
+
+  #     # skip files entirely (supports Unix shell-style wildcards)
+  #     skip_files:
+  #     - credits.md
+  #     - coverage.md
+  #     - reference/* 
+
+  #     # whether to only check in strict mode
+  #     strict_only: yes   
 nav:
 - Home:
     - index.md
