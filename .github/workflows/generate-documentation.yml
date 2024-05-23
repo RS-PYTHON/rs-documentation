@@ -93,7 +93,7 @@ jobs:
           python -m venv ./venv_mkdocs/
           sleep 2
           source venv_mkdocs/bin/activate
-          rm -rf poetry.lock && poetry lock --no-update && poetry install
+          rm -rf poetry.lock && poetry lock --no-update && poetry install --no-root
           cd docs/rs-server
           poetry lock --no-update
           rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev

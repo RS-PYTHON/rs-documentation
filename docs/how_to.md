@@ -8,7 +8,7 @@ process and technical stuff.
 Prerequisites
 =============
 
-The following have to be installed
+The followings have to be installed
 - python version 3.11
 - poetry at least version 1.7.1
 
