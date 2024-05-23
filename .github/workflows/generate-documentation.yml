@@ -24,7 +24,6 @@ env:
   PYTHON_VERSION: 3.11
 
 jobs:
-
   generate-documentation:
     name: Generate documentation
     runs-on: ubuntu-latest
@@ -32,11 +31,7 @@ jobs:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
     steps:      
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/poetry-install
-        with:
-          options: "--no-root"
-          working-directory: .
+      - uses: actions/checkout@v4      
       - name: Clone RS-Server/RS-Client
         run: |
           set -x           
@@ -84,28 +79,23 @@ jobs:
       #     github_token: ${{ secrets.GITHUB_TOKEN }}
       #     publish_branch: gh-pages
       #     publish_dir: ./site
-
+      - uses: ./.github/actions/poetry-install
+        with:
+          options: "--no-root"
+          working-directory: .
+      - uses: ./.github/actions/poetry-install
+        with:          
+          working-directory: ./docs/rs-server    
+      - uses: ./.github/actions/poetry-install
+        with:          
+          working-directory: ./docs/rs-client-libraries
       - name: Generate Markdown HTML documentation
         run: |
           set -x           
           pwd          
-          ls -all
-          python -m venv ./venv_mkdocs/
-          sleep 2
-          source venv_mkdocs/bin/activate
-          rm -rf poetry.lock && poetry lock --no-update && poetry install --no-root
-          cd docs/rs-server
-          poetry lock --no-update
-          rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
-          pwd
           ls -all          
-          cd ../rs-client-libraries
-          pwd
-          ls -all
           sleep 2
-          poetry lock --no-update
-          rm -rf poetry.lock && poetry lock --no-update && poetry install --with dev
-          cd ../../          
+          source ~/env_rs_doc/bin/activate          
           poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
