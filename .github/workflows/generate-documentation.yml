@@ -43,7 +43,7 @@ jobs:
           options: --no-root
           venv: ~/env_rs_doc
           working-directory: .
-      - name: Clone RS-Server/RS-Client
+      - name: Clone RS-Server/RS-Client/RS-Demo
         run: |
           set -x           
           pwd     
@@ -51,8 +51,14 @@ jobs:
           cd docs
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git 
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-demo.git
+          # git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-demo.git
           ls -all
+          # Clone the rs-demo repository.
+          # Use the ssh public key from: https://github.com/RS-PYTHON/rs-demo/settings/keys
+          # and the private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
+          git clone git@github.com:RS-PYTHON/rs-demo.git
         working-directory: .
         shell: bash        
       # # The technical documentation uses a dedicated python project to be built
