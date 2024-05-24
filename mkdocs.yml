@@ -34,7 +34,7 @@ theme:
         name: Switch to light mode    
       primary: teal
       accent: lime
-extra_css: [sidebar_width.css]
+extra_css: [_templates/sidebar_width.css]
 plugins:
   - search
   - mkdocstrings:
@@ -104,5 +104,5 @@ nav:
       - Example: generate_src_doc/rs-client/example.md
       - Staging: generate_src_doc/rs-client/staging.md
       - S1 L0: generate_src_doc/rs-client/s1_l0.md
-
-    
+- RS-Notebooks:
+  - rs-demo/README.md

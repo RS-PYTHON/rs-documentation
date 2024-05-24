@@ -50,7 +50,8 @@ jobs:
           ls -all          
           cd docs
           git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git       
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git 
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-demo.git
           ls -all
         working-directory: .
         shell: bash        
