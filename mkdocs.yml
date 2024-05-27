@@ -1,11 +1,12 @@
 site_name: RS-Python
+#site_url: https://rs-python.github.io/rs-documentation/
 # Copyright
 copyright: Copyright &copy; 2024, ESA
 
 theme:
   name: material
   custom_dir: docs/_templates
-  features:
+  features:    
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections    
@@ -34,6 +35,8 @@ theme:
         name: Switch to light mode    
       primary: teal
       accent: lime
+markdown_extensions:
+  - sane_lists
 extra_css: [_templates/sidebar_width.css]
 plugins:
   - search
@@ -104,8 +107,9 @@ nav:
       - Example: generate_src_doc/rs-client/example.md
       - Staging: generate_src_doc/rs-client/staging.md
       - S1 L0: generate_src_doc/rs-client/s1_l0.md
-- RS-Notebooks:
-  - rs-demo/README.md
+- RS-Notebooks:  
+  - rs-demo/doc/index.md
+  - Running Modes: rs-demo/README.md
 - RS-Deployment:
   - Infrastructure Deployment:
     - Installation: rs-infrastructure/docs/installation.md

@@ -14,20 +14,17 @@ The following have to be installed
 
 Prepare the environment
 =======================
-
-1. Clone the rs-documentation repository:
+1. Clone the rs-documentation repository:   
 ```shell
 #: git clone https://github.com/RS-PYTHON/rs-documentation.git
 #: cd rs-documentation
 ```
-2. Create a virtual env and activate it:
-
+2. Create a virtual env and activate it:  
 ```shell
 #: python -m venv env_rs_doc
 #: source env_rs_doc/bin/activate
 ```
 3. Install needed rs-documentation packages:
-
 ```shell
 #: poetry install --no-root
 ```
