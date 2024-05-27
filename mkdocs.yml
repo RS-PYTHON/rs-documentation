@@ -106,3 +106,15 @@ nav:
       - S1 L0: generate_src_doc/rs-client/s1_l0.md
 - RS-Notebooks:
   - rs-demo/README.md
+- RS-Deployment:
+  - Infrastructure Deployment:
+    - Installation: rs-infrastructure/docs/installation.md
+    - Cluster Management: rs-infrastructure/docs/how-to/Cluster Management.md
+    - Cluster start and stop: rs-infrastructure/docs/how-to/Cluster start and stop.md
+    - GitHub container registry: rs-infrastructure/docs/how-to/GitHub Container Registry.md
+    - Ingress controller: rs-infrastructure/docs/how-to/Ingress.md
+    - Prefect worker: rs-infrastructure/docs/how-to/Prefect-Worker.md
+    - Remote kubectl: rs-infrastructure/docs/how-to/Remote kubectl.md
+    - Wazuh Server installation: rs-infrastructure/docs/how-to/Wazuh-Server_Install.md
+  - Applications Deployment:
+    - RS-Server deployment: rs-helm/README.md
