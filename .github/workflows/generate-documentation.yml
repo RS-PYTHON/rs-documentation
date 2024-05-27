@@ -49,18 +49,26 @@ jobs:
           pwd     
           ls -all          
           cd docs
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
-          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git 
-          # git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-demo.git
+
+          # Clone public rspy repositories
+          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-server.git
+          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-client-libraries.git
+          # git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-demo.git
           ls -all
-          # Clone the rs-demo repository.
-          # Use the ssh public key from: https://github.com/RS-PYTHON/rs-demo/settings/keys
-          # and the private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
+
+          # Clone private rspy repositories.
+          # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
+          # And the public keys from: 
+            #   https://github.com/RS-PYTHON/rs-demo/settings/keys
+            #   https://github.com/RS-PYTHON/rs-infrastructure/settings/keys
+            #   https://github.com/RS-PYTHON/rs-helm/settings/keys
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
+          ssh-add - <<< "${{ secrets.RS_INFRASTRUCTURE_PRIVATE_SSH_KEY }}"
+          ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
           git clone git@github.com:RS-PYTHON/rs-demo.git
-          git clone -b develop https://github.com/RS-PYTHON/rs-infrastructure.git
-          git clone -b develop https://github.com/RS-PYTHON/rs-helm.git
+          git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+          git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
         working-directory: .
         shell: bash        
       # # The technical documentation uses a dedicated python project to be built
