@@ -51,9 +51,8 @@ jobs:
           cd docs
 
           # Clone public rspy repositories
-          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-server.git
-          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-client-libraries.git
-          # git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-demo.git
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git 
           ls -all
 
           # Clone private rspy repositories.
@@ -64,10 +63,14 @@ jobs:
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
-          ssh-add - <<< "${{ secrets.RS_INFRASTRUCTURE_PRIVATE_SSH_KEY }}"
-          ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
           git clone git@github.com:RS-PYTHON/rs-demo.git
+
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
           git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
           git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
         working-directory: .
         shell: bash        
