@@ -38,11 +38,11 @@ jobs:
           python -m venv ~/env_rs_doc
         working-directory: .
         shell: bash
-      - uses: ./.github/actions/poetry-install
-        with:
-          options: --no-root
-          venv: ~/env_rs_doc
-          working-directory: .
+      # - uses: ./.github/actions/poetry-install
+      #   with:
+      #     options: --no-root
+      #     venv: ~/env_rs_doc
+      #     working-directory: .
       - name: Clone RS-Server/RS-Client/RS-Demo
         run: |
           set -x           
@@ -51,8 +51,8 @@ jobs:
           cd docs
 
           # Clone public rspy repositories
-          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-server.git
-          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-client-libraries.git
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-server.git   
+          git clone -b feat-rspy112/improve-documentation https://github.com/RS-PYTHON/rs-client-libraries.git 
           # git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-demo.git
           ls -all
 
