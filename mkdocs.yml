@@ -75,16 +75,15 @@ nav:
 - RS-Server: 
   - rs-server/docs/doc/index.md
   - User Manual: 
-    - rs-server/docs/doc/user_manual.md
+    - General Description: rs-server/docs/doc/user_manual.md
     - Overal Architecture: rs-server/docs/doc/users/architecture.md
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
   - Developer Manual:
-    - rs-server/docs/doc/developer_manual.md
-    - Tutorials: rs-server/docs/doc/dev/environment/installation.md    
-    - Technical Information:
-      - Code style: rs-server/docs/doc/dev/code-style.md
-      - API Pyhton: rs-server/docs/doc/api/python/html/index.md
-      - API Rest: rs-server/docs/doc/api/rest/index.md
+    - General Description: rs-server/docs/doc/developer_manual.md
+    - Installation: rs-server/docs/doc/dev/environment/installation.md    
+    - Code style: rs-server/docs/doc/dev/code-style.md
+    - API Rest: 
+      - rs-server/docs/doc/api/rest/index.md    
     - Python API Library: 
       - generate_src_doc/rs-server/index.md
       - ADGS: generate_src_doc/rs-server/adgs.md
@@ -95,8 +94,7 @@ nav:
     - Additional information:
       - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md      
       - Workflow: rs-server/docs/doc/dev/background/workflow.md
-      - CI: rs-server/docs/doc/dev/background/ci.md
-      - Design: rs-server/docs/doc/dev/design/design.md      
+      - CI: rs-server/docs/doc/dev/background/ci.md      
 - RS-Client:
   - rs-client-libraries/docs/doc/index.md
   - Python API Library:
