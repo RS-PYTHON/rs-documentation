@@ -67,11 +67,11 @@ jobs:
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-infrastructure.git
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
-          git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
+          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-helm.git
         working-directory: .
         shell: bash        
       # # The technical documentation uses a dedicated python project to be built
