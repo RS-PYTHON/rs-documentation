@@ -28,13 +28,17 @@ Prepare the environment
 ```shell
 #: poetry install --no-root
 ```
-4. Clone RS-Server and RS-Client repositories. The default branch from which 
+4. Clone the RS-Server, RS-Client, RS-Demo, RS-Infrastructure and RS-Helm repositories. The default branch from which 
 the projects are pulled is 'main', but one can choose whatever branch is needed by using '-b' flag
-**NOTE**: The repostires need to be pulled in 'docs' directory
+**NOTE**: The repositories need to be pulled in 'docs' directory
+**NOTE**: The RS-Demo, RS-Infrastructure and RS-Helm repositories are not public, so a github access is needed
 ```shell
 #: cd docs
 #: git clone -b develop https://github.com/RS-PYTHON/rs-server.git
 #: git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
+#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-demo.git
+#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-infrastructure.git
+#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-helm.git
 #: cd ..
 ```
 5. Install the source code python packages:

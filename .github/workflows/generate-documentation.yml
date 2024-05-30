@@ -43,7 +43,7 @@ jobs:
           options: --no-root
           venv: ~/env_rs_doc
           working-directory: .
-      - name: Clone RS-Server/RS-Client/RS-Demo
+      - name: Clone RS-Server/RS-Client/RS-Demo/RS-Infra/RS-Helm
         run: |
           set -x           
           pwd     
