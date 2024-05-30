@@ -103,8 +103,7 @@ nav:
   - Python API Library:
     - generate_src_doc/rs-client/index.md
     - RS-Client Classes: generate_src_doc/rs-client/rs_client.md
-    - RS-Client Workflows:
-      - generate_src_doc/rs-client/rs_workflows.md
+    - RS-Client Workflows:      
       - Example: generate_src_doc/rs-client/example.md
       - Staging: generate_src_doc/rs-client/staging.md
       - S1 L0: generate_src_doc/rs-client/s1_l0.md
