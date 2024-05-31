@@ -55,7 +55,7 @@ Reference System Python can be split into the following components:
     -   **Infrastructure security**
 
 
-![Static View](../../images/staticview.png)
+![Static View](images/staticview.png)
 
 
 
