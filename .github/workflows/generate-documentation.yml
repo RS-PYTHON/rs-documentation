@@ -67,8 +67,14 @@ jobs:
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-infrastructure.git
-
+          git clone -b feat-rspy112/improve-documentation --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
+          cd rs-infrastructure
+          git sparse-checkout init --no-cone
+          echo "/docs/" > .git/info/sparse-checkout
+          git read-tree -mu HEAD
+          ls -all
+          cd ..
+          
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
           git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-helm.git
