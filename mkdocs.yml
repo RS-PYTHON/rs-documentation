@@ -81,6 +81,7 @@ nav:
     - General Description: rs-server/docs/doc/user_manual.md
     - Overal Architecture: rs-server/docs/doc/users/architecture.md
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
+    - OAuth2 and API Key Manager: rs-server/docs/doc/users/oauth2_apikey_manager.md
   - Developer Manual:
     - General Description: rs-server/docs/doc/developer_manual.md
     - Installation: rs-server/docs/doc/dev/environment/installation.md    
