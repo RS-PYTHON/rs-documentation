@@ -1,1 +1,1 @@
-::: rs_workflows.serialization
+::: rs_common.serialization
