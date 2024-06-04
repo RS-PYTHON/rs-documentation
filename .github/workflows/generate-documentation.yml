@@ -73,6 +73,7 @@ jobs:
           echo "/docs/" > .git/info/sparse-checkout
           echo "/LICENSE" >> .git/info/sparse-checkout
           echo "/NOTICE.md" >> .git/info/sparse-checkout
+          echo "/README.md" >> .git/info/sparse-checkout
           git read-tree -mu HEAD
           ls -all
           cd ..
