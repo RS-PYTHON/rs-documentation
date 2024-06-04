@@ -108,7 +108,7 @@ nav:
       - Example: generate_src_doc/rs-client/example.md
       - Staging: generate_src_doc/rs-client/staging.md
       - S1 L0: generate_src_doc/rs-client/s1_l0.md
-      - Serialization: generate_src_doc/rs-client/rs_client_serialization.md
+    - RS-Client Common: generate_src_doc/rs-client/rs_client_common.md
 - RS-Notebooks:  
   - rs-demo/doc/index.md
   - Running Modes: rs-demo/README.md

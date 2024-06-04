@@ -7,5 +7,3 @@ of the already implemented workflows
 [Staging](staging.md)
 
 [S1 L0](s1_l0.md)
-
-[Serialization](rs_client_serialization.md)
