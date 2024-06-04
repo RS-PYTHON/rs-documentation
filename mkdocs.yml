@@ -70,7 +70,7 @@ plugins:
   #     - reference/* 
 
   #     # whether to only check in strict mode
-  #     strict_only: yes   
+  #     strict_only: yes
 nav:
 - Home:
     - index.md
