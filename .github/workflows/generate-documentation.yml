@@ -72,6 +72,7 @@ jobs:
           git sparse-checkout init --no-cone
           echo "/docs/" > .git/info/sparse-checkout
           echo "/LICENSE" >> .git/info/sparse-checkout
+          echo "/NOTICE.md" >> .git/info/sparse-checkout
           git read-tree -mu HEAD
           ls -all
           cd ..
