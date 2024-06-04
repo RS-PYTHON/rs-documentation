@@ -112,8 +112,10 @@ nav:
 - RS-Notebooks:  
   - rs-demo/doc/index.md
   - Running Modes: rs-demo/README.md
-- RS-Deployment:
+- RS-Deployment: 
+  - rs_deployment_start.md
   - Infrastructure Deployment:
+    - rs-infrastructure/README.md    
     - Installation: rs-infrastructure/docs/installation.md
     - Cluster Management: rs-infrastructure/docs/how-to/Cluster Management.md
     - Cluster start and stop: rs-infrastructure/docs/how-to/Cluster start and stop.md
