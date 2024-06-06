@@ -1,7 +1,12 @@
 site_name: RS-Python
+#site_url: https://rs-python.github.io/rs-documentation/
+# Copyright
+copyright: Copyright &copy; 2024, ESA
+
 theme:
   name: material
-  features:
+  custom_dir: docs/_templates
+  features:    
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections    
@@ -30,6 +35,12 @@ theme:
         name: Switch to light mode    
       primary: teal
       accent: lime
+markdown_extensions:
+  - sane_lists
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+extra_css: [_templates/sidebar_width.css]
 plugins:
   - search
   - mkdocstrings:
@@ -37,32 +48,81 @@ plugins:
         python:
           options:
             separate_modules: true
-            
+  # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
+  # - spellcheck:      
+  #     known_words: spellchecker_ignore.txt    
+  #     # ignore words in <code> tags
+  #     ignore_code: yes
+
+  #     # minimum length of words to consider
+  #     min_length: 2
+
+  #     # maximum number of capital letters in a word
+  #     max_capital: 1
+
+  #     # keep unicode characters
+  #     allow_unicode: no
+
+  #     # skip files entirely (supports Unix shell-style wildcards)
+  #     skip_files:
+  #     - credits.md
+  #     - coverage.md
+  #     - reference/* 
+
+  #     # whether to only check in strict mode
+  #     strict_only: yes
 nav:
 - Home:
     - index.md
+    - Generate Documentation: how_to.md
 - RS-Server: 
   - rs-server/docs/doc/index.md
   - User Manual: 
-    - rs-server/docs/doc/user_manual.md
+    - General Description: rs-server/docs/doc/user_manual.md
     - Overal Architecture: rs-server/docs/doc/users/architecture.md
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
+    - OAuth2 and API Key Manager: rs-server/docs/doc/users/oauth2_apikey_manager.md
   - Developer Manual:
-    - rs-server/docs/doc/developer_manual.md
-    - Tutorials: rs-server/docs/doc/dev/environment/installation.md
-    - Guides: rs-server/docs/doc/dev/doc-generation/how-to.md
-    - Technical Information:
-      - Code style: rs-server/docs/doc/dev/code-style.md
-      - API Pyhton: rs-server/docs/doc/api/python/html/index.md
-      - API Rest: rs-server/docs/doc/api/rest/index.md
+    - General Description: rs-server/docs/doc/developer_manual.md
+    - Installation: rs-server/docs/doc/dev/environment/installation.md    
+    - Code style: rs-server/docs/doc/dev/code-style.md
+    - API Rest: 
+      - rs-server/docs/doc/api/rest/index.md    
     - Python API Library: 
-      - rs-server/gen-doc/index.md
+      - generate_src_doc/rs-server/index.md
+      - ADGS: generate_src_doc/rs-server/adgs.md
+      - CADIP: generate_src_doc/rs-server/cadip.md        
+      - Catalog: generate_src_doc/rs-server/catalog.md
+      - Common: generate_src_doc/rs-server/common.md
+      - Frontend: generate_src_doc/rs-server/frontend.md
     - Additional information:
-      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md
-      - Description: rs-server/docs/doc/dev/environment/description.md
+      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md      
       - Workflow: rs-server/docs/doc/dev/background/workflow.md
-      - CI: rs-server/docs/doc/dev/background/ci.md
-      - Design: rs-server/docs/doc/dev/design/design.md
-      - Description: rs-server/docs/doc/dev/doc-generation/description.md
-
-    
+      - CI: rs-server/docs/doc/dev/background/ci.md      
+- RS-Client:
+  - rs-client-libraries/docs/doc/index.md
+  - Python API Library:
+    - generate_src_doc/rs-client/index.md
+    - RS-Client Classes: generate_src_doc/rs-client/rs_client.md
+    - RS-Client Workflows:      
+      - Example: generate_src_doc/rs-client/example.md
+      - Staging: generate_src_doc/rs-client/staging.md
+      - S1 L0: generate_src_doc/rs-client/s1_l0.md
+    - RS-Client Common: generate_src_doc/rs-client/rs_client_common.md
+- RS-Notebooks:  
+  - rs-demo/doc/index.md
+  - Running Modes: rs-demo/README.md
+- RS-Deployment: 
+  - rs_deployment_start.md
+  - Infrastructure Deployment:
+    - rs-infrastructure/README.md    
+    - Installation: rs-infrastructure/docs/installation.md
+    - Cluster Management: rs-infrastructure/docs/how-to/Cluster Management.md
+    - Cluster start and stop: rs-infrastructure/docs/how-to/Cluster start and stop.md
+    - GitHub container registry: rs-infrastructure/docs/how-to/GitHub Container Registry.md
+    - Ingress controller: rs-infrastructure/docs/how-to/Ingress.md
+    - Prefect worker: rs-infrastructure/docs/how-to/Prefect-Worker.md
+    - Remote kubectl: rs-infrastructure/docs/how-to/Remote kubectl.md
+    - Wazuh Server installation: rs-infrastructure/docs/how-to/Wazuh-Server_Install.md
+  - Applications Deployment:
+    - RS-Server deployment: rs-helm/README.md

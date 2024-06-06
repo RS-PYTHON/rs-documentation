@@ -1,6 +1,7 @@
 [project]
 name = "rs-documentation"
 version = "0.0.0" # see: https://github.com/mtkennerly/poetry-dynamic-versioning
+package-mode = false
 
 [tool.poetry]
 name = "rs-documentation"
@@ -15,9 +16,14 @@ readme = "README.md"
 # All the dependencies for release are set in the sub-projects
 [tool.poetry.dependencies]
 python = "^3.11"
+mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.23"
 mkdocstrings = "^0.25.1"
 mkdocstrings-python = "^1.10.2"
+mkdocs-spellcheck = "^1.1.0"
+symspellpy = "^6.7.7"
+
+
 
 
 

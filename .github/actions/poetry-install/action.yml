@@ -20,6 +20,11 @@ inputs:
     description: "'poetry install' options e.g. '--with dev'"
     required: false
     default: --with dev
+  
+  venv:
+    description: "use the specificed virtual environment"
+    required: false
+    default: .venv
 
   working-directory:
     description: "the working directory in which poetry is run."
@@ -32,7 +37,8 @@ runs:
     - uses: ./.github/actions/install-python
     - uses: snok/install-poetry@v1
     - run: |
-        poetry install ${{ inputs.options }} # don't use quotes around options
-        poetry run opentelemetry-bootstrap -a install || true # install otel instrumentation packages for dependencies
+        source ${{ inputs.venv }}/bin/activate
+        poetry lock --no-update
+        poetry install ${{ inputs.options }} # don't use quotes around options        
       working-directory: ${{ inputs.working-directory }}
       shell: bash

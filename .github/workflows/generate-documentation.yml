@@ -17,58 +17,126 @@ name: Generate documentation
 # TODO: when to generate the doc ?
 # For now, only for new git tags (including hierarchical tags like v1.0/beta), or manually
 on:
-    push:
-      tags:
-        - '**'
+    push:      
     workflow_dispatch:
 
 env:
   PYTHON_VERSION: 3.11
 
 jobs:
-
   generate-documentation:
     name: Generate documentation
     runs-on: ubuntu-latest
     permissions:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
-    steps:
-      - uses: actions/checkout@v4
+    steps:      
+      - uses: actions/checkout@v4         
+      - uses: ./.github/actions/install-python
+      - name: Create the virtual env   
+        run: |
+          python -m venv ~/env_rs_doc
+        working-directory: .
+        shell: bash
       - uses: ./.github/actions/poetry-install
         with:
-          working-directory: ./docs/rs-server
-      # The technical documentation uses a dedicated python project to be built
-      - uses: ./.github/actions/poetry-install
-        with:
+          options: --no-root
+          venv: ~/env_rs_doc
           working-directory: .
+      - name: Clone RS-Server/RS-Client/RS-Demo/RS-Infra/RS-Helm
+        run: |
+          set -x           
+          pwd     
+          ls -all          
+          cd docs
 
-      # The order of these steps is important
-      # The technical documentation has to be first
-      # because some fake documentation are then replaced
-      # by the following steps for link purpose.
+          # Clone public rspy repositories
+          git clone -b develop https://github.com/RS-PYTHON/rs-server.git   
+          git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git 
+          ls -all
 
+          # Clone private rspy repositories.
+          # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
+          # And the public keys from: 
+            #   https://github.com/RS-PYTHON/rs-demo/settings/keys
+            #   https://github.com/RS-PYTHON/rs-infrastructure/settings/keys
+            #   https://github.com/RS-PYTHON/rs-helm/settings/keys
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
+          git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
+          git clone -b develop --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
+          cd rs-infrastructure
+          git sparse-checkout init --no-cone
+          echo "/docs/" > .git/info/sparse-checkout
+          echo "/LICENSE" >> .git/info/sparse-checkout
+          echo "/NOTICE.md" >> .git/info/sparse-checkout
+          echo "/README.md" >> .git/info/sparse-checkout
+          git read-tree -mu HEAD
+          ls -all
+          cd ..
+          
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
+          git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
+        working-directory: .
+        shell: bash        
+      # # The technical documentation uses a dedicated python project to be built
+      # - uses: ./.github/actions/poetry-install
+      #   with:
+      #     working-directory: ./docs/rs-server/
+
+      # To pull ghcr.io/rs-python/apikey-manager
+      # TODO: to be changed when the apikey manager will have its own container registry.
+      - name: Log into Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate REST API (Swagger) HTML documentation
+        run: |
+          set -x          
+          pwd
+          ls -all
+          sleep 2
+          cd docs/rs-server/
+          # Generate the aggregated openapi.json/swagger
+          echo 'Generate the aggregated openapi.json/swagger'
+          ./services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
+
+          # Copy it beside the index.html
+          echo 'Copy openapi.json in rest directory'
+          cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
+        shell: bash
+
+      # - name: Deploy docs to ghpages
+      #   uses: peaceiris/actions-gh-pages@v4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_branch: gh-pages
+      #     publish_dir: ./site
+      
+      - uses: ./.github/actions/poetry-install
+        with:          
+          venv: ~/env_rs_doc
+          working-directory: ./docs/rs-server    
+      - uses: ./.github/actions/poetry-install
+        with:          
+          venv: ~/env_rs_doc
+          working-directory: ./docs/rs-client-libraries
       - name: Generate Markdown HTML documentation
         run: |
-          set -x
-          cd docs
-          git clone --no-checkout https://github.com/RS-PYTHON/rs-server.git
-          cd rs-server/gen-doc
-          poetry run mkdocs build
-          cd ../../
-          pwd
-          mkdocs build
-        working-directory: ./docs
+          set -x           
+          pwd          
+          ls -all          
+          sleep 2
+          source ~/env_rs_doc/bin/activate          
+          poetry run mkdocs gh-deploy --force
+        working-directory: .
         shell: bash   
 
-      - name: Deploy docs to ghpages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./dist/doc/output
-
-      # - run: >
-      #     echo "Documentation published to: https://rs-python.github.io/rs-server" >> $GITHUB_STEP_SUMMARY
-      - run: mkdocs gh-deploy --force
 
