@@ -87,7 +87,7 @@ nav:
     - Installation: rs-server/docs/doc/dev/environment/installation.md    
     - Code style: rs-server/docs/doc/dev/code-style.md
     - API Rest: 
-      - rs-server/docs/doc/api/rest/index.md    
+      - generate_src_doc/rs-server/swagger_index.md
     - Python API Library: 
       - generate_src_doc/rs-server/index.md
       - ADGS: generate_src_doc/rs-server/adgs.md
