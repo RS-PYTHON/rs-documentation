@@ -14,21 +14,29 @@ Reference System Python can be split into the following components:
 
     -   **RS-Server Frontend**
 
-    -   **RS-Server Backend / Catalog**
+    -   **RS-Server Catalog**
 
-    -   **RS-Server Backend / PRIP**
+    -   **RS-Server PRIP**
 
-    -   **RS-Server Backend / CADIP**
+    -   **RS-Server CADIP**
 
-    -   **RS-Server Backend / LTA**
+    -   **RS-Server LTA**
 
-    -   **RS-Server Backend / AUXIP**
+    -   **RS-Server AUXIP**
 
--   **RS-Client libraries**: this is a set of python functions that
-    provide processing tasks and flows. Flows and tasks can be
-    orchestrated by Prefect server or executed from any Python
-    environment. On RS-Server side, there will be also a function to
-    compute performance indicator.
+-   **RS-Client libraries**: this is a set of python functions that allow
+    to build Copernicus processing chains. Among these libraries, we will find:
+    -   **rs.client** : python libraries that provide atomic call to RS-Server
+
+    -   **rs.processing** : python libraries that wrap DPR processing and provide 
+        high level service (combination of rs.client calls)
+    
+    -   **rs.common** : python libraries for metric, log and traces.
+
+    -   **Prefect tasks & flows** for **On Demand** processing chains
+
+    -   **Prefect tasks & flows** for **Systematic** processing chains
+
 
 -   **RS-Virtual environment**: Component that gives users access to
     computational environments and resources for executing processing
