@@ -92,7 +92,7 @@ nav:
       - generate_src_doc/rs-server/index.md
       - ADGS: generate_src_doc/rs-server/adgs.md
       - CADIP: generate_src_doc/rs-server/cadip.md        
-      - Catalog: generate_src_doc/rs-server/catalog.md
+      - Catalog: rs-server/docs/doc/users/catalog.md
       - Common: generate_src_doc/rs-server/common.md
       - Frontend: generate_src_doc/rs-server/frontend.md
     - Additional information:
