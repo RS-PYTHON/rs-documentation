@@ -51,8 +51,8 @@ jobs:
           cd docs
 
           # Clone public rspy repositories
-          git clone -b develop https://github.com/RS-PYTHON/rs-server.git   
-          git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git 
+          git clone -b v0.1.post1 https://github.com/RS-PYTHON/rs-server.git
+          git clone -b v0.1 https://github.com/RS-PYTHON/rs-client-libraries.git
           ls -all
 
           # Clone private rspy repositories.
@@ -63,11 +63,11 @@ jobs:
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
-          git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+          git clone -b v0.1 git@github.com:RS-PYTHON/rs-demo.git
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone -b develop --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
+          git clone -b v0.1 --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
           cd rs-infrastructure
           git sparse-checkout init --no-cone
           echo "/docs/" > .git/info/sparse-checkout
@@ -80,7 +80,7 @@ jobs:
           
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
-          git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
+          git clone -b v0.1 git@github.com:RS-PYTHON/rs-helm.git
         working-directory: .
         shell: bash        
       # # The technical documentation uses a dedicated python project to be built
