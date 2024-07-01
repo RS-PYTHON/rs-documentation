@@ -1,0 +1,218 @@
+# Copyright 2024 CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-service-config
+  namespace: {{ .Values.namespace }}
+  
+data:
+  {{ .Values.app.eodagConfigFile }}: |-
+  {{- range $k, $v := .Values.app.station }}
+    {{ $k }}:
+      auth:
+        type: GenericAuth
+        method: basic
+      products:
+        GENERIC_PRODUCT_TYPE:
+          productType: '{productType}'
+
+      search:
+        type: ODataV4Search
+        api_endpoint: '{{ $v.endpoint.url.file }}'
+        need_auth: true
+        results_entry: responses | $
+        metadata_mapping:
+          id:
+            - null
+            - '$.Id'
+          Name:
+            - null
+            - '$.Name'
+          SessionIds:
+            - null
+            - '$.SessionID'
+          SessionID:
+            - null
+            - '$.SessionID'
+          Channel:
+            - null
+            - '$.Channel'
+          BlockNumber:
+            - null
+            - '$.BlockNumber'
+          FinalBlock:
+            - null
+            - '$.FinalBlock'
+          PublicationDate:
+            - null
+            - '$.PublicationDate'
+          EvictionDate:
+            - null
+            - '$.EvictionDate'
+          Size:
+            - null
+            - '$.Size'
+          Retransfer:
+            - null
+            - '$.Retransfer'
+          # Eodag Specific map
+          startTimeFromAscendingNode:
+            - null
+            - '$.PublicationDate'
+          completionTimeFromAscendingNode:
+            - null
+            - '$.PublicationDate'
+          geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+          downloadLink: '{{ $v.endpoint.url.file }}({id})/$value'
+          title: '$.Name'
+
+        free_text_search_operations:
+          $filter:
+            union: ' OR '
+            wrapper: '"{}"'
+            operations:
+              and:
+                - 'SessionID in {SessionIds}'
+                - 'SessionID eq {SessionID}'
+                - 'PublicationDate gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
+                - 'PublicationDate lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+
+        pagination:
+          max_items_per_page: 1000
+          next_page_url_tpl: '{url}?{search}&$top={items_per_page}'
+          total_items_nb_key_path: '$.total'
+
+      download:
+        type: HTTPDownload
+        base_uri: '{{ $v.endpoint.url.file }}'
+        metadata_mapping:
+          uid: '$.Id'
+          downloadLink: '{{ $v.endpoint.url.file }}({uid})/$value'
+
+    {{ $k }}_session:
+      auth:
+        type: GenericAuth
+        method: basic
+      products:
+        GENERIC_PRODUCT_TYPE:
+          productType: '{productType}'
+      search:
+        type: ODataV4Search
+        api_endpoint: '{{ $v.endpoint.url.session }}'
+        need_auth: true
+        results_entry: responses | $
+        metadata_mapping:
+          id:
+            - null
+            - "$.Id"
+          SessionIds:
+            - null
+            - "$.SessionId"
+          SessionId:
+            - null
+            - "$.SessionId"
+          NumChannels:
+            - null
+            - "$.NumChannels"
+          PublicationDate:
+            - null
+            - "$.PublicationDate"
+          platform:
+            - null
+            - "$.Satellite"
+          platforms:
+            - null
+            - "$.Satellite"
+          StationUnitId:
+            - null
+            - "$.StationUnitId"
+          DownlinkOrbit:
+            - null
+            - "$.DownlinkOrbit"
+          AcquisitionId:
+            - null
+            - "$.AcquisitionId"
+          AntennaId:
+            - null
+            - "$.AntennaId"
+          FrontEndId:
+            - null
+            - "$.FrontEndId"
+          Retransfer:
+            - null
+            - "$.Retransfer"
+          AntennaStatusOK:
+            - null
+            - "$.AntennaStatusOK"
+          FrontEndStatusOK:
+            - null
+            - "$.FrontEndStatusOK"
+          PlannedDataStart:
+            - null
+            - "$.PlannedDataStart"
+          PlannedDataStop:
+            - null
+            - "$.PlannedDataStop"
+          DownlinkStart:
+            - null
+            - "$.DownlinkStart"
+          DownlinkStop:
+            - null
+            - "$.DownlinkStop"
+          DownlinkStatusOK:
+            - null
+            - "$.DownlinkStatusOK"
+          DeliveryPushOK:
+            - null
+            - "$.DeliveryPushOK"
+          Files:
+            - null
+            - "$.Files"
+          # Eodag Specific map
+          startTimeFromAscendingNode:
+            - null
+            - "$.PublicationDate"
+          completionTimeFromAscendingNode:
+            - null
+            - "$.PublicationDate"
+          geometry: "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
+          title: "$.Name"
+
+        free_text_search_operations:
+          $filter:
+            union: " OR "
+            wrapper: '"{}"'
+            operations:
+              and:
+                - "SessionId in {SessionIds}"
+                - "SessionId eq {SessionId}"
+                - "Satellite eq {platform}"
+                - "Satellite in {platforms}"
+                - "PublicationDate gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
+                - "PublicationDate lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+
+        pagination:
+          max_items_per_page: 1000
+          next_page_url_tpl: "{url}?{search}&$top={items_per_page}&$expand=Files"
+          total_items_nb_key_path: "$.total"
+
+      download:
+        type: HTTPDownload
+        base_uri: '{{ $v.endpoint.url.session }}'
+        metadata_mapping:
+          uid: "$.Id"
+          downloadLink: "{{ $v.endpoint.url.session }}({uid})/$value"
+  {{ end }}

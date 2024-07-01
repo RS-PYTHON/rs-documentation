@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <style>
+    .custom-logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .customBottom-logo-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 600px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .custom-logo-container img,
+    .customBottom-logo-container img {
+      width: auto;
+      height: 50px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .customTop-logo-container > div {
+        margin-top: 10px;
+    }
+
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Move logo containers
+      var topLogoContainer = document.querySelector('.customTop-logo-container');
+      var bottomLogoContainer = document.querySelector('.customBottom-logo-container');
+      var sidebarPrimary = document.querySelector('.md-sidebar--primary');
+      var sidebarScrollwrap = document.querySelector('.md-sidebar__scrollwrap');
+
+      if (topLogoContainer && sidebarPrimary) {
+        sidebarPrimary.insertBefore(topLogoContainer, sidebarPrimary.firstChild);
+      }
+
+      if (bottomLogoContainer && sidebarScrollwrap) {
+        sidebarScrollwrap.insertAdjacentElement('afterend', bottomLogoContainer);
+      }
+
+      // Theme detection and image switch
+      function switchImagesBasedOnTheme() {
+        var isDarkTheme = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+        var images = document.querySelectorAll('img[data-dark-src]');
+
+        images.forEach(function(img) {
+          if (isDarkTheme) {
+            img.src = img.getAttribute('data-dark-src');
+          } else {
+            img.src = img.getAttribute('data-light-src');
+          }
+        });
+      }
+
+      // Initial switch
+      switchImagesBasedOnTheme();
+
+      // Listen for theme change events
+      $(".md-option").on("click", function (evt) {
+        setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+      });
+      /*
+      var themeToggleButton = document.getElementsByClassName("md-option");
+      if (themeToggleButton) {
+        themeToggleButton.addEventListener('click', function() {
+          setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+        });
+      }
+      */
+      // If the theme change is triggered by other means
+      document.documentElement.addEventListener('theme-changed', switchImagesBasedOnTheme);
+    });
+  </script>
+
+{% endblock %}
+
+{% block header %}
+  {{ super() }}
+  <div class="customTop-logo-container custom-logo-container">
+    <div class="customEU-logo">
+      <a href="https://www.airbus.com/en" target="_blank">
+        <img src="{{ base_url }}/_static/EC_POS.png"
+             alt="EU Logo"
+             data-light-src="{{ base_url }}/_static/EC_POS.png"
+             data-dark-src="{{ base_url }}/_static/EC_NEG.png" />
+      </a>
+    </div>
+    <div class="customCop-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="{{ base_url }}/_static/Copernicus_blue.png"
+             alt="Copernicus Logo"
+             data-light-src="{{ base_url }}/_static/Copernicus_blue.png"
+             data-dark-src="{{ base_url }}/_static/Copernicus_white.png" />
+      </a>
+    </div>
+    <div class="customESA-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="{{ base_url }}/_static/ESA_logo_2020_Deep.png"
+             alt="ESA Logo"
+             data-light-src="{{ base_url }}/_static/ESA_logo_2020_Deep.png"
+             data-dark-src="{{ base_url }}/_static/ESA_logo_2020_White.png" />
+      </a>
+    </div>
+  </div>
+
+  <div class="customBottom-logo-container">
+    <div class="customAirbus-logo">
+      <a href="https://www.airbus.com/en" target="_blank">
+        <img src="{{ base_url }}/_static/AIRBUS_Blue.png"
+             alt="Airbus Logo"
+             data-light-src="{{ base_url }}/_static/AIRBUS_Blue.png"
+             data-dark-src="{{ base_url }}/_static/AIRBUS_White.png" />
+      </a>
+    </div>
+    <div class="customCS-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png"
+             alt="CS Group Logo"
+             data-light-src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png"
+             data-dark-src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png" />
+      </a>
+    </div>
+  </div>
+{% endblock %}

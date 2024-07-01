@@ -1,0 +1,70 @@
+networks:
+  default:
+    name: rspy-network
+
+services:
+
+  stac-browser:
+    image: ghcr.io/rs-python/stac-browser:v1
+    container_name: stac-browser
+    ports: 
+      - ${STAC_BROWSER_PORT}:8080
+
+  ### Prefect Server API and UI
+  prefect-server:
+    image: prefecthq/prefect:2.11.5-python3.11
+    restart: always
+    volumes:
+      - prefect_storage:/root/.prefect
+    entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "server", "start"]
+    environment:
+      - PREFECT_UI_URL=http://127.0.0.1:4200/api
+      - PREFECT_API_URL=http://127.0.0.1:4200/api
+      # If you want to access Prefect Server UI from anywhere other than the Docker host machine, you will need to change
+      # PREFECT_UI_URL and PREFECT_API_URL to match the external hostname/IP of the host machine. For example:
+      #- PREFECT_UI_URL=http://external-ip:4200/api
+      #- PREFECT_API_URL=http://external-ip:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-${POSTGRES_DB}:${POSTGRES_PORT}/${POSTGRES_DB}
+      # Uncomment the following line if you want to use the 'S3 Bucket' storage block instead of the older 'S3' storage
+      # - EXTRA_PIP_PACKAGES=prefect-aws
+    ports:
+      - 4200:4200
+    links:
+      - postgres
+    # profiles: ["server"]
+
+  ## Prefect Agent
+  prefect-agent:
+    image: prefecthq/prefect:2.11.5-python3.11
+    restart: always
+    entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "agent", "start", "-q", "YOUR_WORK_QUEUE_NAME"]
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+#       Use PREFECT_API_KEY if connecting the agent to Prefect Cloud
+#     - PREFECT_API_KEY=YOUR_API_KEY
+    links:
+      - prefect-server
+    # profiles: ["agent"]
+
+  # Used only by prefect
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    # variables are set in the .env file
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# Docker named volumes
+volumes:
+  prefect_storage: {}

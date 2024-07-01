@@ -1,0 +1,28 @@
+{
+    "stac_version": "1.0.0",
+    "stac_extensions": [
+        "https://stac-extensions.github.io/file/v2.1.0/schema.json"
+    ],
+    "type": "Feature",
+    "id": "PLACEHOLDER",
+    "geometry": null,
+    "properties": {
+        "created": "PLACEHOLDER",
+        "datetime": "1970-01-01T12:00:00.000Z",
+        "start_datetime": "1970-01-01T12:00:00.000Z",
+        "end_datetime": "1970-01-01T12:00:00.000Z",
+        "eviction_datetime": "PLACEHOLDER",
+        "cadip:id": "PLACEHOLDER",
+        "cadip:retransfer": "PLACEHOLDER",
+        "cadip:final_block": "PLACEHOLDER",
+        "cadip:block_number": "PLACEHOLDER",
+        "cadip:channel": "PLACEHOLDER",
+        "cadip:session_id": "PLACEHOLDER"
+    },
+    "links": [],
+    "assets": {
+        "file": {
+            "file:size": "PLACEHOLDER"
+        }
+    }
+}
