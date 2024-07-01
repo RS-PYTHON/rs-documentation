@@ -16,43 +16,29 @@ Prepare the environment
 =======================
 1. Clone the rs-documentation repository:   
 ```shell
-#: git clone https://github.com/RS-PYTHON/rs-documentation.git
-#: cd rs-documentation
+git clone https://github.com/RS-PYTHON/rs-documentation.git
+cd rs-documentation
 ```
-2. Create a virtual env and activate it:  
+
+2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infrastructure and RS-Helm repositories. The default branch from which 
+the projects are pulled is 'develop', but one can choose whatever branch is needed by using '-b' flag.
+
+    **NOTE**: The repositories need to be pulled in 'docs' directory
+
+    **NOTE**: The RS-Demo, RS-Infrastructure and RS-Helm repositories are not public, so a github access is needed
 ```shell
-#: python -m venv env_rs_doc
-#: source env_rs_doc/bin/activate
+cd docs
+git clone -b develop https://github.com/RS-PYTHON/rs-server.git
+git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
+git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
+cd ..
 ```
+
 3. Install needed rs-documentation packages:
 ```shell
-#: poetry install --no-root
-```
-4. Clone the RS-Server, RS-Client, RS-Demo, RS-Infrastructure and RS-Helm repositories. The default branch from which 
-the projects are pulled is 'main', but one can choose whatever branch is needed by using '-b' flag
-**NOTE**: The repositories need to be pulled in 'docs' directory
-**NOTE**: The RS-Demo, RS-Infrastructure and RS-Helm repositories are not public, so a github access is needed
-```shell
-#: cd docs
-#: git clone -b develop https://github.com/RS-PYTHON/rs-server.git
-#: git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
-#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-demo.git
-#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-infrastructure.git
-#: git clone -b feat-rspy112/improve-documentation git@github.com:RS-PYTHON/rs-helm.git
-#: cd ..
-```
-5. Install the source code python packages:
-```shell
-#: cd rs-server
-#: poetry install --with-dev
-#: cd ../rs-client-libraries
-#: poetry install --with-dev
-#: cd ..
-```
-6. Generate the swagger html documentation for RS-Server and copy it in the needed directory:
-```shell
-#: ./rs-server/services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
-#: cp rs-server/services/frontend/resources/openapi.json rs-server/docs/doc/api/rest/
+poetry install
 ```
 
 Generate and integrate the documentation
@@ -60,7 +46,7 @@ Generate and integrate the documentation
 
 From the **rs-documentation directory**, execute the command:
 ```shell
-#: mkdocs build
+poetry run mkdocs build
 ```
 
 This command generates the html pages of all the technical documentation as well as for the static documentation
@@ -78,7 +64,7 @@ the /docs endpoint.
 
 You can verify the generated documentation before publishing it. mkdocs may be used to serve the generated site:
 ```shell
-#: mkdocs serve
+poetry run mkdocs serve
 ```
 
 Important elements to check :
