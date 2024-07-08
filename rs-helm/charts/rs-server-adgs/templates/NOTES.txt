@@ -1,0 +1,4 @@
+{{ .Chart.Name }}
+======
+
+This is a chart for the installation of {{ .Release.Name }} in version {{ .Chart.Version}}

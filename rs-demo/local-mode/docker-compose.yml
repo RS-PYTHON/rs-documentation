@@ -1,0 +1,430 @@
+networks:
+  default:
+    name: rspy-network
+
+services:
+
+  #############
+  # RS-SERVER #
+  #############
+
+  # NOTE: tt's only for showning the aggregated endpoints, they don't work in this docker compose.
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/frontend/.github/Dockerfile
+  rs-server-frontend:
+    image: ghcr.io/rs-python/rs-server-frontend:latest
+    container_name: rs-server-frontend
+    ports:
+      - 8000:8000
+    # variables are set in the .env file
+    environment:
+      RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/adgs/.github/Dockerfile
+  rs-server-adgs:
+    image: ghcr.io/rs-python/rs-server-adgs:latest
+    container_name: rs-server-adgs
+    ports:
+      - 8001:8000
+    depends_on:
+      - rspy-pre-actions
+    links:
+      - postgres
+      - minio
+      - adgs-station
+    # variables are set in the .env file
+    environment:
+      RSPY_LOCAL_MODE: 1 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/check/api_key # optional
+      RSPY_WORKING_DIR: ${RSPY_WORKING_DIR}
+      # postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # s3 bucket
+      S3_ACCESSKEY: ${S3_ACCESSKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      # EODAG
+      EODAG_ADGS_CONFIG: ${EODAG_ADGS_CONFIG}
+      EODAG__adgs__auth__credentials__username: test
+      EODAG__adgs__auth__credentials__password: test
+      # opentelemetry
+      LOKI_ENDPOINT: ${LOKI_ENDPOINT}
+      TEMPO_ENDPOINT: ${TEMPO_ENDPOINT}
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/cadip/.github/Dockerfile
+  rs-server-cadip:
+    image: ghcr.io/rs-python/rs-server-cadip:latest
+    container_name: rs-server-cadip
+    ports:
+      - 8002:8000
+    depends_on:
+      - rspy-pre-actions
+    links:
+      - postgres
+      - minio
+      - cadip-station
+    # variables are set in the .env file
+    environment:
+      RSPY_LOCAL_MODE: 1 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/check/api_key # optional
+      RSPY_WORKING_DIR: ${RSPY_WORKING_DIR}
+      # postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # s3 bucket
+      S3_ACCESSKEY: ${S3_ACCESSKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      # EODAG
+      EODAG_CADIP_CONFIG: ${EODAG_CADIP_CONFIG}
+      EODAG__cadip__auth__credentials__username: test
+      EODAG__cadip__auth__credentials__password: test
+      # opentelemetry
+      LOKI_ENDPOINT: ${LOKI_ENDPOINT}
+      TEMPO_ENDPOINT: ${TEMPO_ENDPOINT}
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+
+  rs-server-catalog:
+    image: ghcr.io/rs-python/rs-server-catalog:latest
+    container_name: rs-server-catalog
+    ports:
+      - 8003:8000
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    links:
+      - catalog-db
+    # variables are set in the .env file
+    environment:
+      RSPY_LOCAL_MODE: 1 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/check/api_key # optional
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+#      RELOAD: false
+#      ENVIRONMENT: local
+      POSTGRES_PASS: ${PGSTAC_PASS}
+      POSTGRES_HOST_READER: ${PGSTAC_HOST}
+      POSTGRES_HOST_WRITER: ${PGSTAC_HOST}
+      POSTGRES_DBNAME: ${PGSTAC_DB}
+#      WEB_CONCURRENCY: 10
+#      VSI_CACHE: TRUE
+      GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      DB_MIN_CONN_SIZE: 1
+      DB_MAX_CONN_SIZE: 1
+      USE_API_HYDRATE: false
+      POSTGRES_USER: ${PGSTAC_USER}
+      POSTGRES_PASSWORD: ${PGSTAC_PASSWORD}
+      POSTGRES_HOST: ${PGSTAC_HOST}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${PGSTAC_DB}
+      # s3 bucket
+      S3_ACCESSKEY: ${S3_ACCESSKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      # opentelemetry
+      LOKI_ENDPOINT: ${LOKI_ENDPOINT}
+      TEMPO_ENDPOINT: ${TEMPO_ENDPOINT}
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+
+  ############
+  # STATIONS #
+  ############
+
+  # From: https://github.com/RS-PYTHON/rs-testmeans/blob/develop/src/ADGS/Dockerfile
+  adgs-station:
+    image: ghcr.io/rs-python/rs-testmeans_adgs-station-mock:latest
+    container_name: adgs-station
+    ports:
+      - 5001:5000
+
+  # From: https://github.com/RS-PYTHON/rs-testmeans/blob/develop/src/CADIP/Dockerfile
+  cadip-station:
+    image: ghcr.io/rs-python/rs-testmeans_cadip-station-mock:latest
+    container_name: cadip-station
+    ports:
+      - 5002:5000
+
+  ##############
+  # SIMULATORS #
+  ##############
+
+  dpr-simulator:
+    image: ghcr.io/rs-python/rs-testmeans_dpr-processor-mock:latest
+    container_name: dpr-simulator
+    environment:
+      S3_ACCESSKEY: ${S3_ACCESSKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+    ports:
+      - 6002:8000
+
+  ###############
+  # PRE-ACTIONS #
+  ###############
+
+  # Run a bash container as root to run custom pre-actions:
+  #   - Give all permissions to the docker named volumes "rspy_working_dir"
+  #   - Copy stations configuration files
+  rspy-pre-actions:
+    image: bash:latest
+    container_name: rspy-pre-actions
+    privileged: true
+    volumes:
+      - .:/docker/compose/dir
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+    entrypoint: /docker/compose/dir/scripts/rspy-pre-actions.sh
+
+  ########
+  # STAC #
+  ########
+
+  # To build it manually... 
+  # Run: git submodule update --init --recursive
+  # Then uncomment below code:
+  #
+  # stac-browser:
+  #   image: stac-browser:v1
+  #   container_name: stac-browser
+  #   ports: 
+  #     - ${STAC_BROWSER_PORT}:8080
+  #   build:
+  #     context: ./stac/stac-browser
+  #     dockerfile: ./Dockerfile # relative to the context above
+  #     args:
+  #       catalogURL: "http://127.0.0.1:8003/catalog/any_owner"
+  #
+  # Then push the image into ghcr.io:
+  #
+  # docker tag stac-browser:v1 ghcr.io/rs-python/stac-browser:v1
+  # docker login https://ghcr.io/v2/rs-python
+  # docker push ghcr.io/rs-python/stac-browser:v1
+
+  # To use the previously built image
+  stac-browser:
+    image: ghcr.io/rs-python/stac-browser:v1
+    container_name: stac-browser
+    ports: 
+      - ${STAC_BROWSER_PORT}:8080
+
+  catalog-db:
+    container_name: catalog-db
+    image: ghcr.io/stac-utils/pgstac:v0.7.10
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${PGSTAC_PORT}
+      POSTGRES_USER: ${PGSTAC_USER}
+      POSTGRES_PASSWORD: ${PGSTAC_PASSWORD}
+      POSTGRES_DB: ${PGSTAC_DB}
+      PGUSER: ${PGSTAC_USER}
+      PGPASSWORD: ${PGSTAC_PASSWORD}
+      PGDATABASE: ${PGSTAC_DB}
+    ports:
+      - ${PGSTAC_PORT}:5432
+    command: postgres -N 500
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ###########
+  # PREFECT #
+  ###########
+
+  # See: https://github.com/rpeden/prefect-docker-compose/blob/main/docker-compose.yml
+
+  ### Prefect Server API and UI
+  prefect-server:
+    image: prefecthq/prefect:2.11.5-python3.11
+    restart: always
+    volumes:
+      - prefect_storage:/root/.prefect
+    entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "server", "start"]
+    environment:
+      - PREFECT_UI_URL=http://127.0.0.1:4200/api
+      - PREFECT_API_URL=http://127.0.0.1:4200/api
+      # If you want to access Prefect Server UI from anywhere other than the Docker host machine, you will need to change
+      # PREFECT_UI_URL and PREFECT_API_URL to match the external hostname/IP of the host machine. For example:
+      #- PREFECT_UI_URL=http://external-ip:4200/api
+      #- PREFECT_API_URL=http://external-ip:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      # Uncomment the following line if you want to use the 'S3 Bucket' storage block instead of the older 'S3' storage
+      # - EXTRA_PIP_PACKAGES=prefect-aws
+    ports:
+      - 4200:4200
+    links:
+      - postgres
+    # profiles: ["server"]
+
+  ## Prefect Agent
+  prefect-agent:
+    image: prefecthq/prefect:2.11.5-python3.11
+    restart: always
+    entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "agent", "start", "-q", "YOUR_WORK_QUEUE_NAME"]
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+#       Use PREFECT_API_KEY if connecting the agent to Prefect Cloud
+#     - PREFECT_API_KEY=YOUR_API_KEY
+    links:
+      - prefect-server
+    # profiles: ["agent"]
+
+  #################
+  # OPENTELEMETRY #
+  #################
+
+  # See: https://github.com/softwarebloat/python-tracing-demo/tree/main
+
+  grafana:
+    image: grafana/grafana:8.2.0
+    ports:
+      - 3000:3000
+    volumes:
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    links:
+      - tempo
+
+  loki:
+    image: grafana/loki:2.3.0
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+
+  tempo:
+    image: grafana/tempo:1.2.0
+    command: [ "-search.enabled=true", "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - 4317:4317
+
+  ##########
+  # OTHERS #
+  ##########
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    # variables are set in the .env file
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Use minio for temp s3 storage
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9100:9000"
+      - "9101:9001"
+    volumes:
+      - minio_storage:/data # docker named volume
+    # variables are set in the .env file
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESSKEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRETKEY}
+    command: server --console-address ":9001" /data
+
+  # Local Jupyter server.
+  # The logs will show shomething like: http://127.0.0.1:8888/lab?token=<token-value> in your terminal.
+  # Open (ctrl-click) this link to open the Jupyter web client (=Jupyter Notebook) in your browser.
+  jupyter:
+    # From: https://github.com/RS-PYTHON/rs-client-libraries/tree/develop/.github/dockerfiles/Dockerfile.jupyter
+    image: ghcr.io/rs-python/rs-client-libraries_jupyter:latest
+    container_name: jupyter
+    ports:
+      - 8888:8888
+    links:
+      - rs-server-adgs
+      - rs-server-cadip
+      - minio # used to check manually the s3 bucket contents
+      - prefect-server
+      - prefect-agent
+      - dpr-simulator
+    # variables are set in the .env file
+    environment:
+      RSPY_LOCAL_MODE: 1
+      RSPY_WORKING_DIR: ${RSPY_WORKING_DIR}
+      RSPY_WHL_DIR: ${RSPY_WHL_DIR}
+      # rs-server urls
+      RSPY_HOST_ADGS: ${RSPY_HOST_ADGS}
+      RSPY_HOST_CADIP: ${RSPY_HOST_CADIP}
+      RSPY_HOST_CATALOG: ${RSPY_HOST_CATALOG}
+      # s3 bucket
+      S3_ACCESSKEY: ${S3_ACCESSKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      RSPY_TEMP_BUCKET: ${RSPY_TEMP_BUCKET}
+      RSPY_CATALOG_BUCKET: ${RSPY_CATALOG_BUCKET}
+      # prefect
+      PREFECT_API_URL: http://prefect-server:4200/api
+      # opentelemetry
+      LOKI_ENDPOINT: ${LOKI_ENDPOINT}
+      TEMPO_ENDPOINT: ${TEMPO_ENDPOINT}
+    volumes: 
+      - ../notebooks:/home/jovyan/rspy-notebooks
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+
+  # Optional: test the api-key manager. 
+  # Uncomment these lines and, in the rs-server-xxx services: 
+  #   - set RSPY_LOCAL_MODE: 0 
+  #   - set RSPY_UAC_CHECK_URL: http://apikey-manager:8000/check/api_key
+  # apikey-manager:
+  #   image: ghcr.io/rs-python/apikey-manager:rspy15-uac
+  #   container_name: apikey-manager
+  #   ports:
+  #     - 9999:8000
+  #   links:
+  #     - postgres
+  #   environment:
+  #     API_KEYS_DB_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+  #     VERIFY_AUDIENCE: 0
+  #     SHOW_APIKEY_ENDPOINTS: 1
+  #     SHOW_TECHNICAL_ENDPOINTS: 1
+  #     OAUTH2_SERVER_URL: https://iam.dev-rspy.esa-copernicus.eu
+  #     OAUTH2_REALM: rspy
+  #     OAUTH2_CLIENT_ID: fastapi_test
+  #     OAUTH2_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+
+# Docker named volumes
+volumes:
+  minio_storage: {}
+  prefect_storage: {}
+
+  # Used to:
+  #   - store the config files (stations url and port ...)
+  #   - for the demo, download files locally in laptop mode (downloaded by rs-server, read by jupyter)
+  rspy_working_dir: {}

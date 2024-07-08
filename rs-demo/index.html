@@ -1,0 +1,2615 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="doc/">
+      
+      
+        <link rel="next" href="../rs_deployment_start/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.28">
+    
+    
+      
+        <title>Running Modes - RS-Python</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6543a935.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../_templates/sidebar_width.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  
+  <style>
+    .custom-logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .customBottom-logo-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 600px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .custom-logo-container img,
+    .customBottom-logo-container img {
+      width: auto;
+      height: 50px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .customTop-logo-container > div {
+        margin-top: 10px;
+    }
+
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Move logo containers
+      var topLogoContainer = document.querySelector('.customTop-logo-container');
+      var bottomLogoContainer = document.querySelector('.customBottom-logo-container');
+      var sidebarPrimary = document.querySelector('.md-sidebar--primary');
+      var sidebarScrollwrap = document.querySelector('.md-sidebar__scrollwrap');
+
+      if (topLogoContainer && sidebarPrimary) {
+        sidebarPrimary.insertBefore(topLogoContainer, sidebarPrimary.firstChild);
+      }
+
+      if (bottomLogoContainer && sidebarScrollwrap) {
+        sidebarScrollwrap.insertAdjacentElement('afterend', bottomLogoContainer);
+      }
+
+      // Theme detection and image switch
+      function switchImagesBasedOnTheme() {
+        var isDarkTheme = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+        var images = document.querySelectorAll('img[data-dark-src]');
+
+        images.forEach(function(img) {
+          if (isDarkTheme) {
+            img.src = img.getAttribute('data-dark-src');
+          } else {
+            img.src = img.getAttribute('data-light-src');
+          }
+        });
+      }
+
+      // Initial switch
+      switchImagesBasedOnTheme();
+
+      // Listen for theme change events
+      $(".md-option").on("click", function (evt) {
+        setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+      });
+      /*
+      var themeToggleButton = document.getElementsByClassName("md-option");
+      if (themeToggleButton) {
+        themeToggleButton.addEventListener('click', function() {
+          setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+        });
+      }
+      */
+      // If the theme change is triggered by other means
+      document.documentElement.addEventListener('theme-changed', switchImagesBasedOnTheme);
+    });
+  </script>
+
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#running-modes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+  
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="RS-Python" class="md-header__button md-logo" aria-label="RS-Python" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            RS-Python
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running Modes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="lime"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../rs-server/docs/doc/" class="md-tabs__link">
+          
+  
+    
+  
+  RS-Server
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../rs-client-libraries/docs/doc/" class="md-tabs__link">
+          
+  
+    
+  
+  RS-Client
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="doc/" class="md-tabs__link">
+          
+  
+    
+  
+  RS-Notebooks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../rs_deployment_start/" class="md-tabs__link">
+          
+  
+    
+  
+  RS-Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+  <div class="customTop-logo-container custom-logo-container">
+    <div class="customEU-logo">
+      <a href="https://www.airbus.com/en" target="_blank">
+        <img src="../_static/EC_POS.png"
+             alt="EU Logo"
+             data-light-src="../_static/EC_POS.png"
+             data-dark-src="../_static/EC_NEG.png" />
+      </a>
+    </div>
+    <div class="customCop-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="../_static/Copernicus_blue.png"
+             alt="Copernicus Logo"
+             data-light-src="../_static/Copernicus_blue.png"
+             data-dark-src="../_static/Copernicus_white.png" />
+      </a>
+    </div>
+    <div class="customESA-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="../_static/ESA_logo_2020_Deep.png"
+             alt="ESA Logo"
+             data-light-src="../_static/ESA_logo_2020_Deep.png"
+             data-dark-src="../_static/ESA_logo_2020_White.png" />
+      </a>
+    </div>
+  </div>
+
+  <div class="customBottom-logo-container">
+    <div class="customAirbus-logo">
+      <a href="https://www.airbus.com/en" target="_blank">
+        <img src="../_static/AIRBUS_Blue.png"
+             alt="Airbus Logo"
+             data-light-src="../_static/AIRBUS_Blue.png"
+             data-dark-src="../_static/AIRBUS_White.png" />
+      </a>
+    </div>
+    <div class="customCS-logo">
+      <a href="https://www.csgroup.eu/en/" target="_blank">
+        <img src="../_static/logo_cs_group_bleu_petit.png"
+             alt="CS Group Logo"
+             data-light-src="../_static/logo_cs_group_bleu_petit.png"
+             data-dark-src="../_static/logo_cs_group_bleu_petit.png" />
+      </a>
+    </div>
+  </div>
+
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="RS-Python" class="md-nav__button md-logo" aria-label="RS-Python" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    RS-Python
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_to/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../rs-server/docs/doc/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    RS-Server
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            RS-Server
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    User Manual
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            User Manual
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/user_manual/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    General Description
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/users/architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overal Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/users/functionalities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Main Functionalities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/users/oauth2_apikey_manager/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OAuth2 and API Key Manager
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Manual
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Manual
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/developer_manual/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    General Description
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/dev/environment/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/dev/code-style/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code style
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3_4" id="__nav_2_3_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Rest
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Rest
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-server/swagger_index/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SwaggerUI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../generate_src_doc/rs-server/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Python API Library
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_3_5" id="__nav_2_3_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            Python API Library
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-server/adgs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ADGS
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-server/cadip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CADIP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/users/catalog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Catalog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-server/common/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Common
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-server/frontend/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Frontend
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3_6" id="__nav_2_3_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Additional information
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            Additional information
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/dev/background/tree-structure/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tree structure
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/dev/background/workflow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Workflow
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-server/docs/doc/dev/background/ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../rs-client-libraries/docs/doc/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    RS-Client
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            RS-Client
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../generate_src_doc/rs-client/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Python API Library
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            Python API Library
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-client/rs_client/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RS-Client Classes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_3" id="__nav_3_2_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    RS-Client Workflows
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            RS-Client Workflows
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-client/example/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-client/staging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Staging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-client/s1_l0/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    S1 L0
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_src_doc/rs-client/rs_client_common/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RS-Client Common
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+          
+        
+      
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="doc/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    RS-Notebooks
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            RS-Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Running Modes
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Running Modes
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick links
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-on-cluster-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run on cluster mode
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Run on cluster mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-the-demos-on-cluster-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run the demos on cluster mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-a-new-rs-client-libraries-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install a new rs-client-libraries version
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install a new rs-client-libraries version">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-update-the-jupyterhub-image-affects-everyone" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 1: update the JupyterHub image (affects everyone)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-from-a-wheel-package-affects-only-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 2: from a wheel package (affects only you)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-on-local-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run on local mode
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Run on local mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-the-demos-on-local-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run the demos on local mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-does-it-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      How does it work
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-run-your-local-rs-server-code-in-this-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to run your local rs-server code in this environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-on-hybrid-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run on hybrid mode
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Run on hybrid mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-the-demos-on-hybrid-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run the demos on hybrid mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-check-your-python-interpreter-used-in-notebooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to check your Python interpreter used in notebooks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    RS-Deployment
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            RS-Deployment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs_deployment_start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    General
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../rs-infrastructure/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Infrastructure Deployment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Infrastructure Deployment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Cluster%20Management/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cluster Management
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Cluster%20start%20and%20stop/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cluster start and stop
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/GitHub%20Container%20Registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GitHub container registry
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Ingress/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ingress controller
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Prefect-Worker/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prefect worker
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Remote%20kubectl/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Remote kubectl
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rs-infrastructure/docs/how-to/Wazuh-Server_Install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Wazuh Server installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../rs-helm/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Applications Deployment
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Applications Deployment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="running-modes">Running Modes</h1>
+<p>In this page, we will see how to run the Jupyter notebooks on cluster, local and hybrid mode.</p>
+<h3 id="quick-links">Quick links</h3>
+<ul>
+<li>
+<p>On cluster mode:</p>
+<ul>
+<li>JupyterHub: <a href="https://processing.ops.rs-python.eu/jupyter">https://processing.ops.rs-python.eu/jupyter</a></li>
+<li>RS-Server website (Swagger/OpenAPI): <a href="https://rspy.ops.rs-python.eu/docs">https://rspy.ops.rs-python.eu/docs</a></li>
+<li>Create an API key: <a href="https://apikeymanager.rspy.ops.rs-python.eu/docs#/Manage%20API%20keys/create_api_key_auth_api_key_new_get">https://apikeymanager.rspy.ops.rs-python.eu/docs#/Manage%20API%20keys/create_api_key_auth_api_key_new_get</a></li>
+<li>Prefect dashboard (orchestrator): <a href="https://processing.ops.rs-python.eu/">https://processing.ops.rs-python.eu/</a></li>
+<li>Grafana (logs, traces, metrics): <a href="https://monitoring.ops.rs-python.eu/">https://monitoring.ops.rs-python.eu/</a></li>
+</ul>
+</li>
+<li>
+<p>On hybrid mode:</p>
+<ul>
+<li>RS-Server website (Swagger/OpenAPI): <a href="https://rspy.ops.rs-python.eu/docs">https://rspy.ops.rs-python.eu/docs</a></li>
+<li>Create an API key: <a href="https://apikeymanager.rspy.ops.rs-python.eu/docs#/Manage%20API%20keys/create_api_key_auth_api_key_new_get">https://apikeymanager.rspy.ops.rs-python.eu/docs#/Manage%20API%20keys/create_api_key_auth_api_key_new_get</a></li>
+<li>Prefect dashboard (orchestrator): <a href="http://localhost:4200">http://localhost:4200</a></li>
+<li>Grafana (logs, traces, metrics): <a href="http://localhost:3000/explore">http://localhost:3000/explore</a></li>
+</ul>
+</li>
+<li>
+<p>On local mode: </p>
+<ul>
+<li>
+<p>RS-Server website (Swagger/OpenAPI):</p>
+<ul>
+<li><a href="http://localhost:8000/docs">http://localhost:8000/docs</a> (frontend, only for visualization, not functional)</li>
+<li><a href="http://localhost:8001/docs">http://localhost:8001/docs</a> (auxip)</li>
+<li><a href="http://localhost:8002/docs">http://localhost:8002/docs</a> (cadip)</li>
+<li><a href="http://localhost:8003/api.html">http://localhost:8003/api.html</a> (catalog)</li>
+</ul>
+</li>
+<li>
+<p>Prefect dashboard (orchestrator): <a href="http://localhost:4200">http://localhost:4200</a></p>
+</li>
+<li>Grafana (logs, traces, metrics): <a href="http://localhost:3000/explore">http://localhost:3000/explore</a></li>
+<li>
+<p>Minio s3 bucket: <a href="http://localhost:9001/browser">http://localhost:9001/browser</a> with:</p>
+<ul>
+<li>Username: <code>_minio_</code></li>
+<li>Password: <code>_Strong#Pass#1234_</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="run-on-cluster-mode">Run on cluster mode</h2>
+<p>On cluster mode, we run the Jupyter notebooks from our JupyterHub session deployed on the cluster. They connect to the services deployed on the RS-Server website (=cluster). Authentication is required for this mode.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>You have access to JupyterHub: <a href="https://processing.ops.rs-python.eu/jupyter">https://processing.ops.rs-python.eu/jupyter</a></li>
+<li>You have access to the RS-Server website: <a href="https://rspy.ops.rs-python.eu/docs">https://rspy.ops.rs-python.eu/docs</a></li>
+<li>You have generated an API key from the RS-Server website.</li>
+</ul>
+<h3 id="run-the-demos-on-cluster-mode">Run the demos on cluster mode</h3>
+<ul>
+<li>Open a JupyterHub session.</li>
+<li>
+<p>Open a terminal, check that <code>rs-client-libraries</code> is installed by running:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>show<span class="w"> </span>rs-client-libraries<span class="w"> </span><span class="c1"># should show the name, version, ...</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Optional</strong>: save your API key into your <code>~/.env</code> file so it is loaded automatically by your notebooks: </p>
+<ol>
+<li>Go to the menu <em>View -&gt; Show Hidden Files</em></li>
+<li>In the file browser in the left panel, check that you are in your <code>/</code> home folder.</li>
+<li>Double-click the <code>.env</code> file to open it using the integrated text editor.</li>
+<li>Add this line to the file, save it with <em>Ctrl-S</em> and close the editor:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># Replace by your value</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">RSPY_APIKEY</span><span class="o">=</span>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+</code></pre></div>
+</li>
+<li>
+<p>On the left, in the file explorer, go to the demos or tutorial folder and double-click a notebook to open it:</p>
+</li>
+</ul>
+<p><img alt="Jupyter Notebook" src="doc/images/jupyter.png" title="Jupyter Notebook" /></p>
+<h3 id="install-a-new-rs-client-libraries-version">Install a new <code>rs-client-libraries</code> version</h3>
+<h4 id="option-1-update-the-jupyterhub-image-affects-everyone">Option 1: update the JupyterHub image (affects everyone)</h4>
+<ol>
+<li>
+<p>Vérify in the CI/CD that the last <code>rs-client-libraries</code> modifications were merged into the <code>develop</code> branch: <a href="https://github.com/RS-PYTHON/rs-client-libraries/actions/workflows/publish-binaries.yml">https://github.com/RS-PYTHON/rs-client-libraries/actions/workflows/publish-binaries.yml</a></p>
+</li>
+<li>
+<p>Ask the <code>rs-infrastructure</code> administrator to run a new CI/CD workflow to publish this <code>rs-client-libraries</code> version into a new JupyterHub image.</p>
+</li>
+</ol>
+<h4 id="option-2-from-a-wheel-package-affects-only-you">Option 2: from a wheel package (affects only you)</h4>
+<ol>
+<li>
+<p>In the CI/CD, click on the last <code>rs-client-libraries</code> branch workflow that you want to use: <a href="https://github.com/RS-PYTHON/rs-client-libraries/actions/workflows/publish-binaries.yml">https://github.com/RS-PYTHON/rs-client-libraries/actions/workflows/publish-binaries.yml</a>, go to the <code>Artifacts</code> section and download the <code>.whl</code> package file.</p>
+</li>
+<li>
+<p>Or alternatively, build the wheel yourself from your local <code>rs-client-libraries</code> project by running: <code>poetry build --format wheel</code></p>
+</li>
+<li>
+<p>Upload the <code>.whl</code> package file to your JupyterHub session, open a Terminal and run:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Uninstall the old version. Note: this fails if we do it for the first time because </span>
+<span class="c1"># we try to uninstall the root installation of the library, but this this OK.</span>
+pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>rs-client-libraries<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># You may have conflicts between dependencies installed for the root user</span>
+<span class="c1"># and the current user. You can uninstall all current user dependencies with:</span>
+<span class="c1"># for dep in $(pip freeze | cut -d &quot;@&quot; -f1); do pip uninstall -y $dep 2&gt;/dev/null; done</span>
+
+<span class="c1"># The old rs-client-libraries version is still installed for the root user.</span>
+<span class="c1"># This is the version you (=current user) use by default.</span>
+pip<span class="w"> </span>show<span class="w"> </span>rs-client-libraries<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>Location<span class="w"> </span><span class="c1"># should display: /opt/conda/lib/python3.11/site-packages</span>
+
+<span class="c1"># Install the new version for the current user.</span>
+pip<span class="w"> </span>install<span class="w"> </span>rs_client_libraries-&lt;version&gt;-py3-none-any.whl
+</code></pre></div>
+</li>
+</ol>
+<h2 id="run-on-local-mode">Run on local mode</h2>
+<p>On local mode, docker-compose and Docker images are used to run services and libraries locally (not on a cluster). There is no authentication for this mode.</p>
+<h3 id="prerequisites_1">Prerequisites</h3>
+<ul>
+<li>You have Docker installed on your system, see: <a href="https://docs.docker.com/engine/install/">https://docs.docker.com/engine/install/</a></li>
+<li>You have access to the RSPY project on GitHub: <a href="https://github.com/RS-PYTHON">https://github.com/RS-PYTHON</a></li>
+<li>
+<p>You have created a personal access token (PAT) on GitHub: <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens">https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens</a></p>
+<ul>
+<li>This access token is used to retrieve the rs-server product on the github repository.</li>
+<li>You may want to create a classic PAT with the <code>read:packages</code> permissions.</li>
+</ul>
+</li>
+<li>
+<p>You have checked out this git project:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:RS-PYTHON/rs-demo.git<span class="w"> </span><span class="c1"># either with SSH</span>
+<span class="c1"># git clone https://github.com/RS-PYTHON/rs-demo.git # or with HTTPS</span>
+
+<span class="c1"># Get last version</span>
+<span class="nb">cd</span><span class="w"> </span>rs-demo
+git<span class="w"> </span>checkout<span class="w"> </span>develop
+</code></pre></div>
+</li>
+</ul>
+<h3 id="run-the-demos-on-local-mode">Run the demos on local mode</h3>
+<p>To pull the latest Docker images, run:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Login into the project ghcr.io (GitHub Container Registry)</span>
+<span class="c1"># Username: your GitHub login</span>
+<span class="c1"># Password: your personal access token (PAT) created above</span>
+docker<span class="w"> </span>login<span class="w"> </span>https://ghcr.io/v2/rs-python
+
+<span class="c1"># From the local-mode directory, pull the images</span>
+<span class="nb">cd</span><span class="w"> </span>./local-mode
+docker<span class="w"> </span>compose<span class="w"> </span>pull
+</code></pre></div>
+<p>Then to run the demos:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Still from the local-mode directory, if you&#39;re not there yet</span>
+<span class="nb">cd</span><span class="w"> </span>./local-mode
+
+<span class="c1"># Run all services.</span>
+<span class="c1"># Note: in case of port conflicts, you can kill all your running docker containers with:</span>
+<span class="c1"># docker rm -f $(docker ps -aq)</span>
+docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v<span class="p">;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span><span class="c1"># -d for detached</span>
+
+<span class="c1"># Note: we always need to call &#39;down&#39; before &#39;up&#39; or we&#39;ll have errors</span>
+<span class="c1"># when the stac database will initialize a second time.</span>
+</code></pre></div>
+<p>Near the end of the logs you will see some Jupyter information e.g:
+<div class="highlight"><pre><span></span><code>jupyter | To access the server, open this file in a browser:
+jupyter |     ...
+jupyter | Or copy and paste one of these URLs:
+jupyter |     ...
+jupyter |     http://127.0.0.1:8888/lab?token=612cb124335d9ab80a5a6414631a7df186b2401234050001
+</code></pre></div></p>
+<p>Open (ctrl-click) the <code>http://127.0.0.1:8888/lab?token=...</code> link to open the Jupyter web client (=Jupyter Notebook) in your browser.</p>
+<p><strong>Note</strong>: the token is auto-generated by Jupyter and changes everytime you relaunch the containers. So after relaunching, your old Jupyter web session won't be available anymore.</p>
+<p>To show the Jupyter logs from another terminal, run:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>jupyter
+</code></pre></div>
+<p>On the left, in the file explorer, go to the demos or tutorial folder and double-click a notebook to open it:</p>
+<p><img alt="Jupyter Notebook" src="doc/images/jupyter.png" title="Jupyter Notebook" /></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># When you&#39;re done, shutdown all services and volumes (-v)</span>
+<span class="c1"># with Ctrl-C (if not in detached mode i.e. -d) then:</span>
+docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v
+
+<span class="c1"># You can use this to remove all docker volumes </span>
+<span class="c1"># (use with care if you have other docker containers)</span>
+docker<span class="w"> </span>volume<span class="w"> </span>prune
+</code></pre></div>
+<h3 id="how-does-it-work">How does it work</h3>
+<p>The <a href="local-mode/docker-compose.yml">docker-compose.yml</a> file uses Docker images to run all the necessary container services for the demos :</p>
+<ul>
+<li>The latest rs-server images available:<ul>
+<li>Built from the CI/CD: <a href="https://github.com/RS-PYTHON/rs-server/actions/workflows/publish-binaries.yml">https://github.com/RS-PYTHON/rs-server/actions/workflows/publish-binaries.yml</a></li>
+<li>Available in the ghcr.io: <a href="https://github.com/orgs/RS-PYTHON/packages">https://github.com/orgs/RS-PYTHON/packages</a></li>
+</ul>
+</li>
+<li>The AUXIP, CADIP ... station mockups:<ul>
+<li>Built from the CI/CD: <a href="https://github.com/RS-PYTHON/rs-testmeans/actions/workflows/publish-docker.yml">https://github.com/RS-PYTHON/rs-testmeans/actions/workflows/publish-docker.yml</a></li>
+<li>Also available in the ghcr.io</li>
+</ul>
+</li>
+<li>STAC PostgreSQL database</li>
+<li>MinIO S3 bucket server</li>
+<li>Jupyter server</li>
+</ul>
+<p>These containers are run locally (not on a cluster). The Jupyter notebooks accessed from <a href="http://127.0.0.1:8888">http://127.0.0.1:8888</a> are run from the containerized Jupyter server, not from your local environment. This Jupyter environment contains all the Python modules required to call the rs-server HTTP endpoints.</p>
+<h3 id="how-to-run-your-local-rs-server-code-in-this-environment">How to run your local rs-server code in this environment</h3>
+<p>It can be helpful to use your last rs-server code version to debug it or to test modifications without pushing them and rebuilding the Docker image. Follow these steps:</p>
+<ol>
+<li>
+<p>Go to the <code>local-mode</code> directory and run:  </p>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span><span class="s1">&#39;docker-compose.yml&#39;</span><span class="w"> </span><span class="s1">&#39;docker-compose-debug.yml&#39;</span>
+</code></pre></div>
+</li>
+<li>
+<p>If your local <code>rs-server</code> github repository is under <code>/my/local/rs-server</code>, modify the <code>docker-compose-debug.yml</code> file to mount your local <code>rs-server</code> services:  </p>
+<div class="highlight"><pre><span></span><code><span class="c1"># e.g.</span>
+<span class="nt">rs-server-adgs</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># ...</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/my/local/rs-server/services/common/rs_server_common:/usr/local/lib/python3.11/site-packages/rs_server_common</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/my/local/rs-server/services/adgs/rs_server_adgs:/usr/local/lib/python3.11/site-packages/rs_server_adgs</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/my/local/rs-server/services/adgs/config:/usr/local/lib/python3.11/site-packages/config</span>
+<span class="w">    </span><span class="c1"># - and any other useful files ...</span>
+</code></pre></div>
+</li>
+<li>
+<p>Run the demo with:  </p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Still from the local-mode directory, if you&#39;re not there yet</span>
+<span class="nb">cd</span><span class="w"> </span>./local-mode
+
+<span class="c1"># Run all services</span>
+docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v<span class="p">;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose-debug.yml<span class="w"> </span>up<span class="w"> </span><span class="c1"># -d for detached</span>
+</code></pre></div>
+</li>
+</ol>
+<h2 id="run-on-hybrid-mode">Run on hybrid mode</h2>
+<p>On hybrid mode, we run the Jupyter notebooks locally, but they connect to the services deployed on the RS-Server website (=cluster). Authentication is required for this mode.</p>
+<h3 id="prerequisites_2">Prerequisites</h3>
+<ul>
+<li>You have access to the RS-Server website: <a href="https://rspy.ops.rs-python.eu/docs">https://rspy.ops.rs-python.eu/docs</a></li>
+<li>You have generated an API key from the RS-Server website.</li>
+<li>You have saved the S3 bucket configuration in you local file: <code>~/.s3cfg</code></li>
+<li>Python is installed on your system.</li>
+</ul>
+<p>You also need the rs-client-libraries project:</p>
+<ul>
+<li>
+<p>If you have its source code, install it with:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/path/to/rs-client-libraries
+pip<span class="w"> </span>install<span class="w"> </span>poetry
+poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>dev,demo
+poetry<span class="w"> </span>run<span class="w"> </span>opentelemetry-bootstrap<span class="w"> </span>-a<span class="w"> </span>install
+</code></pre></div>
+</li>
+<li>
+<p>Or if you only have its <code>.whl</code> package, install it with: </p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>rs_client_libraries-*.whl
+<span class="c1"># then install jupyter lab</span>
+pip<span class="w"> </span>install<span class="w"> </span>jupyterlab
+</code></pre></div>
+</li>
+</ul>
+<h3 id="run-the-demos-on-hybrid-mode">Run the demos on hybrid mode</h3>
+<p>From your terminal in the rs-demo, run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">RSPY_APIKEY</span><span class="o">=</span>your_api_key<span class="w"> </span><span class="c1"># see the prerequisites</span>
+
+<span class="c1"># NOTE: at CS France premises, use this to deactivate the proxy which causes random errors</span>
+<span class="nb">unset</span><span class="w"> </span>no_proxy<span class="w"> </span>ftp_proxy<span class="w"> </span>https_proxy<span class="w"> </span>http_proxy
+
+<span class="c1"># To use your local rs-client-libraries source code</span>
+<span class="nb">cd</span><span class="w"> </span>/path/to/rs-client-libraries
+<span class="c1"># git checkout develop &amp;&amp; git pull # maybe take the latest default branch</span>
+poetry<span class="w"> </span>run<span class="w"> </span>/path/to/rs-demo/hybrid-mode/start-jupyterlab.sh
+
+<span class="c1"># Or if you have installed it from rs_client_libraries-*.whl, </span>
+<span class="c1"># just run</span>
+/path/to/rs-demo/hybrid-mode/start-jupyterlab.sh
+</code></pre></div>
+<p>The Jupyter web client (=Jupyter Notebook) opens in a new tab of your browser. </p>
+<p><em>WARNING</em>: the cluster is shut down from 18h30 to 8h00 each night and on the weekends.</p>
+<h3 id="how-to-check-your-python-interpreter-used-in-notebooks">How to check your Python interpreter used in notebooks</h3>
+<p>In a notebook cell, run: 
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span>
+</code></pre></div></p>
+<p>If you use the rs-client-libraries poetry environment, it should show something like:
+<div class="highlight"><pre><span></span><code><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.cache/pypoetry/virtualenvs/rs-client-libraries-xxxxxxxx-py3.11/bin/python
+</code></pre></div></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024, ESA
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "navigation.path", "toc.integrate", "toc.follow", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>
