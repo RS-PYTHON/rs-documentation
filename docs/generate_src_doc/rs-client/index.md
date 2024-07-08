@@ -10,7 +10,7 @@ Documentation for RS-Client: [rs-client](rs_client.md)
 ## RS-Client Workflows
 
 Currently, there are 3 Prefect flows implemented that use the a RS-Client instance to access the RS-Server 
-enpoints:
+endpoints:
 
 * an [Example](example.md) prefect flow 
 * a prefect flow that stages the files from a CADIP server or from an ADGS server: [Staging](staging.md)
