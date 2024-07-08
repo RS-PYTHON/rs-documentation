@@ -35,16 +35,7 @@ jobs:
     steps:      
       - uses: actions/checkout@v4         
       - uses: ./.github/actions/install-python
-      - name: Create the virtual env   
-        run: |
-          python -m venv ~/env_rs_doc
-        working-directory: .
-        shell: bash
-      - uses: ./.github/actions/poetry-install
-        with:
-          options: --no-root
-          venv: ~/env_rs_doc
-          working-directory: .
+
       - name: Clone RS-Server/RS-Client/RS-Demo/RS-Infra/RS-Helm
         run: |
           set -x           
@@ -52,9 +43,19 @@ jobs:
           ls -all          
           cd docs
 
+          # We want to use the same branch name (if it exists) in the other 
+          # cloned repositories than the current branch name
+          branch_name=${{ github.ref_name }}
+
+          #
           # Clone public rspy repositories
-          git clone -b v0.1.post1 https://github.com/RS-PYTHON/rs-server.git
-          git clone -b v0.1 https://github.com/RS-PYTHON/rs-client-libraries.git
+
+          git clone https://github.com/RS-PYTHON/rs-server.git
+          (cd rs-server; git checkout $branch_name || git checkout develop)
+
+          git clone https://github.com/RS-PYTHON/rs-client-libraries.git
+          (cd rs-client-libraries; git checkout $branch_name || git checkout develop)
+
           ls -all
 
           # Clone private rspy repositories.
@@ -65,12 +66,14 @@ jobs:
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
-          git clone -b v0.1 git@github.com:RS-PYTHON/rs-demo.git
+          git clone git@github.com:RS-PYTHON/rs-demo.git
+          (cd rs-demo; git checkout $branch_name || git checkout develop)
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone -b v0.1 --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
+          git clone --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
           cd rs-infrastructure
+          git checkout $branch_name || git checkout develop
           git sparse-checkout init --no-cone
           echo "/docs/" > .git/info/sparse-checkout
           echo "/LICENSE" >> .git/info/sparse-checkout
@@ -82,61 +85,20 @@ jobs:
           
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
-          git clone -b v0.1 git@github.com:RS-PYTHON/rs-helm.git
+          git clone git@github.com:RS-PYTHON/rs-helm.git
+          (cd rs-helm; git checkout $branch_name || git checkout develop)
         working-directory: .
-        shell: bash        
-      # # The technical documentation uses a dedicated python project to be built
-      # - uses: ./.github/actions/poetry-install
-      #   with:
-      #     working-directory: ./docs/rs-server/
-
-      # To pull ghcr.io/rs-python/apikey-manager
-      # TODO: to be changed when the apikey manager will have its own container registry.
-      - name: Log into Docker registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate REST API (Swagger) HTML documentation
-        run: |
-          set -x          
-          pwd
-          ls -all
-          sleep 2
-          cd docs/rs-server/
-          # Generate the aggregated openapi.json/swagger
-          echo 'Generate the aggregated openapi.json/swagger'
-          ./services/frontend/resources/build_aggregated_openapi.sh --run-services --set-version
-
-          # Copy it beside the index.html
-          echo 'Copy openapi.json in rest directory'
-          cp ./services/frontend/resources/openapi.json ./docs/doc/api/rest/
         shell: bash
 
-      # - name: Deploy docs to ghpages
-      #   uses: peaceiris/actions-gh-pages@v4
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_branch: gh-pages
-      #     publish_dir: ./site
-      
-      - uses: ./.github/actions/poetry-install
-        with:          
-          venv: ~/env_rs_doc
-          working-directory: ./docs/rs-server    
-      - uses: ./.github/actions/poetry-install
-        with:          
-          venv: ~/env_rs_doc
-          working-directory: ./docs/rs-client-libraries
+      - name: Install dependencies
+        uses: ./.github/actions/poetry-install
+
       - name: Generate Markdown HTML documentation
         run: |
           set -x           
           pwd          
           ls -all          
           sleep 2
-          source ~/env_rs_doc/bin/activate          
           poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
