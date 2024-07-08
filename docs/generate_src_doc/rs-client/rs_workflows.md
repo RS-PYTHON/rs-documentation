@@ -1,4 +1,4 @@
-# Worflows
+# Workflows
 Following is the documentation generated from the source code
 of the already implemented workflows
 
