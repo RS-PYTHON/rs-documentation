@@ -55,8 +55,8 @@ and write them in the **site** directory.
 Verify the generated documentation
 ==================================
 
-The documentation is generated in the directory "site". The main page is the file "index.html" is this
-folder. It can be open in a web browser for example.
+The documentation is generated in the "site" directory. The main page is the "index.html" file located within 
+this folder, which can be opened in a web browser, for example.
 
 The REST API can’t be opened like that since it needs to be served. You
 can open the REST API locally starting the rs-server and connecting to
