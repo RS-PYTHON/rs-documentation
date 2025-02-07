@@ -54,7 +54,7 @@ jobs:
           git clone https://github.com/RS-PYTHON/rs-client-libraries.git
           (cd rs-client-libraries; git checkout $branch_name || git checkout develop)
           
-          git clone git@github.com:RS-PYTHON/rs-demo.git
+          git clone https://github.com/RS-PYTHON/rs-demo.git
           (cd rs-demo; git checkout $branch_name || git checkout develop)
 
           ls -all
