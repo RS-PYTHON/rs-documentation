@@ -53,19 +53,17 @@ jobs:
 
           git clone https://github.com/RS-PYTHON/rs-client-libraries.git
           (cd rs-client-libraries; git checkout $branch_name || git checkout develop)
+          
+          git clone git@github.com:RS-PYTHON/rs-demo.git
+          (cd rs-demo; git checkout $branch_name || git checkout develop)
 
           ls -all
 
           # Clone private rspy repositories.
           # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
           # And the public keys from: 
-            #   https://github.com/RS-PYTHON/rs-demo/settings/keys
             #   https://github.com/RS-PYTHON/rs-infrastructure/settings/keys
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${{ secrets.RS_DEMO_PRIVATE_SSH_KEY }}"
-          git clone git@github.com:RS-PYTHON/rs-demo.git
-          (cd rs-demo; git checkout $branch_name || git checkout develop)
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
