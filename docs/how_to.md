@@ -30,7 +30,7 @@ the projects are pulled is 'develop', but one can choose whatever branch is need
 cd docs
 git clone -b develop https://github.com/RS-PYTHON/rs-server.git
 git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
-git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+git clone -b develop https://github.com/RS-PYTHON/rs-demo.git
 git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
 git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
 cd ..
