@@ -4,18 +4,22 @@ This documentation provides an overview of the various API clients available in 
 
 <span style="font-size: 1.5em; color: green;">RsClient</span>
 ::: rs_client.rs_client.RsClient
-This client is used for interacting with the RS service. It provides methods for performing common operations such as querying and managing data.
+This client is a general client used for interacting with the RS service. It can be used to retrieve a specific client, see below.
 
 <span style="font-size: 1.5em; color: green;">AuxipClient</span>
 ::: rs_client.auxip_client.AuxipClient
-The AuxipClient is tailored for accessing the AUXIP service. It includes functionalities for handling auxiliary data and metadata.
+The AuxipClient is tailored for accessing the AUXIP service. It includes functionalities for querying auxiliary data and metadata from an external AUXIP station.
 
 <span style="font-size: 1.5em; color: green;">CadipClient</span>
 ::: rs_client.cadip_client.CadipClient
-CadipClient is designed to interface with the CADIP service. Use this client to perform tasks related to CADIP data processing and retrieval.
+CadipClient is designed to interface with the CADIP service. It includes functionalities for querying data and metadata from an external CADIP station.
 
-<span style="font-size: 1.5em; color: green;">StacClient</span>
-::: rs_client.stac_client.StacClient
+<span style="font-size: 1.5em; color: green;">CatalogClient</span>
+::: rs_client.catalog_client.CatalogClient
+This client allows you to interact with the STAC service, making it easy to search, retrieve, and manage spatio-temporal asset catalog data.
+
+<span style="font-size: 1.5em; color: green;">CatalogClient</span>
+::: rs_client.staging_client.StagingClient
 This client allows you to interact with the STAC service, making it easy to search, retrieve, and manage spatio-temporal asset catalog data.
 
 For detailed usage instructions and examples for each client, please refer to the respective sections.

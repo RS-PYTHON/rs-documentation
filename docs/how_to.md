@@ -30,8 +30,8 @@ the projects are pulled is 'develop', but one can choose whatever branch is need
 cd docs
 git clone -b develop https://github.com/RS-PYTHON/rs-server.git
 git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
-git clone -b develop https://github.com/RS-PYTHON/rs-demo.git
-git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+git clone -b develop git@github.com:RS-PYTHON/rs-infra-core.git
 git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
 cd ..
 ```
@@ -50,7 +50,7 @@ poetry run mkdocs build
 ```
 
 This command generates the html pages of all the technical documentation as well as for the static documentation
-and write them in the **site** directory.
+and writes it in the **site** directory.
 
 Verify the generated documentation
 ==================================
