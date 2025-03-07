@@ -20,12 +20,12 @@ git clone https://github.com/RS-PYTHON/rs-documentation.git
 cd rs-documentation
 ```
 
-2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infrastructure and RS-Helm repositories. The default branch from which 
+2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infra-Core and RS-Helm repositories. The default branch from which 
 the projects are pulled is 'develop', but one can choose whatever branch is needed by using '-b' flag.
 
     **NOTE**: The repositories need to be pulled in 'docs' directory
 
-    **NOTE**: The RS-Demo, RS-Infrastructure and RS-Helm repositories are not public, so a github access is needed
+    **NOTE**: The RS-Demo, RS-Infra-Core and RS-Helm repositories are not public, so a github access is needed
 ```shell
 cd docs
 git clone -b develop https://github.com/RS-PYTHON/rs-server.git
