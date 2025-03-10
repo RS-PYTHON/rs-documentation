@@ -48,8 +48,8 @@ plugins:
         python:
           options:
             extra:
-              separate_modules: true
               import: true
+              separate_modules: true              
   # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
   # - spellcheck:      
   #     known_words: spellchecker_ignore.txt    

@@ -1,5 +1,5 @@
-::: rs_server_common.authentication.authentication
 ::: rs_server_common.db.database
+::: rs_server_common.authentication.authentication
 ::: rs_server_common.utils.logging
 ::: rs_server_common.utils.opentelemetry
 ::: rs_server_common.utils.utils
