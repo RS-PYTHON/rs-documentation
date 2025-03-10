@@ -93,7 +93,8 @@ jobs:
         run: |
           set -x           
           pwd          
-          ls -all          
+          ls -all
+          poetry show rs_server_common          
           sleep 2
           poetry run mkdocs gh-deploy --force
         working-directory: .
