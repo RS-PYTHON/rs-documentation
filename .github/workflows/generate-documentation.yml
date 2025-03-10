@@ -96,7 +96,11 @@ jobs:
           ls -all
           poetry show rs_server_common
           export RSPY_LOCAL_MODE=1
-          poetry run python -c "import rs_server_common.authentication.authentication"      
+          poetry run python -c "import rs_server_common.authentication.authentication"   
+          echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV   
+          echo $GITHUB_ENV
+          poetry env info
+          source $(poetry env info --path)/bin/activate
           sleep 2
           poetry run mkdocs gh-deploy --force -v
         working-directory: .
