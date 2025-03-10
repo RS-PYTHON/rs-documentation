@@ -95,6 +95,7 @@ jobs:
           pwd          
           ls -all
           poetry show rs_server_common
+          export RSPY_LOCAL_MODE=1
           poetry run python -c "import rs_server_common.authentication.authentication"      
           sleep 2
           poetry run mkdocs gh-deploy --force -v
