@@ -62,13 +62,13 @@ jobs:
           # Clone private rspy repositories.
           # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
           # And the public keys from: 
-            #   https://github.com/RS-PYTHON/rs-infrastructure/settings/keys
+            #   https://github.com/RS-PYTHON/rs-infra-core/settings/keys
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
 
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone --depth 1 git@github.com:RS-PYTHON/rs-infrastructure.git
-          cd rs-infrastructure
+          git clone --depth 1 git@github.com:RS-PYTHON/rs-infra-core.git
+          cd rs-infra-core
           git checkout $branch_name || git checkout develop
           git sparse-checkout init --no-cone
           echo "/docs/" > .git/info/sparse-checkout
