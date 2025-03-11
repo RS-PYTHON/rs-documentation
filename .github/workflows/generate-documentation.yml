@@ -96,7 +96,8 @@ jobs:
           ls -all
           poetry show rs_server_common
           export RSPY_LOCAL_MODE=1
-          poetry run python -c "import rs_server_common.authentication.authentication"   
+          poetry run python -c "import rs_server_common.authentication.authentication"  
+          export PYTHONPATH=$(poetry run python -c "import sys; print(':'.join(sys.path))") 
           echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV   
           echo $GITHUB_ENV
           poetry env info

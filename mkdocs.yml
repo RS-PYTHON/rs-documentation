@@ -49,7 +49,7 @@ plugins:
           options:
             extra:
               import: true
-              separate_modules: true              
+              separate_modules: false              
   # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
   # - spellcheck:      
   #     known_words: spellchecker_ignore.txt    
