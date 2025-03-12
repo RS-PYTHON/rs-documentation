@@ -95,7 +95,7 @@ jobs:
           pwd          
           ls -all
           sleep 2
-          poetry run mkdocs gh-deploy --force -v
+          poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash   
 
