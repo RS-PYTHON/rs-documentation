@@ -94,15 +94,6 @@ jobs:
           set -x           
           pwd          
           ls -all
-          poetry show rs_server_common
-          export RSPY_LOCAL_MODE=1
-          poetry run python -c "import rs_server_common.authentication.authentication"  
-          export PYTHONPATH=$(poetry run python -c "import sys; print(':'.join(sys.path))") 
-          echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV   
-          echo $GITHUB_ENV
-          poetry env info
-          source $(poetry env info --path)/bin/activate
-          ls -all /home/runner/work/rs-documentation/rs-documentation/docs/rs-server/services/common/rs_server_common/authentication/
           sleep 2
           poetry run mkdocs gh-deploy --force -v
         working-directory: .
