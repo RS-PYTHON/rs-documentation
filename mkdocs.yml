@@ -115,10 +115,13 @@ nav:
     - Installation: rs-infra-core/docs/installation.md
     - Cluster Management: rs-infra-core/docs/how-to/Cluster Management.md
     - Cluster start and stop: rs-infra-core/docs/how-to/Cluster start and stop.md
+    - Dask Gateway : rs-infra-core/docs/how-to/Dask-gateway.md
     - GitHub container registry: rs-infra-core/docs/how-to/GitHub Container Registry.md
     - Ingress controller: rs-infra-core/docs/how-to/Ingress.md
     - Prefect worker: rs-infra-core/docs/how-to/Prefect-Worker.md
     - Remote kubectl: rs-infra-core/docs/how-to/Remote kubectl.md
-    - Wazuh Server installation: rs-infra-core/docs/how-to/Wazuh-Server_Install.md
+    - Restore database with CloudNativePG : rs-infra-core/docs/how-to/Restore database with CloudNativePG.md
+    - Velero Backup and Restore : rs-infra-core/docs/how-to/Velero_Backup-Restore.md
+    - Wazuh Server installation: rs-infra-core/docs/how-to/Wazuh server install.md
   - Applications Deployment:
     - RS-Server deployment: rs-helm/README.md
