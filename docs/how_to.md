@@ -20,18 +20,18 @@ git clone https://github.com/RS-PYTHON/rs-documentation.git
 cd rs-documentation
 ```
 
-2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infrastructure and RS-Helm repositories. The default branch from which 
+2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infra-Core and RS-Helm repositories. The default branch from which 
 the projects are pulled is 'develop', but one can choose whatever branch is needed by using '-b' flag.
 
     **NOTE**: The repositories need to be pulled in 'docs' directory
 
-    **NOTE**: The RS-Demo, RS-Infrastructure and RS-Helm repositories are not public, so a github access is needed
+    **NOTE**: The RS-Demo, RS-Infra-Core and RS-Helm repositories are not public, so a github access is needed
 ```shell
 cd docs
 git clone -b develop https://github.com/RS-PYTHON/rs-server.git
 git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
-git clone -b develop https://github.com/RS-PYTHON/rs-demo.git
-git clone -b develop git@github.com:RS-PYTHON/rs-infrastructure.git
+git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
+git clone -b develop git@github.com:RS-PYTHON/rs-infra-core.git
 git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
 cd ..
 ```
@@ -50,13 +50,13 @@ poetry run mkdocs build
 ```
 
 This command generates the html pages of all the technical documentation as well as for the static documentation
-and write them in the **site** directory.
+and writes it in the **site** directory.
 
 Verify the generated documentation
 ==================================
 
-The documentation is generated in the directory "site". The main page is the file "index.html" is this
-folder. It can be open in a web browser for example.
+The documentation is generated in the "site" directory. The main page is the "index.html" file located within 
+this folder, which can be opened in a web browser, for example.
 
 The REST API can’t be opened like that since it needs to be served. You
 can open the REST API locally starting the rs-server and connecting to

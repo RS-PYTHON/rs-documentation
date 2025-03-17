@@ -8,7 +8,7 @@ markdown. The python API documentation is built using mkdocs functionalities whi
 REST API documentation is built using fastapi functionalities.
 
 Therefore, the built procedure includes specific steps to handle these
-elements. The technical documentation include links to open the python
+elements. The technical documentation includes links to open the python
 api and rest api reference guides.
 
 Python api reference guide
