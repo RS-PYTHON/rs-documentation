@@ -1,7 +1,7 @@
 ::: rs_server_common.authentication.authentication
 ::: rs_server_common.db.database
 ::: rs_server_common.utils.logging
-::: rs_server_common.utils.opentelemetry
+::: rs_server_common.utils.init_opentelemetry
 ::: rs_server_common.utils.utils
 ::: rs_server_common.data_retrieval.eodag_provider
 ::: rs_server_common.data_retrieval.provider
