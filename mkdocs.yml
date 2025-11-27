@@ -78,28 +78,30 @@ nav:
     - Generate Documentation: how_to.md
 - RS-Server: 
   - rs-server/docs/doc/index.md
-  - User Manual: 
-    - General Description: rs-server/docs/doc/user_manual.md
+  - User Manual:
+    - rs-server/docs/doc/users/index.md
     - Overall Architecture: rs-server/docs/doc/users/architecture.md
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
+    - Catalog: rs-server/docs/doc/users/catalog.md
     - OAuth2 and API Key Manager: rs-server/docs/doc/users/oauth2_apikey_manager.md
   - Developer Manual:
-    - General Description: rs-server/docs/doc/developer_manual.md
-    - Installation: rs-server/docs/doc/dev/environment/installation.md    
-    - Code style: rs-server/docs/doc/dev/code-style.md
-    - API Rest: 
-      - generate_src_doc/rs-server/swagger_index.md
-    - Python API Library: 
-      - generate_src_doc/rs-server/index.md
-      - ADGS: generate_src_doc/rs-server/adgs.md
-      - CADIP: generate_src_doc/rs-server/cadip.md        
-      - Catalog: rs-server/docs/doc/users/catalog.md
-      - Common: generate_src_doc/rs-server/common.md
-      - Frontend: generate_src_doc/rs-server/frontend.md
-    - Additional information:
-      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md      
-      - Workflow: rs-server/docs/doc/dev/background/workflow.md
-      - CI: rs-server/docs/doc/dev/background/ci.md      
+    - General Description: rs-server/docs/doc/dev/developer_manual.md
+    - Installation: rs-server/docs/doc/dev/installation.md
+    - Project Structure: rs-server/docs/doc/dev/project-structure.md
+    - Good Practices:
+      - Code style: rs-server/docs/doc/dev/good_practices/code-style.md
+      - Workflow: rs-server/docs/doc/dev/good_practices/workflow.md
+      - CI: rs-server/docs/doc/dev/good_practices/ci.md
+    - Rest API:
+      - rs-server/docs/doc/dev/rest_api/swagger_index.md
+  - Python Documentation:
+    - generate_src_doc/rs-server/index.md
+    - ADGS: generate_src_doc/rs-server/adgs.md
+    - CADIP: generate_src_doc/rs-server/cadip.md        
+    - Catalog: generate_src_doc/rs-server/catalog.md 
+    - Common: generate_src_doc/rs-server/common.md
+    - Frontend: generate_src_doc/rs-server/frontend.md   
+
 - RS-Client:
   - rs-client-libraries/docs/doc/index.md
   - Python API Library:
