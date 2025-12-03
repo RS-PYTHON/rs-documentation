@@ -81,6 +81,11 @@ $RS_SERVER_PYDOC
   - Python Documentation:
 $RS_CLIENT_LIBRARIES_PYDOCS
 
+- RS-DPR-Service:
+  - rs-dpr-service/docs/doc/index.md
+  - Python Documentation:
+$RS_DPR_SERVICE_PYDOCS
+
 - RS-Notebooks:
   - rs-demo/doc/index.md
   - Running Modes: rs-demo/README.md
