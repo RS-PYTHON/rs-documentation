@@ -14,7 +14,8 @@ package-mode = false
 python = "^3.11"
 rs-server = {path = "docs/rs-server", develop = true}
 rs-client-libraries = {path = "docs/rs-client-libraries", develop = true}
-mkdocs = "^1.6.0"
+rs-dpr-service = {path = "docs/rs-dpr-service", develop = true}
+mkdocs = "^1.6.1"
 mkdocs-material = "^9.5.23"
 mkdocstrings = "^0.28.1"
 mkdocstrings-python = "^1.10.2"
