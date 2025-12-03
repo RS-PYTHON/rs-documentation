@@ -49,34 +49,13 @@ plugins:
           options:
             extra:              
               separate_modules: true              
-  # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
-  # - spellcheck:      
-  #     known_words: spellchecker_ignore.txt    
-  #     # ignore words in <code> tags
-  #     ignore_code: yes
 
-  #     # minimum length of words to consider
-  #     min_length: 2
-
-  #     # maximum number of capital letters in a word
-  #     max_capital: 1
-
-  #     # keep unicode characters
-  #     allow_unicode: no
-
-  #     # skip files entirely (supports Unix shell-style wildcards)
-  #     skip_files:
-  #     - credits.md
-  #     - coverage.md
-  #     - reference/* 
-
-  #     # whether to only check in strict mode
-  #     strict_only: yes
 nav:
 - Home:
-    - index.md
-    - Generate Documentation: how_to.md
-- RS-Server: 
+  - index.md
+  - Generate Documentation: how_to.md
+
+- RS-Server:
   - rs-server/docs/doc/index.md
   - User Manual:
     - rs-server/docs/doc/users/index.md
@@ -95,22 +74,18 @@ nav:
     - Rest API:
       - rs-server/docs/doc/dev/rest_api/swagger_index.md
   - Python Documentation:
-    - generate_src_doc/rs-server/index.md
-    - ADGS: generate_src_doc/rs-server/adgs.md
-    - CADIP: generate_src_doc/rs-server/cadip.md        
-    - Catalog: generate_src_doc/rs-server/catalog.md 
-    - Common: generate_src_doc/rs-server/common.md
-    - Frontend: generate_src_doc/rs-server/frontend.md   
+$RS_SERVER_PYDOC
 
 - RS-Client:
   - rs-client-libraries/docs/doc/index.md
-  - Python API Library:
-    - generate_src_doc/rs-client/index.md
-    - RS-Client Classes: generate_src_doc/rs-client/rs_client.md    
-- RS-Notebooks:  
+  - Python Documentation:
+$RS_CLIENT_LIBRARIES_PYDOCS
+
+- RS-Notebooks:
   - rs-demo/doc/index.md
   - Running Modes: rs-demo/README.md
-- RS-Deployment: 
+
+- RS-Deployment:
   - rs_deployment_start.md
   - Infrastructure Deployment:
     - rs-infra-core/README.md    
