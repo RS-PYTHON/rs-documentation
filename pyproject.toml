@@ -12,6 +12,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pygeofilter = { git = "https://github.com/RS-PYTHON/pygeofilter", branch = "rspy" }
 rs-server = {path = "docs/rs-server", develop = true}
 rs-client-libraries = {path = "docs/rs-client-libraries", develop = true}
 rs-dpr-service = {path = "docs/rs-dpr-service", develop = true}
