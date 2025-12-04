@@ -23,8 +23,3 @@ mkdocstrings-python = "^1.10.2"
 mkdocs-spellcheck = "^1.1.0"
 symspellpy = "^6.7.7"
 mkdocs-autorefs = ">0.5.0"
-
-
-
-
-
