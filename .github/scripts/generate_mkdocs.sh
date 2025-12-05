@@ -21,9 +21,7 @@ TEMPLATEFILE="${PROJECT_ROOT_DIR}/mkdocs.yml.tpl"
 OUTPUTFILE="${PROJECT_ROOT_DIR}/mkdocs.yml"
 
 # Execute pydoc building scripts
-bash ${PROJECT_ROOT_DIR}/docs/rs-server/docs/build_pydoc.sh
-bash ${PROJECT_ROOT_DIR}/docs/rs-client-libraries/docs/build_pydoc.sh
-bash ${PROJECT_ROOT_DIR}/docs/rs-dpr-service/docs/build_pydoc.sh
+bash ${PROJECT_ROOT_DIR}/.github/scripts/build_pydoc.sh
 
 # Locations of mkdocs.txt files
 RS_SERVER_MKDOCS="${PROJECT_ROOT_DIR}/docs/rs-server/docs/mkdocs.txt"
