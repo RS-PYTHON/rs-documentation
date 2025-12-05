@@ -14,7 +14,7 @@ The following have to be installed
 
 Prepare the environment
 =======================
-1. Clone the rs-documentation repository:   
+1. Clone the rs-documentation repository:
 ```shell
 git clone https://github.com/RS-PYTHON/rs-documentation.git
 cd rs-documentation
@@ -65,7 +65,7 @@ and writes it in the **site** directory.
 Verify the generated documentation
 ==================================
 
-The documentation is generated in the "site" directory. The main page is the "index.html" file located within 
+The documentation is generated in the "site" directory. The main page is the "index.html" file located within
 this folder, which can be opened in a web browser, for example.
 
 The REST API can’t be opened like that since it needs to be served. You

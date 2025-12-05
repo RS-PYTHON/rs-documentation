@@ -6,14 +6,14 @@ copyright: Copyright &copy; 2024, ESA
 theme:
   name: material
   custom_dir: docs/_templates
-  features:    
+  features:
     - navigation.tabs
     - navigation.tabs.sticky
-    - navigation.sections    
+    - navigation.sections
     - navigation.top
     - navigation.tracking
-    - navigation.indexes   
-    - navigation.path   
+    - navigation.indexes
+    - navigation.path
     - toc.integrate
     - toc.follow
     - search.suggest
@@ -25,14 +25,14 @@ theme:
   palette:
     - scheme: default
       toggle:
-        icon: material/toggle-switch-off-outline 
+        icon: material/toggle-switch-off-outline
         name: Switch to dark mode
       primary: teal
-      accent: purple 
-    - scheme: slate 
+      accent: purple
+    - scheme: slate
       toggle:
         icon: material/toggle-switch
-        name: Switch to light mode    
+        name: Switch to light mode
       primary: teal
       accent: lime
 markdown_extensions:
@@ -93,7 +93,7 @@ $RS_DPR_SERVICE_PYDOCS
 - RS-Deployment:
   - rs_deployment_start.md
   - Infrastructure Deployment:
-    - rs-infra-core/README.md    
+    - rs-infra-core/README.md
     - Installation: rs-infra-core/docs/installation.md
     - Cluster Management: rs-infra-core/docs/how-to/Cluster Management.md
     - Cluster start and stop: rs-infra-core/docs/how-to/Cluster start and stop.md

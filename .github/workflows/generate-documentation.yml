@@ -17,7 +17,7 @@ name: Generate documentation
 # TODO: when to generate the doc ?
 # For now, only for new git tags (including hierarchical tags like v1.0/beta), or manually
 on:
-    push:      
+    push:
     workflow_dispatch:
 
 env:
@@ -30,18 +30,18 @@ jobs:
     permissions:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
-    steps:      
-      - uses: actions/checkout@v4         
+    steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/install-python
 
       - name: Clone RS-Server/RS-Client/RS-Demo/RS-Infra/RS-Helm
         run: |
-          set -x           
-          pwd     
-          ls -all          
+          set -x
+          pwd
+          ls -all
           cd docs
 
-          # We want to use the same branch name (if it exists) in the other 
+          # We want to use the same branch name (if it exists) in the other
           # cloned repositories as the current branch name
           branch_name=${{ github.ref_name }}
 
@@ -53,7 +53,7 @@ jobs:
 
           git clone https://github.com/RS-PYTHON/rs-client-libraries.git
           (cd rs-client-libraries; git checkout $branch_name || git checkout develop)
-          
+
           git clone https://github.com/RS-PYTHON/rs-demo.git
           (cd rs-demo; git checkout $branch_name || git checkout develop)
 
@@ -64,7 +64,7 @@ jobs:
 
           # Clone private rspy repositories.
           # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
-          # And the public keys from: 
+          # And the public keys from:
             #   https://github.com/RS-PYTHON/rs-infra-core/settings/keys
             #   https://github.com/RS-PYTHON/rs-helm/settings/keys
 
@@ -81,7 +81,7 @@ jobs:
           git read-tree -mu HEAD
           ls -all
           cd ..
-          
+
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
           git clone git@github.com:RS-PYTHON/rs-helm.git
@@ -100,12 +100,10 @@ jobs:
 
       - name: Generate Markdown HTML documentation
         run: |
-          set -x           
-          pwd          
+          set -x
+          pwd
           ls -all
           sleep 2
           poetry run mkdocs gh-deploy --force
         working-directory: .
-        shell: bash   
-
-
+        shell: bash
