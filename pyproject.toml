@@ -9,7 +9,7 @@ description = "Documentation for Copernicus Sentinel rs-python projects."
 license = "Apache-2.0"
 authors = ["ESA under contract with Airbus and CS <ops_coprs@airbus.com>"]
 readme = "README.md"
-homepage = "https://home.rs-python.eu/"
+homepage = "https://home.rs-python.eu/rs-documentation"
 repository = "https://github.com/RS-PYTHON/rs-documentation"
 package-mode = false
 
