@@ -20,7 +20,8 @@ git clone https://github.com/RS-PYTHON/rs-documentation.git
 cd rs-documentation
 ```
 
-2. Clone the RS-Server, RS-Client, RS-Demo, RS-Infra-Core and RS-Helm repositories. The default branch from which 
+2. Create an access to the project repositories in the docs subfolder. You can chose one of the two following ways:   
+**Option 1:** Clone the RS-Server, RS-Client, RS-DPR-Service, RS-Demo, RS-Infra-Core and RS-Helm repositories. The default branch from which 
 the projects are pulled is 'develop', but one can choose whatever branch is needed by using '-b' flag.
 
     **NOTE**: The repositories need to be pulled in 'docs' directory
@@ -30,10 +31,19 @@ the projects are pulled is 'develop', but one can choose whatever branch is need
 cd docs
 git clone -b develop https://github.com/RS-PYTHON/rs-server.git
 git clone -b develop https://github.com/RS-PYTHON/rs-client-libraries.git
+git clone -b develop https://github.com/RS-PYTHON/rs-dpr-service.git
 git clone -b develop git@github.com:RS-PYTHON/rs-demo.git
 git clone -b develop git@github.com:RS-PYTHON/rs-infra-core.git
 git clone -b develop git@github.com:RS-PYTHON/rs-helm.git
 cd ..
+```
+**Option 2:** If you already have those repositories in your workspace, just create symbolic links to them:
+```shell
+cd docs
+ln -s /path/to/your/workspace/rs-server rs-server
+ln -s /path/to/your/workspace/rs-client-libraries rs-client-libraries
+ln -s /path/to/your/workspace/rs-dpr-service rs-dpr-service
+# etc...
 ```
 
 3. Install needed rs-documentation packages:
