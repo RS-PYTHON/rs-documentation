@@ -13,6 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+#######################################################################################
+# This script scans each project module by module and generates a documentation
+# following the same tree structure as the project, where each markdown file refers
+# to a Python file. It also adds an index file with a table of content for each module,
+# and a link to the index file in each markdown file of the module. A "mkdocs.txt"
+# file is also generated, that contains the table of content to add in the main
+# "mkdocs.yml" file used by rs-documentation.
+########################################################################################
+
+set -euo pipefail
+
 # LOCATIONS OF IMPORTANT FOLDERS
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT_DIR="$(realpath $SCRIPT_DIR/../..)"
@@ -39,14 +51,13 @@ create_md_file() {
     # Name of the module: same as the name of the python file, but without the .py extension and replacing "/" to "." (to turn subfolders into submodules)
     pymodule=$(tr '/' '.' <<< "${base_module}.${python_file::-3}")
     # Subfolders to create: md file without the file name
-    subfolder=${md_file%/*}
+    subfolder=$(dirname $md_file)
     # Location of the index file relative to the md file: replace the subfolder names with ".."
-    index_location=$(printf '%s' "$python_file" | awk -F'/' '{for(i=1;i<NF;i++) printf "../"; print "index.md"}')
+    index_location=$(realpath ${base_module}/index.md --relative-to $(dirname $md_file))
 
     # === CREATE AND POPULATE A MD FILE ===
     # Create subfolders and md file
     mkdir -p "$subfolder"
-    touch $md_file
     # Fill the md file content
     echo "# "${md_file} > $md_file
     echo -e "\n[ << Back to index]("${index_location}")" >> $md_file
@@ -59,7 +70,7 @@ create_md_file() {
 
 
 create_documentation_for_module() {
-    # Creates a comlete documentation folder for the given python module.
+    # Creates a complete documentation folder for the given python module.
     # The documentation created follows mkdocs format and has the same structure as the given module.
     # Don't forget the / at the end of the module_location.
     #
@@ -72,23 +83,16 @@ create_documentation_for_module() {
     module_name=$1
     module_location=$2
 
-    # === BUILD VARIABLES ===
-    # Files list: a complete list of everything inside the module's folder from where we keep only the .py files that are not init
-    files_list=$(find $module_location -type f | grep ".*.\.py$" | grep -v "__init__")
-    # Put the files in an array
-    readarray -t files_list <<< "$files_list"
-
     # === CREATE AND POPULATE INDEX FILE ===
     index_file=$module_name/index.md
     mkdir -p "$module_name"
-    touch $index_file
     echo "# Python documentation for $module_name" > $index_file
     echo -e "\n## List of modules\n" >> $index_file
 
     # === CREATE A MD FILE FOR EACH PY FILE ===
-    for file in "${files_list[@]}"; do
+    for file in $(find $module_location -type f -name "*.py" | grep -v "__init__"); do
         # Remove everything before the module location in the file name we are handling
-        python_file=${file#${module_location}}
+        python_file=$(realpath "$file" --relative-to "$module_location")
 
         # Create md file
         created_file=$(create_md_file $python_file $module_name)
@@ -156,22 +160,16 @@ create_mkdocs_for_folder() {
     cd $folder_name
 
     # For each file in the folder: add it as a line with a reference to the md file location
-    files_list=$(ls -p | grep -v /)
-    readarray -t files_list <<< "$files_list"
-    for file in "${files_list[@]}"; do
+    for file in $(ls -p | grep -v /); do
         mkdocs="${mkdocs}${mkdocs_indent}  - ${file::-3}: ${base_for_mkdocs_locations}${previous_folders}${folder_name}${file}\n"
     done
 
     # For each folder in the folder: repeat the process to create a correct folders tree
-    folders=$(ls -p | grep / )
-    if [[ "$folders" ]]; then
-        readarray -t folders_list <<< "$folders"
-        for folder in "${folders_list[@]}"; do
-            new_level=$((folder_level + 1))
-            new_mkdocs=$(create_mkdocs_for_folder $base_for_mkdocs_locations $folder $new_level "${previous_folders}${folder_name}")
-            mkdocs="${mkdocs}${new_mkdocs}"
-        done
-    fi
+    for folder in $(ls -p | grep / ); do
+        new_level=$((folder_level + 1))
+        new_mkdocs=$(create_mkdocs_for_folder $base_for_mkdocs_locations $folder $new_level "${previous_folders}${folder_name}")
+        mkdocs="${mkdocs}${new_mkdocs}"
+    done
 
     cd ..
     echo "${mkdocs}"
@@ -209,8 +207,26 @@ RS_SERVER_MKDOCS_FILE="${RS_SERVER_DIR}/docs/mkdocs.txt"
 
 # LIST OF MODULES IN RS-SERVER
 # To add or remove one, make sure the lists are on the same order with the same number of elements
-declare -a RS_SERVER_MODULE_LOCATIONS=("${RS_SERVER_MODULES_DIR}/adgs" "${RS_SERVER_MODULES_DIR}/cadip" "${RS_SERVER_MODULES_DIR}/catalog" "${RS_SERVER_MODULES_DIR}/common" "${RS_SERVER_MODULES_DIR}/edrs" "${RS_SERVER_MODULES_DIR}/frontend" "${RS_SERVER_MODULES_DIR}/prip" "${RS_SERVER_MODULES_DIR}/staging")
-declare -a RS_SERVER_MODULE_NAMES=("rs_server_adgs" "rs_server_cadip" "rs_server_catalog" "rs_server_common" "rs_server_edrs" "rs_server_frontend" "rs_server_prip" "rs_server_staging")
+declare -a RS_SERVER_MODULE_LOCATIONS=(
+    "${RS_SERVER_MODULES_DIR}/adgs"
+    "${RS_SERVER_MODULES_DIR}/cadip"
+    "${RS_SERVER_MODULES_DIR}/catalog"
+    "${RS_SERVER_MODULES_DIR}/common"
+    "${RS_SERVER_MODULES_DIR}/edrs"
+    "${RS_SERVER_MODULES_DIR}/frontend"
+    "${RS_SERVER_MODULES_DIR}/prip"
+    "${RS_SERVER_MODULES_DIR}/staging"
+)
+declare -a RS_SERVER_MODULE_NAMES=(
+    "rs_server_adgs"
+    "rs_server_cadip"
+    "rs_server_catalog"
+    "rs_server_common"
+    "rs_server_edrs"
+    "rs_server_frontend"
+    "rs_server_prip"
+    "rs_server_staging"
+)
 
 
 create_documentation_for_rs_server() {
