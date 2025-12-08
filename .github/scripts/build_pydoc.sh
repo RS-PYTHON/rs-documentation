@@ -186,7 +186,7 @@ build_mkdocs_file_for_generic_project() {
     mkdocs_file=$3
     local -n module_names=$4
 
-    rm $mkdocs_file
+    rm -f $mkdocs_file
     cd $pydoc_dir
     base_for_mkdocs_locations="${project_name}/docs/doc/pydoc/" 
     for module in "${module_names[@]}"; do
