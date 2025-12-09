@@ -5,24 +5,24 @@ version = "0.0.0" # see: https://github.com/mtkennerly/poetry-dynamic-versioning
 [tool.poetry]
 name = "rs-documentation"
 version = "0.0.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Documentation for Copernicus Sentinel rs-python projects."
+license = "Apache-2.0"
+authors = ["ESA under contract with Airbus and CS <ops_coprs@airbus.com>"]
 readme = "README.md"
+homepage = "https://home.rs-python.eu/rs-documentation"
+repository = "https://github.com/RS-PYTHON/rs-documentation"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.15"
+pygeofilter = { git = "https://github.com/RS-PYTHON/pygeofilter", branch = "rspy" }
 rs-server = {path = "docs/rs-server", develop = true}
 rs-client-libraries = {path = "docs/rs-client-libraries", develop = true}
-mkdocs = "^1.6.0"
+rs-dpr-service = {path = "docs/rs-dpr-service", develop = true}
+mkdocs = "^1.6.1"
 mkdocs-material = "^9.5.23"
 mkdocstrings = "^0.28.1"
 mkdocstrings-python = "^1.10.2"
 mkdocs-spellcheck = "^1.1.0"
 symspellpy = "^6.7.7"
 mkdocs-autorefs = ">0.5.0"
-
-
-
-
-

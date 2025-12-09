@@ -49,66 +49,48 @@ plugins:
           options:
             extra:              
               separate_modules: true              
-  # TODO: Add the spellchecker also? If yes, a lot of words should be added in the spellchecker_ignore.txt file
-  # - spellcheck:      
-  #     known_words: spellchecker_ignore.txt    
-  #     # ignore words in <code> tags
-  #     ignore_code: yes
 
-  #     # minimum length of words to consider
-  #     min_length: 2
-
-  #     # maximum number of capital letters in a word
-  #     max_capital: 1
-
-  #     # keep unicode characters
-  #     allow_unicode: no
-
-  #     # skip files entirely (supports Unix shell-style wildcards)
-  #     skip_files:
-  #     - credits.md
-  #     - coverage.md
-  #     - reference/* 
-
-  #     # whether to only check in strict mode
-  #     strict_only: yes
 nav:
 - Home:
-    - index.md
-    - Generate Documentation: how_to.md
-- RS-Server: 
+  - index.md
+  - Generate Documentation: how_to.md
+
+- RS-Server:
   - rs-server/docs/doc/index.md
-  - User Manual: 
-    - General Description: rs-server/docs/doc/user_manual.md
+  - User Manual:
+    - rs-server/docs/doc/users/index.md
     - Overall Architecture: rs-server/docs/doc/users/architecture.md
     - Main Functionalities: rs-server/docs/doc/users/functionalities.md
+    - Catalog: rs-server/docs/doc/users/catalog.md
     - OAuth2 and API Key Manager: rs-server/docs/doc/users/oauth2_apikey_manager.md
   - Developer Manual:
-    - General Description: rs-server/docs/doc/developer_manual.md
-    - Installation: rs-server/docs/doc/dev/environment/installation.md    
-    - Code style: rs-server/docs/doc/dev/code-style.md
-    - API Rest: 
-      - generate_src_doc/rs-server/swagger_index.md
-    - Python API Library: 
-      - generate_src_doc/rs-server/index.md
-      - ADGS: generate_src_doc/rs-server/adgs.md
-      - CADIP: generate_src_doc/rs-server/cadip.md        
-      - Catalog: rs-server/docs/doc/users/catalog.md
-      - Common: generate_src_doc/rs-server/common.md
-      - Frontend: generate_src_doc/rs-server/frontend.md
-    - Additional information:
-      - Tree structure: rs-server/docs/doc/dev/background/tree-structure.md      
-      - Workflow: rs-server/docs/doc/dev/background/workflow.md
-      - CI: rs-server/docs/doc/dev/background/ci.md      
+    - General Description: rs-server/docs/doc/dev/developer_manual.md
+    - Installation: rs-server/docs/doc/dev/installation.md
+    - Project Structure: rs-server/docs/doc/dev/project-structure.md
+    - Good Practices:
+      - Code style: rs-server/docs/doc/dev/good_practices/code-style.md
+      - Workflow: rs-server/docs/doc/dev/good_practices/workflow.md
+      - CI: rs-server/docs/doc/dev/good_practices/ci.md
+    - Rest API:
+      - rs-server/docs/doc/dev/rest_api/swagger_index.md
+  - Python Documentation:
+$RS_SERVER_PYDOC
+
 - RS-Client:
   - rs-client-libraries/docs/doc/index.md
-  - Python API Library:
-    - generate_src_doc/rs-client/index.md
-    - RS-Client Classes: generate_src_doc/rs-client/rs_client.md    
-- RS-Notebooks:  
+  - Python Documentation:
+$RS_CLIENT_LIBRARIES_PYDOCS
+
+- RS-DPR-Service:
+  - rs-dpr-service/docs/doc/index.md
+  - Python Documentation:
+$RS_DPR_SERVICE_PYDOCS
+
+- RS-Notebooks:
   - rs-demo/doc/index.md
   - Running Modes: rs-demo/README.md
-- RS-Deployment: 
+
+- RS-Deployment:
   - rs_deployment_start.md
   - Infrastructure Deployment:
     - rs-infra-core/README.md    

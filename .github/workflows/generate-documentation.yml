@@ -21,7 +21,7 @@ on:
     workflow_dispatch:
 
 env:
-  PYTHON_VERSION: 3.11
+  PYTHON_VERSION: 3.13.9
 
 jobs:
   generate-documentation:
@@ -57,6 +57,9 @@ jobs:
           git clone https://github.com/RS-PYTHON/rs-demo.git
           (cd rs-demo; git checkout $branch_name || git checkout develop)
 
+          git clone https://github.com/RS-PYTHON/rs-dpr-service.git
+          (cd rs-dpr-service; git checkout $branch_name || git checkout develop)
+
           ls -all
 
           # Clone private rspy repositories.
@@ -88,6 +91,12 @@ jobs:
 
       - name: Install dependencies
         uses: ./.github/actions/poetry-install
+
+      - name: Generate Pydoc in projects
+        run: |
+          ./.github/scripts/generate_mkdocs.sh
+        working-directory: .
+        shell: bash
 
       - name: Generate Markdown HTML documentation
         run: |
