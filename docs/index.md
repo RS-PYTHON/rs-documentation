@@ -28,9 +28,9 @@ Reference System Python can be split into the following components:
     to build Copernicus processing chains. Among these libraries, we will find:
     -   **rs.client** : python libraries that provide atomic call to RS-Server
 
-    -   **rs.processing** : python libraries that wrap DPR processing and provide 
+    -   **rs.processing** : python libraries that wrap DPR processing and provide
         high level service (combination of rs.client calls)
-    
+
     -   **rs.common** : python libraries for metric, log and traces.
 
     -   **Prefect tasks & flows** for **On Demand** processing chains

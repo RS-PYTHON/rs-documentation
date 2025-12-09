@@ -1,4 +1,4 @@
-# Copyright 2024 CS Group
+# Copyright 2025 Airbus, CS Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: python
-description: Install python with hardcoded version
-runs:
-  using: "composite"
-  steps:
-    - uses: actions/setup-python@v6
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+default_language_version:
+    python: python3
+default_stages: [pre-commit]
+repos:
+
+# Basic verifications
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    -   id: check-merge-conflict
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-toml
+
+- repo: https://github.com/google/addlicense
+  rev: v1.2.0
+  hooks:
+  - id: addlicense
+    files: \.(css|html|sh|yml|yaml)$
+    args: [ "-c", "Airbus, CS Group", "-l", "apache" ]
