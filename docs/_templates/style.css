@@ -1,0 +1,92 @@
+/* Sidebar principale */
+.md-sidebar--primary {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-bottom: 3.75rem; /* 60px -> 3.75rem */
+  box-sizing: border-box;
+}
+
+/* Zone de navigation : 2/3 du haut, scrollable si trop grand */
+.sidebar-navigation {
+  flex: 2 1 auto;
+  overflow-y: auto;
+  padding-bottom: 0.625rem; /* 10px -> 0.625rem */
+}
+
+/* Zone des logos : 1/3 du bas, logos toujours visibles */
+.sidebar-logos-bottom {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; /* logos collés en bas du tiers */
+  padding-bottom: 0.3125rem; /* 5px -> 0.3125rem */
+}
+
+.sidebar-logos-bottom img {
+  height: 3.125rem; /* 50px -> 3.125rem */
+  margin-bottom: 0.3125rem; /* 5px -> 0.3125rem */
+  transition: all 0.1s ease-in-out;
+}
+
+/* Footer fixe avec fond noir et logos à droite */
+.md-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3125rem 1.25rem; /* 5px 20px -> 0.3125rem 1.25rem */
+  background-color: #000; /* toujours noir */
+  color: #fff;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.footer-logos {
+  display: flex;
+  gap: 0.9375rem; /* 15px -> 0.9375rem */
+  align-items: center;
+}
+
+.footer-logos img {
+  height: 3.125rem; /* 50px -> 3.125rem */
+  transition: all 0.1s ease-in-out;
+}
+
+/* Ajustements existants */
+.md-grid {
+  max-width: 100%;
+}
+
+@media (min-width: 76.25rem) { /* 1220px -> 76.25rem */
+  .md-main__inner {
+    margin-top: 0;
+  }
+  .md-sidebar {
+    height: auto;
+  }
+  .md-sidebar--primary {
+    border-right: 1px solid var(--md-default-fg-color--lightest);
+  }
+  .md-nav {
+    font-size: 1rem; /* 16px -> 1rem */
+  }
+  .md-nav .md-nav__title {
+    display: none;
+  }
+  .md-nav__icon {
+    width: 0.075rem; /* 1.2rem = 19.2px ? à ajuster, sinon mettre 1.2rem */
+    height: 0.075rem; /* idem */
+    margin-top: -0.00625rem; /* -0.1rem -> -0.00625rem */
+  }
+}
+
+/* Espace sous le contenu principal pour le footer fixe */
+.md-main {
+  padding-bottom: 3.75rem; /* même hauteur que le footer, 60px -> 3.75rem */
+  box-sizing: border-box;
+}
