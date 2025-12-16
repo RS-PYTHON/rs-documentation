@@ -19,134 +19,169 @@
 {% block extrahead %}
   {{ super() }}
   <style>
-    .custom-logo-container {
+    /* Sidebar : navigation 2/3, 3 logos 1/3 */
+    .md-sidebar--primary {
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* occupe toute la hauteur de la fenêtre */
+    }
+
+    /* Conteneur de navigation */
+    .sidebar-navigation {
+      flex-basis: 66.6666%;
+      flex-shrink: 0;
+      overflow-y: auto; /* scroll si le menu est trop long */
+    }
+
+    /* Conteneur des 3 logos dans la sidebar */
+    .sidebar-logos-bottom {
+      flex-basis: 33.3333%;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 10px;
+      justify-content: flex-start;
+      padding-top: 10px;
+    }
+
+    .sidebar-logos-bottom img {
+      height: 50px;
+      margin-bottom: 10px;
       transition: all 0.1s ease-in-out;
     }
 
-    .customBottom-logo-container {
+    /* Footer fixe avec fond noir et logos à droite */
+    .md-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 10px;
-      width: 100%;
-      max-width: 600px;
-      transition: all 0.1s ease-in-out;
+      padding: 5px 20px;
+      background-color: #000; /* toujours noir */
+      color: #fff;
+      border-top: 1px solid var(--md-default-fg-color--lightest);
     }
 
-    .custom-logo-container img,
-    .customBottom-logo-container img {
-      width: auto;
+    .footer-logos {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .footer-logos img {
       height: 50px;
       transition: all 0.1s ease-in-out;
     }
 
-    .customTop-logo-container > div {
-        margin-top: 10px;
+    /* Ajustements existants */
+    .md-grid {
+      max-width: 100%;
     }
 
+    @media (min-width: 1220px) {
+      .md-main__inner {
+        margin-top: 0;
+      }
+      .md-sidebar {
+        height: auto;
+      }
+      .md-sidebar--primary {
+        border-right: 1px solid var(--md-default-fg-color--lightest);
+      }
+      .md-nav {
+        font-size: 16px;
+      }
+      .md-nav .md-nav__title {
+        display: none;
+      }
+      .md-nav__icon {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-top: -.1rem;
+      }
+    }
   </style>
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Move logo containers
-      var topLogoContainer = document.querySelector('.customTop-logo-container');
-      var bottomLogoContainer = document.querySelector('.customBottom-logo-container');
-      var sidebarPrimary = document.querySelector('.md-sidebar--primary');
-      var sidebarScrollwrap = document.querySelector('.md-sidebar__scrollwrap');
 
-      if (topLogoContainer && sidebarPrimary) {
-        sidebarPrimary.insertBefore(topLogoContainer, sidebarPrimary.firstChild);
-      }
+      // ---- SIDEBAR: navigation + 3 logos ----
+      var sidebarPrimary = document.querySelector(".md-sidebar--primary");
+      if (sidebarPrimary) {
+        // Conteneur navigation
+        var navContainer = document.createElement("div");
+        navContainer.className = "sidebar-navigation";
+        var mdNav = sidebarPrimary.querySelector(".md-nav");
+        if (mdNav) navContainer.appendChild(mdNav);
 
-      if (bottomLogoContainer && sidebarScrollwrap) {
-        sidebarScrollwrap.insertAdjacentElement('afterend', bottomLogoContainer);
-      }
+        // Conteneur logos
+        var logosContainer = document.createElement("div");
+        logosContainer.className = "sidebar-logos-bottom";
+        var sidebarLogos = [
+          {src: "{{ base_url }}/_static/EC_POS.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://www.airbus.com/en"},
+          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.csgroup.eu/en/"},
+          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.csgroup.eu/en/"}
+        ];
 
-      // Theme detection and image switch
-      function switchImagesBasedOnTheme() {
-        var isDarkTheme = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
-        var images = document.querySelectorAll('img[data-dark-src]');
-
-        images.forEach(function(img) {
-          if (isDarkTheme) {
-            img.src = img.getAttribute('data-dark-src');
-          } else {
-            img.src = img.getAttribute('data-light-src');
-          }
+        sidebarLogos.forEach(function(l) {
+          var a = document.createElement("a");
+          a.href = l.url;
+          a.target = "_blank";
+          var img = document.createElement("img");
+          img.src = l.src;
+          img.alt = l.alt;
+          img.setAttribute("data-light-src", l.src);
+          img.setAttribute("data-dark-src", l.dark);
+          a.appendChild(img);
+          logosContainer.appendChild(a);
         });
+
+        // Vider sidebar et ajouter navigation + logos
+        sidebarPrimary.innerHTML = "";
+        sidebarPrimary.appendChild(navContainer);
+        sidebarPrimary.appendChild(logosContainer);
+
+        // Switch logos selon thème
+        function switchSidebarLogosTheme() {
+          var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+          var images = sidebarPrimary.querySelectorAll("img[data-dark-src]");
+          images.forEach(function(img) {
+            img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
+          });
+        }
+
+        switchSidebarLogosTheme();
+        $(".md-option").on("click", function() { setTimeout(switchSidebarLogosTheme, 100); });
+        document.documentElement.addEventListener('theme-changed', switchSidebarLogosTheme);
       }
 
-      // Initial switch
-      switchImagesBasedOnTheme();
-
-      // Listen for theme change events
-      $(".md-option").on("click", function (evt) {
-        setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
-      });
-      /*
-      var themeToggleButton = document.getElementsByClassName("md-option");
-      if (themeToggleButton) {
-        themeToggleButton.addEventListener('click', function() {
-          setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+      // ---- FOOTER: logos à droite ----
+      var footer = document.querySelector(".md-footer");
+      if (footer) {
+        var footerLogos = document.createElement("div");
+        footerLogos.className = "footer-logos";
+        var logos = [
+          {src: "{{ base_url }}/_static/AIRBUS_Blue.png", dark: "{{ base_url }}/_static/AIRBUS_White.png", alt: "Airbus Logo", url: "https://www.airbus.com/en"},
+          {src: "{{ base_url }}/_static/logo_cs_group_bleu_petit.png", dark: "{{ base_url }}/_static/logo_cs_group_bleu_petit.png", alt: "CS Group Logo", url: "https://www.csgroup.eu/en/"}
+        ];
+        logos.forEach(function(l) {
+          var a = document.createElement("a");
+          a.href = l.url;
+          a.target = "_blank";
+          var img = document.createElement("img");
+          img.src = l.src; // toujours version sombre
+          img.alt = l.alt;
+          a.appendChild(img);
+          footerLogos.appendChild(a);
         });
+        footer.appendChild(footerLogos);
       }
-      */
-      // If the theme change is triggered by other means
-      document.documentElement.addEventListener('theme-changed', switchImagesBasedOnTheme);
+
     });
   </script>
-
-{% endblock %}
-
-{% block header %}
-  {{ super() }}
-  <div class="customTop-logo-container custom-logo-container">
-    <div class="customEU-logo">
-      <a href="https://www.airbus.com/en" target="_blank">
-        <img src="{{ base_url }}/_static/EC_POS.png"
-             alt="EU Logo"
-             data-light-src="{{ base_url }}/_static/EC_POS.png"
-             data-dark-src="{{ base_url }}/_static/EC_NEG.png" />
-      </a>
-    </div>
-    <div class="customCop-logo">
-      <a href="https://www.csgroup.eu/en/" target="_blank">
-        <img src="{{ base_url }}/_static/Copernicus_blue.png"
-             alt="Copernicus Logo"
-             data-light-src="{{ base_url }}/_static/Copernicus_blue.png"
-             data-dark-src="{{ base_url }}/_static/Copernicus_white.png" />
-      </a>
-    </div>
-    <div class="customESA-logo">
-      <a href="https://www.csgroup.eu/en/" target="_blank">
-        <img src="{{ base_url }}/_static/ESA_logo_2020_Deep.png"
-             alt="ESA Logo"
-             data-light-src="{{ base_url }}/_static/ESA_logo_2020_Deep.png"
-             data-dark-src="{{ base_url }}/_static/ESA_logo_2020_White.png" />
-      </a>
-    </div>
-  </div>
-
-  <div class="customBottom-logo-container">
-    <div class="customAirbus-logo">
-      <a href="https://www.airbus.com/en" target="_blank">
-        <img src="{{ base_url }}/_static/AIRBUS_Blue.png"
-             alt="Airbus Logo"
-             data-light-src="{{ base_url }}/_static/AIRBUS_Blue.png"
-             data-dark-src="{{ base_url }}/_static/AIRBUS_White.png" />
-      </a>
-    </div>
-    <div class="customCS-logo">
-      <a href="https://www.csgroup.eu/en/" target="_blank">
-        <img src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png"
-             alt="CS Group Logo"
-             data-light-src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png"
-             data-dark-src="{{ base_url }}/_static/logo_cs_group_bleu_petit.png" />
-      </a>
-    </div>
-  </div>
 {% endblock %}
