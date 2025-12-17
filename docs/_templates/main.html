@@ -18,93 +18,6 @@
 
 {% block extrahead %}
   {{ super() }}
-  <style>
-    /* Sidebar : navigation 2/3, 3 logos 1/3 */
-    .md-sidebar--primary {
-      display: flex;
-      flex-direction: column;
-      height: 100vh; /* occupe toute la hauteur de la fenêtre */
-    }
-
-    /* Conteneur de navigation */
-    .sidebar-navigation {
-      flex-basis: 66.6666%;
-      flex-shrink: 0;
-      overflow-y: auto; /* scroll si le menu est trop long */
-    }
-
-    /* Conteneur des 3 logos dans la sidebar */
-    .sidebar-logos-bottom {
-      flex-basis: 33.3333%;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding-top: 10px;
-    }
-
-    .sidebar-logos-bottom img {
-      height: 50px;
-      margin-bottom: 10px;
-      transition: all 0.1s ease-in-out;
-    }
-
-    /* Footer fixe avec fond noir et logos à droite */
-    .md-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      z-index: 1000;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 20px;
-      background-color: #000; /* toujours noir */
-      color: #fff;
-      border-top: 1px solid var(--md-default-fg-color--lightest);
-    }
-
-    .footer-logos {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .footer-logos img {
-      height: 50px;
-      transition: all 0.1s ease-in-out;
-    }
-
-    /* Ajustements existants */
-    .md-grid {
-      max-width: 100%;
-    }
-
-    @media (min-width: 1220px) {
-      .md-main__inner {
-        margin-top: 0;
-      }
-      .md-sidebar {
-        height: auto;
-      }
-      .md-sidebar--primary {
-        border-right: 1px solid var(--md-default-fg-color--lightest);
-      }
-      .md-nav {
-        font-size: 16px;
-      }
-      .md-nav .md-nav__title {
-        display: none;
-      }
-      .md-nav__icon {
-        width: 1.2rem;
-        height: 1.2rem;
-        margin-top: -.1rem;
-      }
-    }
-  </style>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
@@ -123,9 +36,9 @@
         var logosContainer = document.createElement("div");
         logosContainer.className = "sidebar-logos-bottom";
         var sidebarLogos = [
-          {src: "{{ base_url }}/_static/EC_POS.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://www.airbus.com/en"},
-          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.csgroup.eu/en/"},
-          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.csgroup.eu/en/"}
+          {src: "{{ base_url }}/_static/EC_POS.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
+          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
+          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.esa.int/"}
         ];
 
         sidebarLogos.forEach(function(l) {
@@ -166,8 +79,8 @@
         var footerLogos = document.createElement("div");
         footerLogos.className = "footer-logos";
         var logos = [
-          {src: "{{ base_url }}/_static/AIRBUS_Blue.png", dark: "{{ base_url }}/_static/AIRBUS_White.png", alt: "Airbus Logo", url: "https://www.airbus.com/en"},
-          {src: "{{ base_url }}/_static/logo_cs_group_bleu_petit.png", dark: "{{ base_url }}/_static/logo_cs_group_bleu_petit.png", alt: "CS Group Logo", url: "https://www.csgroup.eu/en/"}
+          {src: "{{ base_url }}/_static/AIRBUS_White.png", dark: "{{ base_url }}/_static/AIRBUS_White.png", alt: "Airbus Logo", url: "https://www.airbus.com/en"},
+          {src: "{{ base_url }}/_static/logo_cs_group.png", dark: "{{ base_url }}/_static/logo_cs_group.png", alt: "CS Group Logo", url: "https://www.csgroup.eu/en/"}
         ];
         logos.forEach(function(l) {
           var a = document.createElement("a");
