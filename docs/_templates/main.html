@@ -1,5 +1,5 @@
 <!--
- Copyright 2025 Airbus, CS Group
+ Copyright 2023-2025 Airbus, CS Group
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -23,34 +23,21 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
 
-      // ---- SIDEBAR: navigation + 3 logos ----
+      // ---- SIDEBAR ----
       var sidebarPrimary = document.querySelector(".md-sidebar--primary");
       if (sidebarPrimary) {
-        // Conteneur navigation
+        // Navigation container
         var navContainer = document.createElement("div");
         navContainer.className = "sidebar-navigation";
         var mdNav = sidebarPrimary.querySelector(".md-nav");
         if (mdNav) navContainer.appendChild(mdNav);
 
-        // Vider sidebar et ajouter navigation + logos
+        // Empty sidebar and add navigation
         sidebarPrimary.innerHTML = "";
         sidebarPrimary.appendChild(navContainer);
-
-        // Switch logos selon thème
-        function switchSidebarLogosTheme() {
-          var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
-          var images = sidebarPrimary.querySelectorAll("img[data-dark-src]");
-          images.forEach(function(img) {
-            img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
-          });
-        }
-
-        switchSidebarLogosTheme();
-        $(".md-option").on("click", function() { setTimeout(switchSidebarLogosTheme, 100); });
-        document.documentElement.addEventListener('theme-changed', switchSidebarLogosTheme);
       }
 
-      // ---- TABS: logos à droite du menu horizontal ----
+      // ---- TABS: logos to the right of the horizontal menu ----
       var tabs = document.querySelector(".md-tabs");
 
       if (tabs) {
@@ -97,7 +84,7 @@
         document.documentElement.addEventListener("theme-changed", switchTabsLogosTheme);
       }
 
-      // ---- FOOTER: logos à droite ----
+      // ---- FOOTER: logos to the right ----
       var footer = document.querySelector(".md-footer");
       if (footer) {
         var footerLogos = document.createElement("div");
@@ -111,7 +98,7 @@
           a.href = l.url;
           a.target = "_blank";
           var img = document.createElement("img");
-          img.src = l.src; // toujours version sombre
+          img.src = l.src; // always dark theme (footer is black)
           img.alt = l.alt;
           a.appendChild(img);
           footerLogos.appendChild(a);
