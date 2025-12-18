@@ -105,3 +105,28 @@ limitations under the License. */
   padding-bottom: 3.75rem; /* même hauteur que le footer, 60px -> 3.75rem */
   box-sizing: border-box;
 }
+
+/* Menu horizontal Material + logos */
+.md-tabs {
+    display: flex;
+    align-items: stretch; /* comportement Material par défaut */
+}
+
+/* Forcer les onglets à rester collés à gauche */
+.md-tabs > *:first-child {
+    margin-left: 0;
+}
+
+/* Logos à droite */
+.md-tabs-logos {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto; /* seul cet élément pousse à droite */
+    padding-right: 1rem;
+}
+
+.md-tabs-logo img {
+    height: 28px;
+    transition: all 0.1s ease-in-out;
+}

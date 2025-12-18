@@ -32,32 +32,9 @@
         var mdNav = sidebarPrimary.querySelector(".md-nav");
         if (mdNav) navContainer.appendChild(mdNav);
 
-        // Conteneur logos
-        var logosContainer = document.createElement("div");
-        logosContainer.className = "sidebar-logos-bottom";
-        var sidebarLogos = [
-          {src: "{{ base_url }}/_static/EC_POS.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
-          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
-          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.esa.int/"}
-        ];
-
-        sidebarLogos.forEach(function(l) {
-          var a = document.createElement("a");
-          a.href = l.url;
-          a.target = "_blank";
-          var img = document.createElement("img");
-          img.src = l.src;
-          img.alt = l.alt;
-          img.setAttribute("data-light-src", l.src);
-          img.setAttribute("data-dark-src", l.dark);
-          a.appendChild(img);
-          logosContainer.appendChild(a);
-        });
-
         // Vider sidebar et ajouter navigation + logos
         sidebarPrimary.innerHTML = "";
         sidebarPrimary.appendChild(navContainer);
-        sidebarPrimary.appendChild(logosContainer);
 
         // Switch logos selon thème
         function switchSidebarLogosTheme() {
@@ -71,6 +48,53 @@
         switchSidebarLogosTheme();
         $(".md-option").on("click", function() { setTimeout(switchSidebarLogosTheme, 100); });
         document.documentElement.addEventListener('theme-changed', switchSidebarLogosTheme);
+      }
+
+      // ---- TABS: logos à droite du menu horizontal ----
+      var tabs = document.querySelector(".md-tabs");
+
+      if (tabs) {
+        var tabsLogos = document.createElement("div");
+        tabsLogos.className = "md-tabs-logos";
+
+        var tabsLogosData = [
+          {src: "{{ base_url }}/_static/EC_NEG.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
+          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
+          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.esa.int/"}
+        ];
+
+        tabsLogosData.forEach(function(l) {
+          var a = document.createElement("a");
+          a.href = l.url;
+          a.target = "_blank";
+          a.className = "md-tabs-logo";
+
+          var img = document.createElement("img");
+          img.src = l.src;
+          img.alt = l.alt;
+          img.setAttribute("data-light-src", l.src);
+          img.setAttribute("data-dark-src", l.dark);
+
+          a.appendChild(img);
+          tabsLogos.appendChild(a);
+        });
+
+        tabs.appendChild(tabsLogos);
+
+        // Light / dark
+        function switchTabsLogosTheme() {
+          var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+          var images = tabsLogos.querySelectorAll("img[data-dark-src]");
+          images.forEach(function(img) {
+            img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
+          });
+        }
+
+        switchTabsLogosTheme();
+        $(".md-option").on("click", function() {
+          setTimeout(switchTabsLogosTheme, 100);
+        });
+        document.documentElement.addEventListener("theme-changed", switchTabsLogosTheme);
       }
 
       // ---- FOOTER: logos à droite ----
