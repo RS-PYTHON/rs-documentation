@@ -1,7 +1,7 @@
 site_name: RS-Python
 #site_url: https://rs-python.github.io/rs-documentation/
 # Copyright
-copyright: Copyright &copy; 2024, ESA
+copyright: Copyright &copy; 2024-2026, ESA
 
 theme:
   name: material
@@ -40,7 +40,7 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
-extra_css: [_templates/sidebar_width.css]
+extra_css: [_templates/style.css]
 plugins:
   - search
   - mkdocstrings:
