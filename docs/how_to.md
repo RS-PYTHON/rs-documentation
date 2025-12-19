@@ -54,7 +54,14 @@ poetry install
 Generate and integrate the documentation
 ========================================
 
-From the **rs-documentation directory**, execute the command:
+From the **rs-documentation directory**, run the script *.github/scripts/generate_mkdocs.sh*:
+```shell
+./.github/scripts/generate_mkdocs.sh
+```
+
+This script will automatically scan the Python projects in your environment and generate their documentation. After executing the script, you should see a newly generated *mkdocs.yml* file, that contains the summary used by mkdocs to generate the website.
+
+Once this file is generated, execute the command:
 ```shell
 poetry run mkdocs build
 ```
