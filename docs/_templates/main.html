@@ -69,19 +69,19 @@
         tabs.appendChild(tabsLogos);
 
         // Light / dark
-        function switchTabsLogosTheme() {
-          var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
-          var images = tabsLogos.querySelectorAll("img[data-dark-src]");
-          images.forEach(function(img) {
-            img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
-          });
-        }
+        // function switchTabsLogosTheme() {
+        //   var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+        //   var images = tabsLogos.querySelectorAll("img[data-dark-src]");
+        //   images.forEach(function(img) {
+        //     img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
+        //   });
+        // }
 
-        switchTabsLogosTheme();
-        $(".md-option").on("click", function() {
-          setTimeout(switchTabsLogosTheme, 100);
-        });
-        document.documentElement.addEventListener("theme-changed", switchTabsLogosTheme);
+        // switchTabsLogosTheme();
+        // $(".md-option").on("click", function() {
+        //   setTimeout(switchTabsLogosTheme, 100);
+        // });
+        // document.documentElement.addEventListener("theme-changed", switchTabsLogosTheme);
       }
 
       // ---- FOOTER: logos to the right ----
@@ -105,6 +105,29 @@
         });
         footer.appendChild(footerLogos);
       }
+
+      function switchImagesBasedOnTheme() {
+        var isDarkTheme = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
+        var images = document.querySelectorAll('img[data-dark-src]');
+
+        images.forEach(function(img) {
+          if (isDarkTheme) {
+            img.src = img.getAttribute('data-dark-src');
+          } else {
+            img.src = img.getAttribute('data-light-src');
+          }
+        });
+      }
+
+      // Initial switch
+      switchImagesBasedOnTheme();
+
+      $(".md-option").on("click", function (evt) {
+        setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
+      });
+
+      // If the theme change is triggered by other means
+      document.documentElement.addEventListener('theme-changed', switchImagesBasedOnTheme);
 
     });
   </script>
