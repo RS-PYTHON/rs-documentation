@@ -23,112 +23,87 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
 
-      // ---- SIDEBAR ----
-      var sidebarPrimary = document.querySelector(".md-sidebar--primary");
-      if (sidebarPrimary) {
-        // Navigation container
-        var navContainer = document.createElement("div");
-        navContainer.className = "sidebar-navigation";
-        var mdNav = sidebarPrimary.querySelector(".md-nav");
-        if (mdNav) navContainer.appendChild(mdNav);
+      function initCustomMaterial() {
 
-        // Empty sidebar and add navigation
-        sidebarPrimary.innerHTML = "";
-        sidebarPrimary.appendChild(navContainer);
-      }
-
-      // ---- TABS: logos to the right of the horizontal menu ----
-      var tabs = document.querySelector(".md-tabs");
-
-      if (tabs) {
-        var tabsLogos = document.createElement("div");
-        tabsLogos.className = "md-tabs-logos";
-
-        var tabsLogosData = [
-          {src: "{{ base_url }}/_static/EC_NEG.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
-          {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
-          {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.esa.int/"}
-        ];
-
-        tabsLogosData.forEach(function(l) {
-          var a = document.createElement("a");
-          a.href = l.url;
-          a.target = "_blank";
-          a.className = "md-tabs-logo";
-
-          var img = document.createElement("img");
-          img.src = l.src;
-          img.alt = l.alt;
-          img.setAttribute("data-light-src", l.src);
-          img.setAttribute("data-dark-src", l.dark);
-
-          a.appendChild(img);
-          tabsLogos.appendChild(a);
-        });
-
-        tabs.appendChild(tabsLogos);
-
-        // Light / dark
-        // function switchTabsLogosTheme() {
-        //   var isDark = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
-        //   var images = tabsLogos.querySelectorAll("img[data-dark-src]");
-        //   images.forEach(function(img) {
-        //     img.src = isDark ? img.getAttribute("data-dark-src") : img.getAttribute("data-light-src");
-        //   });
-        // }
-
-        // switchTabsLogosTheme();
-        // $(".md-option").on("click", function() {
-        //   setTimeout(switchTabsLogosTheme, 100);
-        // });
-        // document.documentElement.addEventListener("theme-changed", switchTabsLogosTheme);
-      }
-
-      // ---- FOOTER: logos to the right ----
-      var footer = document.querySelector(".md-footer");
-      if (footer) {
-        var footerLogos = document.createElement("div");
-        footerLogos.className = "footer-logos";
-        var logos = [
-          {src: "{{ base_url }}/_static/AIRBUS_White.png", dark: "{{ base_url }}/_static/AIRBUS_White.png", alt: "Airbus Logo", url: "https://www.airbus.com/en"},
-          {src: "{{ base_url }}/_static/logo_cs_group_white.png", dark: "{{ base_url }}/_static/logo_cs_group_white.png", alt: "CS Group Logo", url: "https://www.csgroup.eu/en/"}
-        ];
-        logos.forEach(function(l) {
-          var a = document.createElement("a");
-          a.href = l.url;
-          a.target = "_blank";
-          var img = document.createElement("img");
-          img.src = l.src; // always dark theme (footer is black)
-          img.alt = l.alt;
-          a.appendChild(img);
-          footerLogos.appendChild(a);
-        });
-        footer.appendChild(footerLogos);
-      }
-
-      function switchImagesBasedOnTheme() {
-        var isDarkTheme = document.querySelectorAll('body[data-md-color-scheme="slate"]').length > 0;
-        var images = document.querySelectorAll('img[data-dark-src]');
-
-        images.forEach(function(img) {
-          if (isDarkTheme) {
-            img.src = img.getAttribute('data-dark-src');
-          } else {
-            img.src = img.getAttribute('data-light-src');
+        // ---- SIDEBAR ----
+        const sidebarPrimary = document.querySelector(".md-sidebar--primary");
+        if (sidebarPrimary && !sidebarPrimary.querySelector(".sidebar-navigation")) {
+          const mdNav = sidebarPrimary.querySelector(".md-nav");
+          if (mdNav) {
+            const navContainer = document.createElement("div");
+            navContainer.className = "sidebar-navigation";
+            mdNav.parentNode.insertBefore(navContainer, mdNav);
+            navContainer.appendChild(mdNav);
           }
-        });
+        }
+
+        // ---- TABS: logos to the right of the horizontal menu ----
+        const tabs = document.querySelector(".md-tabs");
+        if (tabs && !tabs.querySelector(".md-tabs-logos")) {
+
+          const tabsLogos = document.createElement("div");
+          tabsLogos.className = "md-tabs-logos";
+        
+          const tabsLogosData = [
+            {src: "{{ base_url }}/_static/EC_NEG.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
+            {src: "{{ base_url }}/_static/Copernicus_blue.png", dark: "{{ base_url }}/_static/Copernicus_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
+            {src: "{{ base_url }}/_static/ESA_logo_2020_Deep.png", dark: "{{ base_url }}/_static/ESA_logo_2020_White.png", alt: "ESA Logo", url: "https://www.esa.int/"}
+          ];
+
+          tabsLogosData.forEach(l => {
+            const a = document.createElement("a");
+            a.href = l.url;
+            a.target = "_blank";
+            a.className = "md-tabs-logo";
+
+            const img = document.createElement("img");
+            img.src = l.src;
+            img.alt = l.alt;
+            img.setAttribute("data-light-src", l.src);
+            img.setAttribute("data-dark-src", l.dark);
+
+            a.appendChild(img);
+            tabsLogos.appendChild(a);
+          });
+
+          tabs.appendChild(tabsLogos);
+        }
+
+        // ---- FOOTER: logos to the right ----
+        const footer = document.querySelector(".md-footer");
+        if (footer && !footer.querySelector(".footer-logos")) {
+
+          const footerLogos = document.createElement("div");
+          footerLogos.className = "footer-logos";
+
+          const logos = [
+            {src: "{{ base_url }}/_static/AIRBUS_White.png", dark: "{{ base_url }}/_static/AIRBUS_White.png", alt: "Airbus Logo", url: "https://www.airbus.com/en"},
+            {src: "{{ base_url }}/_static/logo_cs_group_white.png", dark: "{{ base_url }}/_static/logo_cs_group_white.png", alt: "CS Group Logo", url: "https://www.csgroup.eu/en/"}
+          ];
+
+          logos.forEach(l => {
+            const a = document.createElement("a");
+            a.href = l.url;
+            a.target = "_blank";
+
+            const img = document.createElement("img");
+            img.src = l.src; // footer toujours sombre
+            img.alt = l.alt;
+
+            a.appendChild(img);
+            footerLogos.appendChild(a);
+          });
+
+          footer.appendChild(footerLogos);
+        }
       }
 
-      // Initial switch
-      switchImagesBasedOnTheme();
+      /* Initial load */
+      initCustomMaterial();
 
-      $(".md-option").on("click", function (evt) {
-        setTimeout(switchImagesBasedOnTheme, 100); // Delay to allow theme change to apply
-      });
-
-      // If the theme change is triggered by other means
-      document.documentElement.addEventListener('theme-changed', switchImagesBasedOnTheme);
-
+      /* Re-run after internal navigation (SPA) */
+      document.addEventListener("md-content-updated", initCustomMaterial);
+    
     });
   </script>
 {% endblock %}
