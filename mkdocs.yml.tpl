@@ -22,6 +22,8 @@ theme:
     - content.code.annotation
     - content.code.copy
   language: en
+  logo: _static/rspython_logo.png
+  favicon: _static/rspython_logo.png
   palette:
     - scheme: default
       toggle:
