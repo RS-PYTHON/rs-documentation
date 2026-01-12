@@ -54,7 +54,6 @@ kubernetes
 lakeFS
 lifecycle
 middleware
-Minio
 misconfiguration
 misconfigurations
 multithreading
@@ -95,6 +94,7 @@ repos
 roadmap
 rs-python
 sde
+SeaweedFS
 sed
 Serco
 sha
