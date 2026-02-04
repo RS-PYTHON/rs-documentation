@@ -109,3 +109,5 @@ $RS_DPR_SERVICE_PYDOCS
     - Wazuh Server installation: rs-infra-core/docs/how-to/Wazuh server install.md
   - Applications Deployment:
     - RS-Server deployment: rs-helm/README.md
+  - Monitor Object Storage access:
+    - Deploy flow collect-obs-logs : rs-client-libraries/docs/quota_monitoring/setting_quota_feature.md
