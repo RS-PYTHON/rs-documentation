@@ -45,47 +45,11 @@ jobs:
           # cloned repositories as the current branch name
           branch_name=${{ github.ref_name }}
 
-          #
-          # Clone public rspy repositories
-
-          git clone https://github.com/RS-PYTHON/rs-server.git
-          (cd rs-server; git checkout $branch_name || git checkout develop)
-
-          git clone https://github.com/RS-PYTHON/rs-client-libraries.git
-          (cd rs-client-libraries; git checkout $branch_name || git checkout develop)
-
-          git clone https://github.com/RS-PYTHON/rs-demo.git
-          (cd rs-demo; git checkout $branch_name || git checkout develop)
-
-          git clone https://github.com/RS-PYTHON/rs-dpr-service.git
-          (cd rs-dpr-service; git checkout $branch_name || git checkout develop)
-
-          ls -all
-
-          # Clone private rspy repositories.
-          # Use the ssh private key from: https://github.com/RS-PYTHON/rs-documentation/settings/secrets/actions
-          # And the public keys from:
-            #   https://github.com/RS-PYTHON/rs-infra-core/settings/keys
-            #   https://github.com/RS-PYTHON/rs-helm/settings/keys
-
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${{ secrets.RS_INFRA_PRIVATE_SSH_KEY }}"
-          git clone --depth 1 git@github.com:RS-PYTHON/rs-infra-core.git
-          cd rs-infra-core
-          git checkout $branch_name || git checkout develop
-          git sparse-checkout init --no-cone
-          echo "/docs/" > .git/info/sparse-checkout
-          echo "/LICENSE" >> .git/info/sparse-checkout
-          echo "/NOTICE.md" >> .git/info/sparse-checkout
-          echo "/README.md" >> .git/info/sparse-checkout
-          git read-tree -mu HEAD
-          ls -all
-          cd ..
-
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${{ secrets.RS_HELM_PRIVATE_SSH_KEY }}"
-          git clone git@github.com:RS-PYTHON/rs-helm.git
-          (cd rs-helm; git checkout $branch_name || git checkout develop)
+          # Clone rspy repositories
+          for repo in rs-server rs-client-libraries rs-demo rs-dpr-service rs-infra-core rs-infra-monitoring rs-workflow-env rs-helm ; do
+            git clone https://github.com/RS-PYTHON/${repo}.git
+            (cd ${repo}; git checkout $branch_name || git checkout develop)
+          done
         working-directory: .
         shell: bash
 

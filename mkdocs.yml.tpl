@@ -1,7 +1,7 @@
 site_name: RS-Python
 #site_url: https://rs-python.github.io/rs-documentation/
 # Copyright
-copyright: Copyright &copy; 2024-2026, ESA
+copyright: Copyright &copy; 2024-2026, Airbus, CS Group
 
 theme:
   name: material
@@ -49,8 +49,8 @@ plugins:
       handlers:
         python:
           options:
-            extra:              
-              separate_modules: true              
+            extra:
+              separate_modules: true
 
 nav:
 - Home:
@@ -110,4 +110,8 @@ $RS_DPR_SERVICE_PYDOCS
   - Applications Deployment:
     - RS-Server deployment: rs-helm/README.md
   - Monitor Object Storage access:
-    - Deploy flow collect-obs-logs : rs-client-libraries/docs/quota_monitoring/setting_quota_feature.md
+    - Deploy flow collect-obs-logs: rs-client-libraries/docs/quota_monitoring/setting_quota_feature.md
+  - Third-party dependencies:
+    - Core infrastructure FOSS: rs-infra-core/NOTICE.md
+    - Monitoring FOSS: rs-infra-monitoring/NOTICE.md
+    - Workflow env. FOSS: rs-workflow-env/NOTICE.md
