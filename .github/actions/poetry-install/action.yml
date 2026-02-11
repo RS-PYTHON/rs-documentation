@@ -32,7 +32,7 @@ runs:
     - uses: ./.github/actions/install-python
     - uses: snok/install-poetry@v1
       with:
-        version: 2.2.1
+        version: 2.3.2
     - run: |
         poetry install ${{ inputs.options }} # don't use quotes around options
       working-directory: ${{ inputs.working-directory }}
