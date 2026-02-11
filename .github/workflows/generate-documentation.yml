@@ -40,6 +40,7 @@ jobs:
           pwd
           ls -all
           cd docs
+          ls -all
 
           # We want to use the same branch name (if it exists) in the other
           # cloned repositories as the current branch name
@@ -55,6 +56,8 @@ jobs:
 
       - name: Install dependencies
         uses: ./.github/actions/poetry-install
+        with:
+          options: '--verbose'
 
       - name: Generate Pydoc in projects
         run: |
