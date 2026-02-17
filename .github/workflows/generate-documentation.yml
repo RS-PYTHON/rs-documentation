@@ -65,7 +65,7 @@ jobs:
         working-directory: .
         shell: bash
 
-      - name: Generate Markdown HTML documentation
+      - name: Deploy the Markdown HTML documentation to GitHub Pages
         run: |
           set -x
           pwd
