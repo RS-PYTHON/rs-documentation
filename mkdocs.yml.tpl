@@ -85,6 +85,10 @@ $RS_CLIENT_LIBRARIES_PYDOCS
 
 - RS-DPR-Service:
   - rs-dpr-service/docs/doc/index.md
+  - User Manual:
+    - rs-dpr-service/docs/doc/users/index.md
+  - Trigger a DPR run: rs-dpr-service/docs/doc/users/trigger.md
+  - Cancel a DPR run: rs-dpr-service/docs/doc/users/cancel.md
   - Python Documentation:
 $RS_DPR_SERVICE_PYDOCS
 
