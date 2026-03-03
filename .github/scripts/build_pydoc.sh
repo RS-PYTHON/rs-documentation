@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2025 CS Group
+# Copyright 2023-2026 Airbus, CS Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ create_documentation_for_generic_project() {
     project_modules_dir=$2
     local -n project_list_of_modules=$3
 
-    # Move to pydoc dir and remove all existing content 
+    # Move to pydoc dir and remove all existing content
     # (making sure we are really in a pydoc folder to avoid unfortunate consequences)
     mkdir -p "$project_pydoc_dir"
     cd $project_pydoc_dir
@@ -188,7 +188,7 @@ build_mkdocs_file_for_generic_project() {
 
     rm -f $mkdocs_file
     cd $pydoc_dir
-    base_for_mkdocs_locations="${project_name}/docs/doc/pydoc/" 
+    base_for_mkdocs_locations="${project_name}/docs/doc/pydoc/"
     for module in "${module_names[@]}"; do
         module_mkdocs=$(create_mkdocs_for_folder $base_for_mkdocs_locations "${module}/" 0 "")
         echo -e "${module_mkdocs}" >> $mkdocs_file
