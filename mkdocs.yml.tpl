@@ -119,3 +119,4 @@ $RS_DPR_SERVICE_PYDOCS
     - Core infrastructure FOSS: rs-infra-core/NOTICE.md
     - Monitoring FOSS: rs-infra-monitoring/NOTICE.md
     - Workflow env. FOSS: rs-workflow-env/NOTICE.md
+  - Dask images: rs-workflow-env/docs/dask_images.md
