@@ -214,6 +214,7 @@ declare -a RS_SERVER_MODULE_LOCATIONS=(
     "${RS_SERVER_MODULES_DIR}/common"
     "${RS_SERVER_MODULES_DIR}/edrs"
     "${RS_SERVER_MODULES_DIR}/frontend"
+    "${RS_SERVER_MODULES_DIR}/osam"
     "${RS_SERVER_MODULES_DIR}/prip"
     "${RS_SERVER_MODULES_DIR}/staging"
 )
@@ -224,6 +225,7 @@ declare -a RS_SERVER_MODULE_NAMES=(
     "rs_server_common"
     "rs_server_edrs"
     "rs_server_frontend"
+    "rs_server_osam"
     "rs_server_prip"
     "rs_server_staging"
 )
