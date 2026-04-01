@@ -1,4 +1,4 @@
-# Copyright 2025 Airbus, CS Group
+# Copyright 2023-2026 Airbus, CS Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,10 +25,36 @@ repos:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
     -   id: check-toml
+    -   id: check-yaml
+
+# Format (black)
+-   repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+    -   id: black
+
+# Format (isort)
+-   repo: https://github.com/PyCQA/isort
+    rev: 8.0.1
+    hooks:
+    -   id: isort
+        args: ["--profile", "black"]
+
+# Format (add trailing commas)
+-   repo: https://github.com/asottile/add-trailing-comma
+    rev: v4.0.0
+    hooks:
+    -   id: add-trailing-comma
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+    -   id: pyupgrade
+        args: [--py313-plus]
 
 - repo: https://github.com/google/addlicense
   rev: v1.2.0
   hooks:
   - id: addlicense
-    files: \.(css|html|sh|yml|yaml)$
-    args: [ "-c", "Airbus, CS Group", "-l", "apache" ]
+    files: \.(css|html|py|sh|yml|yaml)$
+    args: [ "-c", "Airbus, CS Group", "-l", "apache", "-y", "2023-2026" ]
