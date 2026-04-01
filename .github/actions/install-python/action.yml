@@ -13,25 +13,10 @@
 # limitations under the License.
 
 name: python
-description: Install python
-
-inputs:
-  python-version:
-    description: "Python version"
-    required: false
-
+description: Install python with hardcoded version
 runs:
   using: "composite"
   steps:
-
-    # Install default python version
-    - if: ${{ inputs.python-version == '' }}
-      uses: actions/setup-python@v6
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-
-    # Install specified python version
-    - if: ${{ inputs.python-version != '' }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ inputs.python-version }}

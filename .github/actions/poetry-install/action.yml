@@ -19,10 +19,7 @@ inputs:
   options:
     description: "'poetry install' options e.g. '--with dev'"
     required: false
-  rm-plugin-dir:
-    description: "Remove the installed poetry plugin directory that triggers quality issues"
-    required: false
-    default: "false"
+    default:
 
   working-directory:
     description: "the working directory in which poetry is run."
@@ -33,9 +30,6 @@ runs:
   using: "composite"
   steps:
     - uses: ./.github/actions/install-python
-      with:
-        python-version: ${{ inputs.python-version }}
-
     - uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1
       with:
         version: 2.3.2
@@ -45,12 +39,5 @@ runs:
       run: |
         set -x
         poetry install $INPUTS_OPTIONS # don't use quotes around options
-      working-directory: ${{ inputs.working-directory }}
-      shell: bash
-
-    - if: ${{ inputs.rm-plugin-dir == 'true' }}
-      run: |
-        set -x
-        rm -rf .poetry/plugins
       working-directory: ${{ inputs.working-directory }}
       shell: bash

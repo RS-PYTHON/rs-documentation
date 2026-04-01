@@ -6141,7 +6141,7 @@ werkzeug = ">=3.1.6"
 
 [package.source]
 type = "directory"
-url = "../rs-client-libraries"
+url = "docs/rs-client-libraries"
 
 [[package]]
 name = "rs-dpr-service"
@@ -6176,7 +6176,7 @@ uvicorn = ">=0.35.0"
 
 [package.source]
 type = "directory"
-url = "../rs-dpr-service"
+url = "docs/rs-dpr-service"
 
 [[package]]
 name = "rs-server"
@@ -6200,7 +6200,7 @@ rs-server-staging = {path = "services/staging", develop = true}
 
 [package.source]
 type = "directory"
-url = "../rs-server"
+url = "docs/rs-server"
 
 [[package]]
 name = "rs-server-adgs"
@@ -6217,7 +6217,7 @@ rs-server-common = "*"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/adgs"
+url = "docs/rs-server/services/adgs"
 
 [[package]]
 name = "rs-server-cadip"
@@ -6234,7 +6234,7 @@ rs-server-common = "*"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/cadip"
+url = "docs/rs-server/services/cadip"
 
 [[package]]
 name = "rs-server-catalog"
@@ -6253,7 +6253,7 @@ xmltodict = "^1.0.2"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/catalog"
+url = "docs/rs-server/services/catalog"
 
 [[package]]
 name = "rs-server-common"
@@ -6298,7 +6298,7 @@ xmltodict = "^1.0.2"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/common"
+url = "docs/rs-server/services/common"
 
 [[package]]
 name = "rs-server-frontend"
@@ -6320,7 +6320,7 @@ uvicorn = ">=0.35.0"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/frontend"
+url = "docs/rs-server/services/frontend"
 
 [[package]]
 name = "rs-server-osam"
@@ -6340,7 +6340,7 @@ rs-server-common = "*"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/osam"
+url = "docs/rs-server/services/osam"
 
 [[package]]
 name = "rs-server-prip"
@@ -6357,7 +6357,7 @@ rs-server-common = "*"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/prip"
+url = "docs/rs-server/services/prip"
 
 [[package]]
 name = "rs-server-staging"
@@ -6383,7 +6383,7 @@ xmltodict = "^1.0.2"
 
 [package.source]
 type = "directory"
-url = "../rs-server/services/staging"
+url = "docs/rs-server/services/staging"
 
 [[package]]
 name = "ruamel-yaml"
