@@ -24,58 +24,6 @@ env:
   PYTHON_VERSION: 3.13.12
 
 jobs:
-  generate-quality-report:
-    runs-on: ubuntu-latest
-    name: Quality report (sonarqube)
-    permissions:
-      pull-requests: write # for: phwt/sonarqube-quality-gate-action
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_PROJECT_KEY: RS-PYTHON_rs-documentation
-      SONAR_HOST_URL: https://sonarcloud.io
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0 # Full history for SCM and branch analysis
-
-      - name: Run SonarCloud Scanner
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7
-        with:
-          # See doc: https://docs.sonarsource.com/sonarqube-cloud
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=rs-python
-            -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.sources=.
-            -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.python.version=${{ env.PYTHON_VERSION }}
-
-      - name: Wait for quality gate result
-        run: sleep 5
-
-      - name: Report quality gate result in the pull request comment
-        uses: phwt/sonarqube-quality-gate-action@e8842ff65b97bfa4fd4effe3ab0909f568d16e91 # v1
-        id: quality-gate-result
-        with:
-          sonar-project-key: ${{ env.SONAR_PROJECT_KEY }}
-          sonar-host-url: ${{ env.SONAR_HOST_URL }}
-          sonar-token: ${{ env.SONAR_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref_name }}
-
-      - name: Output result
-        run: |
-          echo "Project status: ${{ steps.quality-gate-result.outputs.project-status }}"
-          echo "Quality gate result: ${{ steps.quality-gate-result.outputs.quality-gate-result }}"
-
-      - id: check-gate
-        name: Check quality gate status
-        uses: sonarsource/sonarqube-quality-gate-action@cb3ed20f9fec62b4c3b8ad9e77656c6adaade913 # master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
   generate-documentation:
     name: Generate documentation
     runs-on: ubuntu-latest

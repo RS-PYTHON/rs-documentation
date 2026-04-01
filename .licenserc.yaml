@@ -12,26 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: python
-description: Install python
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: Airbus, CS Group
+    copyright-year: '2023-2026'
 
-inputs:
-  python-version:
-    description: "Python version"
-    required: false
+  paths-ignore:
+    - '**/*.csv'
+    - '**/*.env'
+    - '**/*.json'
+    - '**/*.lock'
+    - '**/*.md'
+    - '**/*.raw'
+    - '**/Dockerfile*'
+    - '**/.gitignore'
+    - '.gitmodules'
+    - '.safety-project.ini'
+    - '.trivyignore'
+    - 'LICENSE'
+    - 'NOTICE'
 
-runs:
-  using: "composite"
-  steps:
-
-    # Install default python version
-    - if: ${{ inputs.python-version == '' }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    # Install specified python version
-    - if: ${{ inputs.python-version != '' }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ inputs.python-version }}
+  comment: on-failure

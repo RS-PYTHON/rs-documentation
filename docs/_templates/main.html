@@ -15,7 +15,7 @@
 -->
 
 <!-- NOTE: currently we only use dark-themed logos because they are positioned in the header and footer,
- that don't change color when the theme is switched. But if this is updated, white-themed logos are 
+ that don't change color when the theme is switched. But if this is updated, white-themed logos are
  available in _static, just replace the src file whenever it's necessary. -->
 
 {% extends "base.html" %}
@@ -47,7 +47,7 @@
 
           const tabsLogos = document.createElement("div");
           tabsLogos.className = "md-tabs-logos";
-        
+
           const tabsLogosData = [
             {src: "{{ base_url }}/_static/EC_NEG.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
             {src: "{{ base_url }}/_static/copernicus_logo_white.png", dark: "{{ base_url }}/_static/copernicus_logo_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
@@ -107,7 +107,7 @@
 
       /* Re-run after internal navigation (SPA) */
       document.addEventListener("md-content-updated", initCustomMaterial);
-    
+
     });
   </script>
 {% endblock %}
