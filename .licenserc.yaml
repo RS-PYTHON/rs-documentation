@@ -32,5 +32,8 @@ header:
     - '.trivyignore'
     - 'LICENSE'
     - 'NOTICE'
+    - '**/*.svg'
+    - 'spellchecker_ignore.txt'
+    - 'mkdocs.yml.tpl'
 
   comment: on-failure
