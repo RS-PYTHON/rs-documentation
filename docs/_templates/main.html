@@ -1,21 +1,21 @@
 <!--
- Copyright 2023-2025 Airbus, CS Group
+Copyright 2023-2026 Airbus, CS Group
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 -->
 
 <!-- NOTE: currently we only use dark-themed logos because they are positioned in the header and footer,
- that don't change color when the theme is switched. But if this is updated, white-themed logos are 
+ that don't change color when the theme is switched. But if this is updated, white-themed logos are
  available in _static, just replace the src file whenever it's necessary. -->
 
 {% extends "base.html" %}
@@ -23,7 +23,11 @@
 {% block extrahead %}
   {{ super() }}
 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script
+    src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs"
+    crossorigin="anonymous"
+  ></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
 
@@ -47,7 +51,7 @@
 
           const tabsLogos = document.createElement("div");
           tabsLogos.className = "md-tabs-logos";
-        
+
           const tabsLogosData = [
             {src: "{{ base_url }}/_static/EC_NEG.png", dark: "{{ base_url }}/_static/EC_NEG.png", alt: "EU Logo", url: "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/european-space-programme_en"},
             {src: "{{ base_url }}/_static/copernicus_logo_white.png", dark: "{{ base_url }}/_static/copernicus_logo_white.png", alt: "Copernicus Logo", url: "https://www.copernicus.eu/en"},
@@ -107,7 +111,7 @@
 
       /* Re-run after internal navigation (SPA) */
       document.addEventListener("md-content-updated", initCustomMaterial);
-    
+
     });
   </script>
 {% endblock %}
