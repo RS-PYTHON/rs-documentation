@@ -14,11 +14,10 @@
 
 name: Generate documentation
 
-# TODO: when to generate the doc ?
-# For now, only for new git tags (including hierarchical tags like v1.0/beta), or manually
+# When to generate the doc ? Currently, on each push and with manual trigger
 on:
-    push:
-    workflow_dispatch:
+  push:
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: 3.13.12
