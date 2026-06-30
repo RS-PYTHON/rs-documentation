@@ -90,7 +90,10 @@ create_documentation_for_module() {
     echo -e "\n## List of modules\n" >> $index_file
 
     # === CREATE A MD FILE FOR EACH PY FILE ===
-    for file in $(find $module_location -type f -name "*.py" | grep -v "__init__"); do
+    # Skip rs_workflows/adf_conversion: vendored third-party scripts (ESA EOPF) that
+    # are not an importable package and pull heavy optional deps, so mkdocstrings
+    # (griffe) cannot collect them.
+    for file in $(find $module_location -type f -name "*.py" -not -path "*/adf_conversion/*" | grep -v "__init__"); do
         # Remove everything before the module location in the file name we are handling
         python_file=$(realpath "$file" --relative-to "$module_location")
 
