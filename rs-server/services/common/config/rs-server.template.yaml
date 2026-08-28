@@ -1,0 +1,207 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# NOTE: this file contains configuration values for the auxip/cadip search and the staging.
+# It is used only in local mode. In cluster mode, we use the RSPY__TOKEN__ env vars instead.
+
+template:
+  domain:
+  service:
+    name:
+    url:
+  authentication:
+    auth_type: oauth2
+    token_url:
+    grant_type: password
+    scope:
+    username: test
+    password: test
+    client_id: client_id
+    client_secret: client_secret
+    authorization:
+
+external_data_sources:
+  adgs:
+    domain: mockup-station-adgs.processing.svc.cluster.local
+    service:
+      name: auxip
+      url: http://127.0.0.1:5000
+    authentication:
+      token_url: http://127.0.0.1:5000/oauth2/token
+      authorization: Basic test
+    trusteddomains:
+    - trusted.domain1.eu
+    - trusted.domain2.eu
+
+  adgs2:
+    domain: mockup-station-adgs2.processing.svc.cluster.local
+    service:
+      name: auxip
+      url: http://127.0.0.1:5001
+    authentication:
+      token_url: http://127.0.0.1:5001/oauth2/token
+      authorization: Basic test
+
+  # CADIP stations. MPS has Authorization but no scope. MTI has scope but no Authorization
+  # the following one is for tests onlys
+  cadip:
+    domain: mockup-station-cadip-cadip.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5000
+    authentication:
+      #token_url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080/oauth2/token
+      token_url: http://127.0.0.1:5000/oauth2/token
+      scope: sss
+  ins:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5002
+    authentication:
+      #token_url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080/oauth2/token
+      token_url: http://127.0.0.1:5002/oauth2/token
+      scope: sss
+  mps:
+    domain: mockup-station-cadip-mps.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5003
+    authentication:
+      token_url: http://127.0.0.1:5004/oauth2/token
+      authorization: Basic test
+  mti:
+    domain: mockup-station-cadip-mti.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5004
+    authentication:
+      token_url: http://127.0.0.1:5004/oauth2/token
+      scope: openid
+  nsg:
+    domain: mockup-station-cadip-nsg.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5005
+    authentication:
+      token_url: http://127.0.0.1:5005/oauth2/token
+  sgs:
+    domain: mockup-station-cadip-sgs.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5006
+    authentication:
+      token_url: http://127.0.0.1:5006/oauth2/token
+
+  # CADIP stations for sessions. MPS has Authorization but no scope. MTI has scope but no Authorization
+  # the following one is for tests onlys
+  cadip_session:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5000
+    authentication:
+      #token_url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080/oauth2/token
+      token_url: http://127.0.0.1:5000/oauth2/token
+      scope: sss
+
+  ins_session:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5001
+    authentication:
+      #token_url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080/oauth2/token
+      token_url: http://127.0.0.1:5001/oauth2/token
+      scope: sss
+  mps_session:
+    domain: mockup-station-cadip-mps.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5002
+    authentication:
+      token_url: http://127.0.0.1:5002/oauth2/token
+      authorization: Basic test
+  mti_session:
+    domain: mockup-station-cadip-mti.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5003
+    authentication:
+      token_url: http://127.0.0.1:5003/oauth2/token
+      scope: openid
+  nsg_session:
+    domain: mockup-station-cadip-nsg.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5004
+    authentication:
+      token_url: http://127.0.0.1:5004/oauth2/token
+  sgs_session:
+    domain: mockup-station-cadip-sgs.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5005
+    authentication:
+      token_url: http://127.0.0.1:5005/oauth2/token
+
+  # LTA
+  lta:
+    domain: mockup-lta-lta.processing.svc.cluster.local
+    service:
+      name: lta
+      url: http://127.0.0.1:5006
+    authentication:
+      token_url: http://127.0.0.1:5006/oauth2/token
+      authorization: Basic test
+
+  # PRIP (Production Services)
+  s1a:
+    domain: mockup-prip-s1a.processing.svc.cluster.local
+    service:
+      name: prip
+      url: http://127.0.0.1:5007
+    authentication:
+      token_url: http://127.0.0.1:5007/oauth2/token
+      authorization: Basic test
+  s2b:
+    domain: mockup-prip-s2b.processing.svc.cluster.local
+    service:
+      name: prip
+      url: http://127.0.0.1:5008
+    authentication:
+      token_url: http://127.0.0.1:5008/oauth2/token
+      authorization: Basic test
+
+  # External S3 for tests
+  s3test:
+    service:
+      name: s3
+      url: https://s3.gra.io.cloud.ovh.net
+    domain: s3.gra.io.cloud.ovh.net
+    authentication:
+      auth_type: s3
+      access_key: ${access_key}
+      secret_key: ${secret_key}
+
+  # CDSE (S3)
+  cdse:
+    service:
+      name: s3
+      url: https://eodata.dataspace.copernicus.eu
+    domain: eodata.dataspace.copernicus.eu
+    authentication:
+      auth_type: s3
+      access_key: example_s3_access_key
+      secret_key: example_s3_secret_key

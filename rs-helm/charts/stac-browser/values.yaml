@@ -1,0 +1,146 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -- Namespace for the deployment
+namespace: processing
+
+# -- Number of replicas for the deployment
+replicaCount: 1
+
+service:
+  # -- Port for the service
+  port: 8080
+
+app:
+  # -- Port for the application
+  port: 8080
+  # -- OIDC End Point
+  oidc_endpoint: ""
+  # -- OIDC Realm
+  oidc_realm: ""
+  # -- OIDC Public Client ID
+  oidc_client_id: ""
+  # -- Allows or disallows loading and browsing external STAC data
+  SB_allowExternalAccess: "false"
+  # -- Detect locale from user
+  SB_detectLocaleFromBrowser: "true"
+  # -- Allows search engines to better crawl STAC Browser. Must be set to 'history' for OIDC
+  SB_historyMode: history
+  # -- URL of the STAC catalog
+  SB_catalogUrl: https://subdomain.example.com/catalog/
+  # -- Social sharing
+  SB_socialSharing: email,bsky,mastodon
+  # -- maxEntriesPerPage - see https://github.com/radiantearth/stac-browser/pull/563 and https://github.com/radiantearth/stac-browser/releases/tag/v4.0.0
+  SB_maxEntriesPerPage: 1000
+
+probe:
+  startup::
+    # -- Path for the liveness probe
+    path: /
+    # -- Port for the liveness probe
+    port: 8080
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 2
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 1
+  liveness:
+    # -- Path for the liveness probe
+    path: /
+    # -- Port for the liveness probe
+    port: 8080
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 5
+  readiness:
+    # -- Path for the readiness probe
+    path: /
+    # -- Port for the readiness probe
+    port: 8080
+    # -- InitialDelaySeconds for the readiness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the readiness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the readiness probe
+    timeoutSeconds: 5
+
+image:
+  # -- Image registry
+  registry: ghcr.io
+  # -- Image repository
+  repository: rs-python
+  # -- Image name
+  name: stac-browser
+  # -- Image version, can be a tag or a digest
+  version: sha256:b9c55d13d3bb52e0f2ebdfd532c68cf03d2bde0eac4170f26d29e082b5fcea5d
+  # -- Image pull policy
+  PullPolicy: IfNotPresent
+
+ingress:
+  # -- Enabled/Disable ingress
+  enabled: false
+  issuer:
+    # -- Ingress Issuer type
+    type: cluster-issuer
+    # -- Ingress Issuer name
+    name: letsencrypt-prod
+  # -- Ingress host name.
+  host: stac-browser.subdomain.example.com
+  # -- Ingress path for the application
+  # Note that because of bug https://github.com/radiantearth/stac-browser/issues/479 the path is forced to /
+  path: /
+
+gatewayapi:
+  # -- Enabled/Disable Gateway API
+  enabled: false
+  # -- HTTPRoute parentRefs, can either be a ListenerSet or a Gateway
+  # Example :
+  # parentRefs:
+  # - group: gateway.networking.k8s.io
+  #   kind: ListenerSet
+  #   name: stac-browser
+  #   namespace: gateway-system
+  parentRefs: []
+  # -- HTTPRoute host name
+  host: subdomain.example.com
+  # -- HTTPRoute path for the application
+  # Example :
+  # path:
+  #   - /
+  path: []
+
+resources:
+  request:
+    # -- Pod memory request
+    ram: "256Mi"
+    # -- Pod CPU request
+    cpu: "100m"
+  limit:
+    # -- Pod memory limit
+    ram: "1000Mi"
+    # -- Pod CPU limit
+    cpu: "500m"
+
+# -- Pod affinity
+affinity: {}
+
+# -- Pod toleration
+tolerations: []
+
+# -- Pod initContainers
+initContainers: []

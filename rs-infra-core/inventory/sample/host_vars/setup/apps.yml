@@ -1,0 +1,585 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package_paths:
+- apps
+
+grafana_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+kubectl_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+prometheus_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+oauth2_proxy_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+jupyterhub_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+apikeymanager_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+apikeymanager_cookieSecret: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters') }}"
+osam_oidc_client_secret: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters') }}"
+# https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview/#generating-a-cookie-secret
+oauth2_proxy_cookieSecret: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') | b64encode }}"
+neuvector_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+rsserver_cookieSecret: "{{ lookup('password', '/dev/null length=64 chars=ascii_letters') }}"
+prefect_api_oidc_client_secret: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+oauth2_proxy_provider_ca_files: ""
+
+apikeymanager:
+  database:
+    name: apikeymanagerdb
+    host: postgresql-cluster-rw.database.svc.cluster.local
+    username: apikeymanager
+    password: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+    secret: apikeymanager-database-password
+
+cinder:
+  provisioner: cinder.csi.openstack.org
+
+certmanager:
+  clusterissuer:
+    acme:
+      email: user@example.com
+
+grafana:
+  admin:
+    user: admin
+    password: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+  # Configure here additional plugins to install in Grafana
+  # The url must point to a ZIP filed, not necessarily signed
+  # The name must be the plugin ID
+  # Leave [] if you don't want to install any plugins
+  custom_plugins: []
+    # - name: example
+    #   version: 1.2.3
+    #   url: https://example.com/example.zip
+  smtp:
+    enabled: "true"
+    from_address: test@example.com
+    from_name: Test
+    host: HOST:port
+  smtp_credentials:
+    password: PASSWORD
+    user: test@example.com
+  serviceMonitor:
+    interval: 30s
+    scrapeTimeout: 10s
+
+ingress:
+  annotations: {}
+
+postgresql:
+  postgres_user:
+    password: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+  replication_password: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+  replication_user: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+  bucket: "{{ cluster_name }}-psql"
+  instances: 3
+
+keycloak:
+  database:
+    host: postgresql-cluster-rw.database.svc.cluster.local
+    name: keycloak
+    username: keycloak
+    password: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+    secret: keycloak-database-password
+  replicaCount: 1
+  proxy:
+    mode: edge
+  logLevel: info
+  realm:
+    name: rspy
+  smtp:
+    from: test@example.com
+    host: HOST
+    password: PASSWORD
+    port: 25
+    user: test@example.com
+    ssl: true
+    starttls: false
+  adminCliRealm:
+    client_id: admin-cli-realm
+    secret_id: "{{ lookup('password', '/dev/null length=60 chars=ascii_letters') }}"
+
+prefect3server:
+  ops:
+    # Note "-server" is automatically appended at the end of the name's value during the dpeloyment
+    # so "prefect-copernicus" will be deployed as "prefect-copernicus-server"
+    name: prefect-copernicus
+    namespace: processing
+    subDomain: processing
+    allowedRoles: "role:RS-JUPYTER-USER"
+    database:
+      host: postgresql-cluster-rw.database.svc.cluster.local
+      # Database name must be only composed of lowercase alphanumerics characters
+      name: prefectcopernicus
+      username: prefect
+      password: "{{ lookup('password', '/dev/null length=30 chars=ascii_letters') }}"
+
+prefect3worker:
+  monitoring:
+    name: monitoring-k8s-pool
+    namespace: processing
+    number: 2
+  integrated:
+    name: processing-integrated-k8s-pool
+    namespace: processing
+    number: 2
+  sandbox:
+    name: processing-sandbox-k8s-pool
+    namespace: processing
+    number: 2
+
+rs_s3quotamonitoring:
+  database:
+    host: postgresql-cluster-rw.database.svc.cluster.local
+    name: s3_quota
+    password: password
+    secret: s3quotamonitoring-database-password
+    username: postgresuserquotamonitoring
+
+rs_performance_indicator:
+  database:
+    host: postgresql-cluster-rw.database.svc.cluster.local
+    name: performance
+    password: test
+    username: test
+    secret: pi-database-password
+
+rs_server:
+  database:
+    host: postgresql-cluster-rw.database.svc.cluster.local
+    name: pygeoapi
+    password: test
+    username: test
+    secret: pygeoapi-database-password
+  full_domain: "{{ platform_domain_name }}"
+
+rs_server_catalog:
+  database:
+    host: pgstac-cluster-rw.database.svc.cluster.local
+    name: catalog
+    password: password
+    username: catalog
+    cluster:
+      instances: 3
+  # -- Additionnals STAC extensions
+  extensions:
+    - https://stac-extensions.github.io/eo/v1.1.0/schema.json
+    - https://stac-extensions.github.io/sat/v1.0.0/schema.json
+    - https://stac-extensions.github.io/projection/v1.1.0/schema.json
+    - https://stac-extensions.github.io/processing/v1.2.0/schema.json
+    - https://stac-extensions.github.io/product/v0.1.0/schema.json
+    - https://stac-extensions.github.io/sar/v1.0.0/schema.json
+    - https://stac-extensions.github.io/raster/v1.1.0/schema.json
+    - https://stac-extensions.github.io/authentication/v1.1.0/schema.json
+    - https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json
+    - https://stac-extensions.github.io/timestamps/v1.1.0/schema.json
+  # -- Additionnals queryables
+  queryables:
+    - eo:snow_cover
+    - sat:absolute_orbit
+    - sat:relative_orbit
+    - processing:level
+    - processing:facility
+    - processing:datetime
+    - processing:version
+    - product:type
+    - product:timeliness
+    - product:timeliness_category
+    - sar:instrument_mode
+    - published
+    - expires
+    - unpublished
+
+rs_server_staging:
+  dask:
+    # See how to calculate the following numbers
+    # https://github.com/RS-PYTHON/rs-infra-core/blob/develop/docs/how-to/Dask-gateway.md#create-a-dask-cluster-for-staging-with-options-option-3
+    worker_cores: 1
+    worker_memory: 2.0
+    worker_count: 3
+    cluster_max_cores: 4 # = ( worker_count * worker_cores ) + 1
+    cluster_max_workers: 4 # = worker_count + 1
+    cluster_max_memory: 8589934592 # = ( worker_count + 1 ) ∗  worker_memory * 2^30
+
+rs_server_station_secrets:
+  stations:
+    adgs:
+      service:
+        name: auxip
+        url: http://mockup-station-adgs.processing.svc.cluster.local:8080
+      domain: mockup-station-adgs.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-adgs.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    adgs2:
+      service:
+        name: auxip
+        url: http://mockup-station-adgs2.processing.svc.cluster.local:8080
+      domain: mockup-station-adgs2.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-adgs2.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    cadip:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-cadip.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-cadip.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-cadip.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: null
+    mps:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-mps.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-mps.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-mps.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    mti:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-mti.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-mti.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-mti.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: openid
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: null
+    nsg:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-nsg.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-nsg.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-nsg.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: null
+    sgs:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-sgs.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-sgs.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-sgs.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: null
+    ssc:
+      service:
+        name: cadip
+        url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080
+      domain: mockup-station-cadip-ins.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-station-cadip-ins.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: null
+    lta:
+      service:
+        name: lta
+        url: http://mockup-lta-lta.processing.svc.cluster.local:8080
+      domain: mockup-lta-lta.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-lta-lta.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s1a:
+      service:
+        name: prip
+        url: http://mockup-prip-s1a.processing.svc.cluster.local:8080
+      domain: mockup-prip-s1a.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s1a.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s1c:
+      service:
+        name: prip
+        url: http://mockup-prip-s1c.processing.svc.cluster.local:8080
+      domain: mockup-prip-s1c.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s1c.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s1d:
+      service:
+        name: prip
+        url: http://mockup-prip-s1d.processing.svc.cluster.local:8080
+      domain: mockup-prip-s1d.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s1d.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s2b:
+      service:
+        name: prip
+        url: http://mockup-prip-s2b.processing.svc.cluster.local:8080
+      domain: mockup-prip-s2b.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s2b.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s2c:
+      service:
+        name: prip
+        url: http://mockup-prip-s2c.processing.svc.cluster.local:8080
+      domain: mockup-prip-s2c.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s2c.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s3a:
+      service:
+        name: prip
+        url: http://mockup-prip-s3a.processing.svc.cluster.local:8080
+      domain: mockup-prip-s3a.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s3a.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s3b:
+      service:
+        name: prip
+        url: http://mockup-prip-s3b.processing.svc.cluster.local:8080
+      domain: mockup-prip-s3b.processing.svc.cluster.local
+      authentication:
+        auth_type: oauth2
+        token_url: http://mockup-prip-s3b.processing.svc.cluster.local:8080/oauth2/token
+        grant_type: password
+        scope: null
+        username: test
+        password: test
+        client_id: client_id
+        client_secret: client_secret
+        authorization: Basic test
+    s3rspy:
+      service:
+        name: s3
+        url: https://s3.gra.io.cloud.ovh.net
+      domain: s3.gra.io.cloud.ovh.net
+      authentication:
+        auth_type: s3
+        access_key: example_s3_access_key
+        secret_key: example_s3_secret_key
+    creodias:
+      service:
+        name: odata
+        url: https://datahub.creodias.eu/odata/v1/Assets
+      domain: datahub.creodias.eu
+
+rs_station_mockup:
+  adgs:
+    adgs:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/ADGS/
+    adgs2:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/ADGS/
+  cadip:
+    cadip:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/CADIP/
+    mti:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/CADIP/
+    sgs:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/CADIP/
+  prip:
+    s1a:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/PRIP/
+    s2b:
+      bucketName: rspython-ops-catalog-playground
+      bucketPath: stations/PRIP/
+
+rs_server_osam:
+  provider:
+    secret:
+      # Create a new API key or re-use the one you used to set up the ovh managed k8s
+      # AK, AS and CK on https://www.ovh.com/auth/api/createToken
+      # with GET, POST, PUT, DELETE on *
+      ovh_endpoint: "ovh-eu"
+      ovh_application_key: ""
+      ovh_application_secret: ""
+      ovh_consumer_key: ""
+      # OVH Service (used in endpoint /cloud/project/<ovh_service>/user )
+      # Aka projet id from web console https://www.ovh.com/manager/#/public-cloud/pci/projects/<project_id>/
+      ovh_service: ""
+
+rspy:
+  tmp_bucket: "{{ cluster_name }}-temp"
+  catalog_bucket: "{{ cluster_name }}-catalog"
+
+loki:
+  retention: 1460h
+  bucket:
+    chunks: "{{ cluster_name }}-loki-chunks"
+    ruler: "{{ cluster_name }}-loki-ruler"
+
+grafanatempo:
+  metaMonitoring:
+    serviceMonitor:
+      interval: 30s
+      scrapeTimeout: 10s
+  s3:
+    bucket: "{{ cluster_name }}-tempo"
+
+velero:
+  bucket: "{{ cluster_name }}-velero"
+  bckStorageLoc:
+    name: "{{ cluster_name }}-velero"
+  volSnapLoc:
+    name: aws-default
+
+jupyterhub:
+  ops:
+    name: jupyterhub
+    namespace: processing
+    subDomain: processing
+    allowedGroups:
+      - RS-JUPYTER-USER
+    adminGroups:
+      - RS-ADMIN
+    jupyterhub_crypt_key: "{{ lookup('password', '/dev/null', length=64, chars=['ascii_letters']) }}"
+    services:
+      daskgateway:
+        apitoken: "{{ lookup('password', '/dev/null', length=64, chars=['ascii_letters']) }}"
+        apiurl: http://hub.processing.svc.cluster.local:8081/api
+      daskstaging:
+        apitoken: "{{ lookup('password', '/dev/null', length=64, chars=['ascii_letters']) }}"
+      metrics:
+        apitoken: "{{ lookup('password', '/dev/null', length=64, chars=['ascii_letters']) }}"
+      # -- OpenTelemetry
+      otel:
+        # -- Trace request headers with OpenTelemetry ?
+        trace_headers: false
+        # -- Trace request bodies and response contents with OpenTelemetry ?
+        trace_body: false
+
+# You might need to create a docker registry secret
+# to retrieve private container image from the
+# GitHub Container Registry : ghcr.io
+# Refer to the doc in /docs/how-to/GitHub Container Registry.md
+github:
+  registrySecret:
+    name: ghcr-k8s
+    registry: ghcr.io
+    username: YOUR_GITHUB_USERNAME
+    password: YOUR_GITHUB_TOKEN
+
+# To use the vault the first time you have
+# to manually create an empty secret named
+# generated_inventory_vars in the vault UI
+# and set the upload_existing to false and upload_backup to true
+vault:
+  # Download the inventory from the vault
+  download_inventory_vars: false
+  # Path to the inventory in the vault ending without "/"
+  path: null
+  # Token to access the vault
+  token: null
+  # Upload newly generated inventory to the vault
+  upload_backup: false
+  # Upload existing inventory to the vault
+  upload_existing: false
+  # URL of the vault
+  url: https://vault.coprs.esa-copernicus.eu

@@ -1,0 +1,111 @@
+    - rs_server_adgs:
+      - adgs_retriever: rs-server/docs/doc/pydoc/rs_server_adgs/adgs_retriever.md
+      - adgs_utils: rs-server/docs/doc/pydoc/rs_server_adgs/adgs_utils.md
+      - index: rs-server/docs/doc/pydoc/rs_server_adgs/index.md
+      - api:
+        - adgs_search: rs-server/docs/doc/pydoc/rs_server_adgs/api/adgs_search.md
+      - fastapi:
+        - adgs_app: rs-server/docs/doc/pydoc/rs_server_adgs/fastapi/adgs_app.md
+        - adgs_routers: rs-server/docs/doc/pydoc/rs_server_adgs/fastapi/adgs_routers.md
+
+    - rs_server_cadip:
+      - cadip_retriever: rs-server/docs/doc/pydoc/rs_server_cadip/cadip_retriever.md
+      - cadip_utils: rs-server/docs/doc/pydoc/rs_server_cadip/cadip_utils.md
+      - index: rs-server/docs/doc/pydoc/rs_server_cadip/index.md
+      - api:
+        - cadip_search: rs-server/docs/doc/pydoc/rs_server_cadip/api/cadip_search.md
+      - fastapi:
+        - cadip_app: rs-server/docs/doc/pydoc/rs_server_cadip/fastapi/cadip_app.md
+        - cadip_routers: rs-server/docs/doc/pydoc/rs_server_cadip/fastapi/cadip_routers.md
+
+    - rs_server_catalog:
+      - app: rs-server/docs/doc/pydoc/rs_server_catalog/app.md
+      - authentication_catalog: rs-server/docs/doc/pydoc/rs_server_catalog/authentication_catalog.md
+      - index: rs-server/docs/doc/pydoc/rs_server_catalog/index.md
+      - main: rs-server/docs/doc/pydoc/rs_server_catalog/main.md
+      - utils: rs-server/docs/doc/pydoc/rs_server_catalog/utils.md
+      - data_management:
+        - data_lifecycle: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/data_lifecycle.md
+        - geometry_manager: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/geometry_manager.md
+        - s3_manager: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/s3_manager.md
+        - stac_manager: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/stac_manager.md
+        - timestamps_extension: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/timestamps_extension.md
+        - user_handler: rs-server/docs/doc/pydoc/rs_server_catalog/data_management/user_handler.md
+      - middleware:
+        - catalog_middleware: rs-server/docs/doc/pydoc/rs_server_catalog/middleware/catalog_middleware.md
+        - request_manager: rs-server/docs/doc/pydoc/rs_server_catalog/middleware/request_manager.md
+        - response_manager: rs-server/docs/doc/pydoc/rs_server_catalog/middleware/response_manager.md
+
+    - rs_server_common:
+      - fastapi_app: rs-server/docs/doc/pydoc/rs_server_common/fastapi_app.md
+      - footprint_facility: rs-server/docs/doc/pydoc/rs_server_common/footprint_facility.md
+      - index: rs-server/docs/doc/pydoc/rs_server_common/index.md
+      - middlewares: rs-server/docs/doc/pydoc/rs_server_common/middlewares.md
+      - rspy_models: rs-server/docs/doc/pydoc/rs_server_common/rspy_models.md
+      - settings: rs-server/docs/doc/pydoc/rs_server_common/settings.md
+      - stac_api_common: rs-server/docs/doc/pydoc/rs_server_common/stac_api_common.md
+      - stac_cql2: rs-server/docs/doc/pydoc/rs_server_common/stac_cql2.md
+      - authentication:
+        - apikey: rs-server/docs/doc/pydoc/rs_server_common/authentication/apikey.md
+        - authentication: rs-server/docs/doc/pydoc/rs_server_common/authentication/authentication.md
+        - authentication_to_external: rs-server/docs/doc/pydoc/rs_server_common/authentication/authentication_to_external.md
+        - external_authentication_config: rs-server/docs/doc/pydoc/rs_server_common/authentication/external_authentication_config.md
+        - keycloak_util: rs-server/docs/doc/pydoc/rs_server_common/authentication/keycloak_util.md
+        - oauth2: rs-server/docs/doc/pydoc/rs_server_common/authentication/oauth2.md
+        - token_auth: rs-server/docs/doc/pydoc/rs_server_common/authentication/token_auth.md
+      - data_retrieval:
+        - eodag_provider: rs-server/docs/doc/pydoc/rs_server_common/data_retrieval/eodag_provider.md
+        - provider: rs-server/docs/doc/pydoc/rs_server_common/data_retrieval/provider.md
+      - ftp_handler:
+        - ftp_handler: rs-server/docs/doc/pydoc/rs_server_common/ftp_handler/ftp_handler.md
+      - s3_storage_handler:
+        - s3_storage_config: rs-server/docs/doc/pydoc/rs_server_common/s3_storage_handler/s3_storage_config.md
+        - s3_storage_handler: rs-server/docs/doc/pydoc/rs_server_common/s3_storage_handler/s3_storage_handler.md
+      - utils:
+        - cql2_filter_extension: rs-server/docs/doc/pydoc/rs_server_common/utils/cql2_filter_extension.md
+        - init_opentelemetry: rs-server/docs/doc/pydoc/rs_server_common/utils/init_opentelemetry.md
+        - logging: rs-server/docs/doc/pydoc/rs_server_common/utils/logging.md
+        - utils: rs-server/docs/doc/pydoc/rs_server_common/utils/utils.md
+        - utils2: rs-server/docs/doc/pydoc/rs_server_common/utils/utils2.md
+        - pytest:
+          - pytest_authentication_utils: rs-server/docs/doc/pydoc/rs_server_common/utils/pytest/pytest_authentication_utils.md
+          - pytest_common_tests: rs-server/docs/doc/pydoc/rs_server_common/utils/pytest/pytest_common_tests.md
+          - pytest_utils: rs-server/docs/doc/pydoc/rs_server_common/utils/pytest/pytest_utils.md
+
+    - rs_server_frontend:
+      - index: rs-server/docs/doc/pydoc/rs_server_frontend/index.md
+      - main: rs-server/docs/doc/pydoc/rs_server_frontend/main.md
+
+    - rs_server_osam:
+      - index: rs-server/docs/doc/pydoc/rs_server_osam/index.md
+      - main: rs-server/docs/doc/pydoc/rs_server_osam/main.md
+      - tasks: rs-server/docs/doc/pydoc/rs_server_osam/tasks.md
+      - utils:
+        - cloud_provider_api_handler: rs-server/docs/doc/pydoc/rs_server_osam/utils/cloud_provider_api_handler.md
+        - keycloak_handler: rs-server/docs/doc/pydoc/rs_server_osam/utils/keycloak_handler.md
+        - tools: rs-server/docs/doc/pydoc/rs_server_osam/utils/tools.md
+
+    - rs_server_prip:
+      - index: rs-server/docs/doc/pydoc/rs_server_prip/index.md
+      - prip_retriever: rs-server/docs/doc/pydoc/rs_server_prip/prip_retriever.md
+      - prip_utils: rs-server/docs/doc/pydoc/rs_server_prip/prip_utils.md
+      - api:
+        - prip_search: rs-server/docs/doc/pydoc/rs_server_prip/api/prip_search.md
+      - fastapi:
+        - prip_app: rs-server/docs/doc/pydoc/rs_server_prip/fastapi/prip_app.md
+        - prip_routers: rs-server/docs/doc/pydoc/rs_server_prip/fastapi/prip_routers.md
+
+    - rs_server_staging:
+      - index: rs-server/docs/doc/pydoc/rs_server_staging/index.md
+      - jobs_table: rs-server/docs/doc/pydoc/rs_server_staging/jobs_table.md
+      - main: rs-server/docs/doc/pydoc/rs_server_staging/main.md
+      - staging_endpoints_validation: rs-server/docs/doc/pydoc/rs_server_staging/staging_endpoints_validation.md
+      - processors:
+        - authentication: rs-server/docs/doc/pydoc/rs_server_staging/processors/authentication.md
+        - processor_staging: rs-server/docs/doc/pydoc/rs_server_staging/processors/processor_staging.md
+        - tasks: rs-server/docs/doc/pydoc/rs_server_staging/processors/tasks.md
+      - utils:
+        - asset_info: rs-server/docs/doc/pydoc/rs_server_staging/utils/asset_info.md
+        - rspy_models: rs-server/docs/doc/pydoc/rs_server_staging/utils/rspy_models.md
+        - tools: rs-server/docs/doc/pydoc/rs_server_staging/utils/tools.md
+

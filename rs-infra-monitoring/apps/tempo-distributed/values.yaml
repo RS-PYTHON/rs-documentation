@@ -1,0 +1,209 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors:
+        - service-graphs
+        - span-metrics
+        - local-blocks
+    global:
+      max_bytes_per_trace: 500000000
+
+tempo:
+  structuredConfig:
+    server:
+      grpc_server_max_recv_msg_size: 1073741824
+      grpc_server_max_send_msg_size: 1073741824
+    querier:
+      frontend_worker:
+        grpc_client_config:
+          max_recv_msg_size: 1073741824
+          max_send_msg_size: 1073741824
+
+compactor:
+  config:
+    compaction:
+      block_retention: 2160h # 90 days
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  resources:
+    limits:
+      memory: 8Gi
+    requests:
+      memory: 512Mi
+
+distributor:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 50
+  config:
+    max_attribute_bytes: 4096
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 150m
+    requests:
+      memory: 50Mi
+
+ingester:
+  persistence:
+    enabled: true
+    storageClass: csi-cinder-high-speed-retain
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: ingester
+              app.kubernetes.io/instance: tempo-distributed
+              app.kubernetes.io/name: tempo
+          topologyKey: kubernetes.io/hostname
+  resources:
+    limits:
+      memory: 4Gi
+    requests:
+      memory: 3Gi
+
+metricsGenerator:
+  enabled: true
+  kind: StatefulSet
+  persistence:
+    enabled: true
+    storageClass: csi-cinder-high-speed-retain
+  config:
+    storage:
+      remote_write:
+        - url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/prometheus/api/v1/write
+    processor:
+      local_blocks:
+        filter_server_spans: false
+        flush_to_storage: true
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  resources:
+    limits:
+      memory: 3Gi
+    requests:
+      memory: 256Mi
+
+querier:
+  config:
+    frontend_worker:
+      grpc_client_config:
+        max_recv_msg_size: 1073741824
+        max_send_msg_size: 1073741824
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  resources:
+    limits:
+      memory: 8Gi
+    requests:
+      memory: 8Gi
+
+queryFrontend:
+  grpc_client_config:
+    max_recv_msg_size: 1073741824
+    max_send_msg_size: 1073741824
+  query:
+    enabled: true
+    resources:
+      limits:
+        memory: 6Mi
+      requests:
+        memory: 2Mi
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-s3-credentials
+  resources:
+    limits:
+      memory: 5Gi
+    requests:
+      memory: 5Gi
+
+traces:
+  otlp:
+    http:
+      enabled: true
+    grpc:
+      enabled: true
+
+server:
+  grpc_server_max_recv_msg_size: 1073741824
+  grpc_server_max_send_msg_size: 1073741824
+
+storage:
+  trace:
+    backend: s3
+    s3:
+      access_key: ${S3_ACCESS_KEY}
+      secret_key: ${S3_SECRET_KEY}
+      bucket: "{{ grafanatempo.s3.bucket }}"
+      endpoint: "{{ s3.endpoint | regex_replace('http(.)?://', '') }}"
+      region: "{{ s3.region }}"
+      insecure: false
+
+memcached:
+  replicas: 2
+  extraArgs:
+    - "-m 512"
+  nodeSelector:
+    node-role.kubernetes.io/infra: ""
+  resources:
+    limits:
+      memory: 1024Mi
+    requests:
+      memory: 64Mi
+
+metaMonitoring:
+  serviceMonitor:
+    enabled: true
+    interval: "{{ grafanatempo.metaMonitoring.serviceMonitor.interval }}"
+    scrapeTimeout: "{{ grafanatempo.metaMonitoring.serviceMonitor.scrapeTimeout }}"

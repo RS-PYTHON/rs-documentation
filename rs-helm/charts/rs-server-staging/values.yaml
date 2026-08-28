@@ -1,0 +1,230 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -- Namespace for the deployment
+namespace: processing
+
+# -- Number of replicas for the deployment
+replicaCount: 1
+
+service:
+  # -- Port for the service
+  port: 8080
+
+app:
+  # -- Port for the application
+  port: 8000
+  # -- URL suffix for the application. The same value should also be included into ingress.path
+  docsUrl: /docs
+  # -- Config directory for the application
+  confDir: /app/conf
+  # -- URL of the API Key Manager service (internal)
+  uacUrl: http://apikeymanager.processing.svc.cluster.local:8000/auth/check_key
+  # -- OAuth2 attributes to read and save, as a comma-separated str
+  oauth2Attributes: monthly-download-volume-limit-gb
+  # -- URL of the API Key Manager home page (public)
+  uacHomeUrl: https://apikeymanager.subdomain.example.com/docs
+  # -- Catalog pod address
+  endpointCatalog: http://rs-server-catalog.processing.svc.cluster.local:8080
+  # -- Object Storage bucket for the catalog
+  catalogBucket: rs-cluster-catalog
+  # -- Catalog publish timeout (in seconds)
+  catalogPublishTimeout: 120
+  # -- Catalog publish max retries
+  catalogPublishMaxRetries: 3
+  # -- Catalog publish retry delay (in seconds)
+  catalogPublishRetryDelay: 30
+  # -- Cadip server pod address
+  endpointCadip: https://subdomain.example.com/cadip
+  # -- Adgs server pod address
+  endpointAdgs: https://subdomain.example.com/auxip
+  # -- Prip server pod address
+  endpointPrip: https://subdomain.example.com/prip
+  # -- Osam pod address
+  endpointOsam: https://subdomain.example.com/osam
+  # -- Access token validity duration (in seconds)
+  AccessTokenLifetime: 1200
+  # -- Refresh token validity duration (in seconds)
+  RefreshTokenLifetime: 3600
+  # -- Duration before expiration of the access token
+  NbSecsBeforeAccessTokenExpire: 60
+  # -- Duration before expiration of the refresh token
+  NbSecsBeforeRefreshTokenExpire: 60
+  # -- List of configured stations (expect a secret with the same name)
+  station:
+    adgs:
+      type: auxip
+    adgs2:
+      type: auxip
+    s1a:
+      type: prip
+    s2b:
+      type: prip
+    cadip:
+      type: cadip
+    sgs:
+      type: cadip
+    mti:
+      type: cadip
+    s3rspy:
+      type: s3
+
+dask:
+  # -- Dask gateway address
+  gateway_address: http://traefik-dask-gateway.dask-gateway.svc.cluster.local
+  # -- Dask gateway auth type
+  gateway_auth_type: jupyterhub
+  # -- Jupyter API Token when dask.jupyterhub=jupyterhub
+  jupyterhub_api_token: JUPYTER_API_TOKEN_HERE
+  # -- Dask cluster name for staging
+  clusterName: dask-staging
+
+probe:
+  startup:
+    # -- Path for the liveness probe
+    path: /_mgmt/ping
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 20
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 2
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 1
+  liveness:
+    # -- Path for the liveness probe
+    path: /_mgmt/ping
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 5
+  readiness:
+    # -- Path for the readiness probe
+    path: /_mgmt/ping
+    # -- Port for the readiness probe
+    port: 8000
+    # -- InitialDelaySeconds for the readiness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the readiness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the readiness probe
+    timeoutSeconds: 5
+
+# -- Pod affinity
+affinity: {}
+
+# -- Pod toleration
+tolerations: []
+
+# -- Pod initContainers
+initContainers: []
+
+postgres:
+  # -- PostgreSQL port
+  port: "5432"
+  # -- PostgreSQL database name
+  db: rspydemo
+  # -- PostgreSQL service URL
+  host: postgresql-cluster-rw.database.svc.cluster.local
+  secret:
+    # -- Username to authenticate with the PostgreSQL service
+    user: test
+    # -- Password to authenticate with the PostgreSQL service
+    pass: test
+
+auth:
+  secret:
+    # -- OIDC End Point
+    oidc_endpoint: ""
+    # -- OIDC Realm
+    oidc_realm: ""
+    # -- OIDC CLient ID
+    oidc_client_id: ""
+    # -- OIDC Secret used to sync user info from Keycloak
+    oidc_client_secret: ""
+    # -- Random string used to encode cookie-based HTTP sessions in SessionMiddleware
+    cookie_secret: ""
+
+image:
+  # -- Image registry
+  registry: ghcr.io
+  # -- Image repository
+  repository: rs-python
+  # -- Image name
+  name: rs-server-staging
+  # -- Image version, can be a tag or a digest
+  version: "1.0a12"
+  # -- Image pull policy
+  PullPolicy: IfNotPresent
+
+ingress:
+  # -- Enabled/Disable ingress
+  enabled: false
+  issuer:
+    # -- Ingress Issuer type
+    type: cluster-issuer
+    # -- Ingress Issuer name
+    name: letsencrypt-prod
+  # -- Ingress host name
+  host: subdomain.example.com
+  # -- Ingress path for the application
+  path:
+    - /processes
+    - /jobs
+
+gatewayapi:
+  # -- Enabled/Disable Gateway API
+  enabled: false
+  # -- HTTPRoute parentRefs, can either be a ListenerSet or a Gateway
+  # Example :
+  # parentRefs:
+  # - group: gateway.networking.k8s.io
+  #   kind: ListenerSet
+  #   name: mylistenerset
+  #   namespace: processing
+  parentRefs: []
+  # -- HTTPRoute host name
+  host: subdomain.example.com
+  # -- HTTPRoute path for the application
+  # Example :
+  # path:
+  #   - /processes
+  #   - /jobs
+  path: []
+
+resources:
+  request:
+    # -- Pod memory request
+    ram: "256Mi"
+    # -- Pod CPU request
+    cpu: "100m"
+  limit:
+    # -- Pod memory limit
+    ram: "1000Mi"
+    # -- Pod CPU limit
+    cpu: "500m"
+
+tempo:
+  # -- Grafana tempo endpoint.
+  endpoint: http://alloy.monitoring.svc.cluster.local:4317
+
+otel:
+  # -- Trace request headers with OpenTelemetry ?
+  trace_headers: false
+  # -- Trace request bodies and response contents with OpenTelemetry ?
+  trace_body: false

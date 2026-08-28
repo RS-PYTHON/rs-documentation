@@ -1,0 +1,778 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# THIS FILE WAS AUTOMATICALLY CREATED FROM:
+#  - rs-server/services/adgs/config/adgs_search_config.template.yaml
+#  - rs-server/resources/sync_config_files.py
+# DON'T MODIFY IT DIRECTLY !
+
+collections:
+- id: adgs
+  station: adgs
+  query: null
+  stac_extensions: []
+  title: All from 'adgs' station
+  description: All from 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2
+  station: adgs2
+  query: null
+  stac_extensions: []
+  title: All from 'adgs2' station
+  description: All from 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_aux_pp2
+  station: adgs
+  query:
+    productType: AUX_PP2
+  stac_extensions: []
+  title: AUX_PP2 'adgs' station
+  description: AUX_PP2 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_ecmwfd_pdmc
+  station: adgs
+  query:
+    productType: OPER_AUX_ECMWFD_PDMC
+  stac_extensions: []
+  title: OPER_AUX_ECMWFD_PDMC 'adgs' station
+  description: OPER_AUX_ECMWFD_PDMC 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_obmemc
+  station: adgs
+  query:
+    productType: OPER_AUX_OBMEMC
+  stac_extensions: []
+  title: OPER_AUX_OBMEMC 'adgs' station
+  description: OPER_AUX_OBMEMC 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_obmemc_pdmc
+  station: adgs
+  query:
+    productType: OPER_AUX_OBMEMC_PDMC
+  stac_extensions: []
+  title: OPER_AUX_OBMEMC_PDMC 'adgs' station
+  description: OPER_AUX_OBMEMC_PDMC 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_preorb_opod
+  station: adgs
+  query:
+    productType: OPER_AUX_PREORB_OPOD
+  stac_extensions: []
+  title: OPER_AUX_PREORB_OPOD 'adgs' station
+  description: OPER_AUX_PREORB_OPOD 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_resorb_opod
+  station: adgs
+  query:
+    productType: OPER_AUX_RESORB_OPOD
+  stac_extensions: []
+  title: OPER_AUX_RESORB_OPOD 'adgs' station
+  description: OPER_AUX_RESORB_OPOD 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_aux_resorb_opods
+  station: adgs
+  query:
+    productType: OPER_AUX_RESORB_OPODs
+  stac_extensions: []
+  title: OPER_AUX_RESORB_OPODs 'adgs' station
+  description: OPER_AUX_RESORB_OPODs 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_mpl_orbpre
+  station: adgs
+  query:
+    productType: OPER_MPL_ORBPRE
+  stac_extensions: []
+  title: OPER_MPL_ORBPRE 'adgs' station
+  description: OPER_MPL_ORBPRE 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs_oper_mpl_orbsct
+  station: adgs
+  query:
+    productType: OPER_MPL_ORBSCT
+  stac_extensions: []
+  title: OPER_MPL_ORBSCT 'adgs' station
+  description: OPER_MPL_ORBSCT 'adgs' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_aux_pp2
+  station: adgs2
+  query:
+    productType: AUX_PP2
+  stac_extensions: []
+  title: AUX_PP2 'adgs2' station
+  description: AUX_PP2 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_ecmwfd_pdmc
+  station: adgs2
+  query:
+    productType: OPER_AUX_ECMWFD_PDMC
+  stac_extensions: []
+  title: OPER_AUX_ECMWFD_PDMC 'adgs2' station
+  description: OPER_AUX_ECMWFD_PDMC 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_obmemc
+  station: adgs2
+  query:
+    productType: OPER_AUX_OBMEMC
+  stac_extensions: []
+  title: OPER_AUX_OBMEMC 'adgs2' station
+  description: OPER_AUX_OBMEMC 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_obmemc_pdmc
+  station: adgs2
+  query:
+    productType: OPER_AUX_OBMEMC_PDMC
+  stac_extensions: []
+  title: OPER_AUX_OBMEMC_PDMC 'adgs2' station
+  description: OPER_AUX_OBMEMC_PDMC 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_preorb_opod
+  station: adgs2
+  query:
+    productType: OPER_AUX_PREORB_OPOD
+  stac_extensions: []
+  title: OPER_AUX_PREORB_OPOD 'adgs2' station
+  description: OPER_AUX_PREORB_OPOD 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_resorb_opod
+  station: adgs2
+  query:
+    productType: OPER_AUX_RESORB_OPOD
+  stac_extensions: []
+  title: OPER_AUX_RESORB_OPOD 'adgs2' station
+  description: OPER_AUX_RESORB_OPOD 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_aux_resorb_opods
+  station: adgs2
+  query:
+    productType: OPER_AUX_RESORB_OPODs
+  stac_extensions: []
+  title: OPER_AUX_RESORB_OPODs 'adgs2' station
+  description: OPER_AUX_RESORB_OPODs 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_mpl_orbpre
+  station: adgs2
+  query:
+    productType: OPER_MPL_ORBPRE
+  stac_extensions: []
+  title: OPER_MPL_ORBPRE 'adgs2' station
+  description: OPER_MPL_ORBPRE 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/
+- id: adgs2_oper_mpl_orbsct
+  station: adgs2
+  query:
+    productType: OPER_MPL_ORBSCT
+  stac_extensions: []
+  title: OPER_MPL_ORBSCT 'adgs2' station
+  description: OPER_MPL_ORBSCT 'adgs2' station
+  license: other
+  extent:
+    spatial:
+      bbox:
+      - - -180
+        - -82.85
+        - 180
+        - 82.82
+    temporal:
+      interval:
+      - - '2024-06-12T02:57:21.459000Z'
+        - '2024-08-22T11:30:12.767000Z'
+  links:
+  - rel: license
+    href: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
+    title: Legal notice on the use of Copernicus Sentinel Data and Service Information
+    type: application/pdf
+  - rel: describedby
+    href: https://sentiwiki.copernicus.eu/web/copernicus-operations#CopernicusOperations-AuxiliaryDataGathering
+    title: Auxiliary Data
+    type: text/html
+  providers:
+  - name: European Union/ESA/Copernicus
+    roles:
+    - producer
+    - licensor
+    url: https://sentiwiki.copernicus.eu/web/sentinel-1
+  - name: Reference System
+    roles:
+    - host
+    url: https://home.rs-python.eu/

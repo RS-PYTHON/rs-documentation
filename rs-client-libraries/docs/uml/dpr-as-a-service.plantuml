@@ -1,0 +1,74 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml dpr-as-a-service
+
+actor John
+
+entity JupyterLab_Python_3.13 as Jupyter
+entity Prefect_Python_3.13 as Prefect
+entity DPR_service_Python_3.11 as DPR
+collections Catalog
+
+activate Jupyter
+activate Prefect
+activate DPR
+activate Catalog
+
+John -> Jupyter: Edit/Run flow in notebook
+
+Jupyter -> Prefect: Run flow
+
+Prefect -> DPR: GET /dpr/processes/{processor}
+DPR -> DPR: dask submit:\neopf trigger tasktable
+DPR --> Prefect: tasktable
+
+Prefect -> Prefect: generate EOPF payload
+
+Prefect -> DPR: POST /dpr/processes/{processor}/execution(payload)
+DPR --> Prefect: acknowledge (job_id)
+DPR -> DPR: dask async processing
+
+loop until_complete
+  Prefect -> DPR: GET /dpr/jobs/{job_id}
+  DPR --> Prefect: progress (%)
+end
+
+Prefect -> Catalog: POST item(s)
+
+alt S3L1
+  Prefect -> Prefect: generate quicklooks
+  Prefect -> Catalog: PATCH item(s)
+end
+
+Prefect --> Jupyter: flow result
+Jupyter --> John: flow result
+
+newpage manual_dismiss
+
+John -> Jupyter: Edit/Run test in notebook
+
+Jupyter -> Jupyter: generate EOPF payload
+
+Jupyter -> DPR: POST /dpr/processes/{processor}/execution(payload)
+DPR --> Jupyter: acknowledge (job_id)
+DPR -> DPR: dask async processing
+
+Jupyter -> DPR: DELETE /dpr/jobs/{job_id}
+DPR -> DPR: retrieve dask client
+DPR -> DPR: retrieve dask future
+DPR -> DPR: cancel dask future
+DPR --> Jupyter: acknowledge (job_id, status=dismissed)
+
+@enduml

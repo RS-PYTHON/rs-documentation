@@ -1,0 +1,151 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+general_configuration:
+  logging:
+    level: DEBUG
+  # setup a basic logging configuration
+  triggering__use_basic_logging: true
+  # Wait before stopping the dask cluster, usefull for localCluster to access the dashboard
+  triggering__wait_before_exit: 10
+  # Export the dask graph for variables at writing time
+  dask__export_graphs: ./reports/graphs
+   # breakpoints: activate intermediate data dump
+   # WRITE mode : write the entire outputs EOProducts of the ProcessingUnit in the zarr associated storage
+   # FORCE_WRITE mode : Same as WRITE but overload existing breakpoint
+   # RETRIEVE mode: replace the computed output of the ProcessingUnit by a disc read product
+   # SKIP mode: do nothing
+
+workflow:
+- name: s3_l0_processor
+  # Activate or not this unit, if not active its outputs will not be available
+  active : true
+  # python module to import from
+  module: l0.s3.s3_l0_processor
+  processing_unit: S3L0Processor
+  # input products IDs
+  inputs:
+    CADUS: S3ACADUS
+
+  outputs:
+    doris_dop:
+      DORDOP
+
+  adfs:
+    osf: OSF
+    fro: FRO
+    # session_info: SSI
+
+  parameters:
+    acquisition_report_output_path: ./output_params/s1
+    streaming_mode: false
+    temporary_path: ./output_params/tmp
+
+
+I/O:
+  # input products descriptions and access parameters
+  input_products:
+  - id: S3ACADUS
+    path: s3://${PREFECT_BUCKET_NAME}/stations/CADIP/test-l0-develop/S3A_20250612034536048530/
+    store_type: cadu
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  adfs:
+
+  - id: OSF
+    path : s3://${PREFECT_BUCKET_NAME}/stations/ADGS/test-l0-develop/unzip/S3A_AX___OSF_AX_20160216T192404_99991231T235959_20240624T085540___________________EUM_O_AL_001.SEN3/S3A_OPER_MPL_ORBSCT_20160216T192404_99999999T999999_0007.EOF
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  - id: FRO
+    path : s3://${PREFECT_BUCKET_NAME}/stations/ADGS/test-l0-develop/unzip/S3A_AX___FRO_AX_20250609T000000_20250619T000000_20250612T064635___________________EUM_O_AL_001.SEN3/S3A_OPER_MPL_ORBRES_20250609T000000_20250619T000000_0001.EOF
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  # - id: SSI
+  #   path : s3://${PREFECT_BUCKET_NAME}/stations/CADIP/test-l0-develop/...
+  #   store_params:
+  #     # s3_secret_alias: s3_cluster # see secrets.json
+  #     storage_options:
+  #       key: ${S3_ACCESSKEY_CLUSTER}
+  #       secret: ${S3_SECRETKEY_CLUSTER}
+  #       client_kwargs:
+  #         endpoint_url: ${S3_ENDPOINT_CLUSTER}
+  #         region_name: ${S3_REGION_CLUSTER}
+
+
+  output_products:
+  - id: DORDOP
+    path: ${OUTPUT_DIR}/S3A_20250612034536048530
+    type: folder
+    store_type: zarr
+    opening_mode: "CREATE_OVERWRITE"
+    store_params:
+      # s3_secret_alias: s3_local_or_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY}
+        secret: ${S3_SECRETKEY}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT}
+          region_name: ${S3_REGION}
+
+breakpoints: []
+
+# Dask context configuration, see eopf.daskconfig.dask_context_manager
+dask_context:
+  cluster_type: gateway
+  cluster_config:
+    address: ${DASK_GATEWAY_ADDRESS}
+    reuse_cluster: ${DASK_CLUSTER_INSTANCE}
+    auth:
+      type: jupyterhub
+      api_token: ${JUPYTERHUB_API_TOKEN}
+    auth_local_mode: # auth for local mode
+      type: basic
+      username: ${LOCAL_DASK_USERNAME}
+      password: ${LOCAL_DASK_PASSWORD}
+
+  # Activate the report file writing in this file
+  performance_report_file: ./reports/report.html
+
+# Any secret files to be loaded in the secrets dictionary of EOConfiguration
+secret:
+  - ../secrets.json
+
+# Any logging file(s) to load to the EOLogging facility
+logging: ../logging_config.yaml
+
+# Any config file(s) to load to the EOConfiguration facility, general_configuration and env variables will overload them
+config:
+  - ./l0_processor_configuration.yaml
+  - ../cadu_configuration.yaml

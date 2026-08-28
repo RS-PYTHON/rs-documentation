@@ -1,0 +1,346 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Set CI mode flag with a default (can be overridden via -e private_registry=true)
+- name: Use managed private docker registry (default false)
+  set_fact:
+    private_registry: "{{ (private_registry | default(false)) | bool }}"
+
+- name: Install app
+  block:
+    - name: "{{ package_name }} - {{ app_name }} | Check whether kustomization.yaml file exists"
+      stat:
+        path: "{{ app_dir }}/kustomization.yaml"
+      delegate_to: bastion
+      register: kustomization_file
+
+    - name: "{{ package_name }} - {{ app_name }} | Fail if no kustomization file found"
+      fail:
+        msg: "No kustomization.yaml file found in {{ app_dir }}. Documentation available at https://github.com/RS-PYTHON/rs-infra-core/blob/develop/docs/installation.md"
+      when: not kustomization_file.stat.exists
+
+    - name: "{{ package_name }} - {{ app_name }} | Include vars from {{ kustomization_file.stat.path }}"
+      include_vars:
+        file: "{{ kustomization_file.stat.path }}"
+        name: kustomization
+      delegate_to: bastion
+
+    - name: "{{ package_name  }} - {{ app_name }} | Check whether .helm_repository_config.yaml exists"
+      stat:
+        path: "{{ app_dir }}/.helm_repository_config.yaml"
+      register: repository_config
+      delegate_to: bastion
+
+    - name: "{{ package_name  }} - {{ app_name }} | Include vars from .helm_repository_config.yaml"
+      include_vars:
+        file: "{{ app_dir }}/.helm_repository_config.yaml"
+      when: repository_config.stat.exists
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Create tmp directory for k8s resources"
+      tempfile:
+        state: directory
+        suffix: "k8s_resources_{{ app_name }}"
+      register: resources_dir
+      delegate_to: bastion
+      check_mode: false
+
+    - name: "{{ package_name }} - {{ app_name }} | Template and send resources to remote"
+      template:
+        src: "{{ item }}"
+        dest: "{{ resources_dir.path }}/{{ item | basename }}"
+      with_fileglob: "{{ app_dir }}/*"
+      when:
+        - item not in ['.helm_repository_config.yaml', 'resources.txt']
+      delegate_to: bastion
+      check_mode: false
+
+    - name: "{{ package_name }} - {{ app_name }} | Copy subdirectories to remote"
+      copy:
+        src: "{{ app_dir }}/{{ item.path }}"
+        dest: "{{ resources_dir.path }}"
+      with_community.general.filetree: "{{ app_dir }}/"
+      when:
+        - item.state == 'directory'
+      delegate_to: bastion
+      check_mode: false
+
+    - name: "{{ package_name }} - {{ app_name }} | Pull charts from private repositories"
+      shell: |
+        helm pull \
+        --untar --untardir {{ resources_dir.path }}/charts \
+        --repo {{ item.0.repo }} {{ item.0.name }} \
+        {{ "--version " + item.0.version if item.0.version is defined else omit }} \
+        {{ "--username " + item.1.username if item.1.username is defined else omit }} \
+        {{ "--password " + item.1.password if item.1.password is defined else omit }}
+      loop: "{{ kustomization.helmCharts | product(helm_repositories) }}"
+      when:
+        - repository_config.stat.exists
+        - helm_repositories is defined
+        - kustomization.helmCharts is defined
+        - item.0.repo == item.1.name
+      delegate_to: bastion
+      check_mode: false
+
+    - name: "{{ package_name }} - {{ app_name }} | Deploy resources"
+      shell: >
+        kustomize build --enable-helm {{ resources_dir.path }} \
+        | yq eval 'select(.metadata.annotations."helm.sh/hook" != "test" and .metadata.annotations."helm.sh/hook" != "test-success")' - \
+        {% if private_registry | bool %} \
+        | sed -E '/image:/ {
+          /image: (docker.io\/)?([a-z0-9\-]+\/[a-z0-9\-]+)(:[^@ ]+)?(@sha256:[a-f0-9]{64})?/ {
+            s|image: (docker.io\/)?([a-z0-9\-]+\/[a-z0-9\-]+)(:[^@ ]+)?(@sha256:[a-f0-9]{64})?|image: {{ registry.harbor_url | regex_replace('^https?://', '') }}/proxycache/\2\3\4|
+            b
+          }
+          /^image: [a-z0-9\-]+\/[a-z0-9\-]+(:[^@ ]+)?(@sha256:[a-f0-9]{64})?$/ {
+            s|^image: ([a-z0-9\-]+\/[a-z0-9\-]+)(:[^@ ]+)?(@sha256:[a-f0-9]{64})?|image: {{ registry.harbor_url | regex_replace('^https?://', '') }}/proxycache/\1\2\3|
+            b
+          }
+          /^image: [a-z0-9\-]+(:[^@ ]+)?(@sha256:[a-f0-9]{64})?$/ {
+            s|^image: ([a-z0-9\-]+)(:[^@ ]+)?(@sha256:[a-f0-9]{64})?|image: {{ registry.harbor_url | regex_replace('^https?://', '') }}/proxycache/\1\2\3|
+          }
+        }' \
+        | yq eval 'select(.kind == "Pod") |= .spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "Deployment") |= .spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "StatefulSet") |= .spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "DaemonSet") |= .spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "Job") |= .spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "CronJob") |= .spec.jobTemplate.spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "Grafana") |= .spec.deployment.spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}] |
+            select(.kind == "ReplicaSet") |= .spec.template.spec.imagePullSecrets += [{"name": "harbor-pull-secret"}]' - \
+        {% endif %} \
+        | kubectl apply -f - \
+        {% if ansible_check_mode and not app_name.startswith('crds') and app_name != 'namespaces' %} \
+          --dry-run=server \
+        {% endif %} \
+        --server-side \
+        --force-conflicts \
+        -o yaml \
+        {% if not app_name.startswith('networkpol') %} \
+          -l app.kubernetes.io/instance={{ app_name }}
+        {% endif %}
+      tags:
+        - cleanup
+      register: result
+      delegate_to: bastion
+      check_mode: false
+      retries: 5
+      delay: 15
+      until: >
+        (result.rc == 0) or
+        (result.stderr is search('500|502|503|Service Unavailable|timeout|timed out|deadline exceeded|Client.Timeout'))
+
+    - name: "{{ package_name }} - {{ app_name }} | reset facts"
+      set_fact:
+        resources: []
+        jobs: {"resources": []}
+        pods: {"resources": []}
+        deployments: {"resources": []}
+        statefulsets: {"resources": []}
+        daemonsets: {"resources": []}
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Cleanup deployed resources YAML"
+      set_fact:
+        # cleanup the yaml to fix invalid CRD definitions before parsing
+        cleaned_resources_yaml: >-
+          {{
+            (result.stdout | default(''))
+            | regex_replace('(?m)^([ ]*)- =$' , '\1- "="')
+            | regex_replace('(?m)^([ ]*)- =~$', '\1- "=~"')
+          }}
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Extract deployed resources"
+      set_fact:
+        resources: >-
+          {{
+            [] if (cleaned_resources_yaml | default('') | trim) == ''
+            else (cleaned_resources_yaml | from_yaml_all | list)
+          }}
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Collect detailed deployed resources and write them into resources_full.json"
+      copy:
+        content: "{{ resources }}"
+        dest: "{{ resources_dir.path }}/resources_full.json"
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Extract resources summary"
+      shell:
+        cat {{ resources_dir.path }}/resources_full.json \
+          | jq -r '.[].items[] | .kind + "." + .apiVersion + "@" + .metadata.name'
+          | sed -e 's|[./]v[^/@]*@|/|g'
+      register: resources_summary
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Write resources.txt"
+      copy:
+        content: "{{ resources_summary.stdout | default('') }}\n"
+        dest: "{{ app_dir }}/resources.txt"
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Wait for deployed resources readiness (when asked)"
+      include_tasks: wait_ready.yaml
+      args:
+        apply:
+          delegate_to: bastion
+      # kubectl apply -o yaml does not produce the exact same output when applying one resource or several ones
+      # make sure our resources list handles all cases
+      loop: >-
+        {{
+          resources
+          | map('community.general.json_query', "items || [@]")
+          | flatten
+          | list
+        }}
+      loop_control:
+        label: "{{ item.kind }}/{{ item.metadata.name }}"
+      when: item.kind in ['CustomResourceDefinition', 'Job', 'Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'Certificate', 'Cluster', 'ClusterIssuer', 'ScheduledBackup', 'Keycloak', 'KeycloakRealmImport']
+
+  rescue:
+    - name: "{{ package_name }} - {{ app_name }} | Show resources"
+      debug:
+        var: resources
+      when:
+        - resources is defined
+        - resources | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Show jobs status"
+      debug:
+        var: jobs.resources
+      when:
+        - jobs is defined
+        - jobs.resources | default([]) | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Get pods of each failed job"
+      kubernetes.core.k8s_info:
+        kind: Pod
+        label_selectors:
+          - "job-name={{ item.metadata.name }}"
+      loop: "{{ jobs.resources }}"
+      register: job_pods
+      when:
+        - jobs is defined
+        - jobs.resources | default([]) | length > 0
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Get logs of pods from failed jobs"
+      kubernetes.core.k8s_log:
+        name: "{{ item.metadata.name }}"
+        namespace: "{{ item.metadata.namespace }}"
+        all_containers: true
+      loop: "{{ job_pods.results | map(attribute='resources') | flatten }}"
+      when:
+        - job_pods is defined
+        - (job_pods.results | default([]) | map(attribute='resources') | flatten | length) > 0
+      ignore_errors: true
+      register: job_logs
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Show jobs logs"
+      debug:
+        var: job_logs
+      when:
+        - jobs is defined
+        - jobs.resources | default([]) | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Show pods status"
+      debug:
+        var: pods.resources
+      when:
+        - pods is defined
+        - pods.resources | default([]) | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Get logs of each pod"
+      kubernetes.core.k8s_log:
+        name: "{{ item.metadata.name }}"
+        namespace: "{{ item.metadata.namespace }}"
+        all_containers: true
+      loop: "{{ pods.resources }}"
+      when:
+        - pods is defined
+        - pods.resources | default([]) | length > 0
+      ignore_errors: true
+      register: pod_logs
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Show pods logs"
+      debug:
+        var: pod_logs
+      when:
+        - pods is defined
+        - pods.resources | default([]) | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Show deployments status"
+      debug:
+        var: deployments.resources
+      when:
+        - deployments is defined
+        - deployments.resources | default([]) | length > 0
+
+    - name: "{{ package_name }} - {{ app_name }} | Get logs of each deployment"
+      kubernetes.core.k8s_log:
+        name: "{{ item.metadata.name }}"
+        namespace: "{{ item.metadata.namespace }}"
+        all_containers: true
+      loop: "{{ deployments.resources }}"
+      when:
+        - deployments is defined
+        - deployments.resources | default([]) | length > 0
+      ignore_errors: true
+      register: deployment_logs
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Show deployments logs"
+      debug:
+        var: deployment_logs
+      when:
+        - deployments is defined
+        - deployments.resources | default([]) | length > 0
+
+    - name: Retrieve Kubernetes events
+      shell: |
+        kubectl get events --all-namespaces --sort-by=.metadata.creationTimestamp | tail -n 100 || true
+      register: k8s_debug
+      ignore_errors: yes
+
+    - name: Show collected debug info
+      debug:
+        msg: |
+          {{ k8s_debug.stdout_lines | default('') }}
+
+    - name: "{{ package_name }} - {{ app_name }} | Fail the playbook"
+      fail:
+        msg: "Deployment {{ app_name }} failed! See debug info above."
+
+  always:
+    - name: "{{ package_name }} - {{ app_name }} | Remove resources tmp dir"
+      file:
+        path: "{{ resources_dir.path }}"
+        state: absent
+      when:
+        - resources_dir.path is defined
+        - not debug
+      delegate_to: bastion
+
+    - name: "{{ package_name }} - {{ app_name }} | Warn about not deleted tmp folder"
+      debug:
+        msg:
+          - "DEBUG: the temporary folder containing the k8s resources has been kept for debugging purpose"
+          - "{{ resources_dir.path }}"
+          - "DO NOT FORGET TO DELETE IT WHEN YOU ARE DONE"
+      when:
+        - debug
+      delegate_to: bastion

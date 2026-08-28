@@ -1,0 +1,848 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+networks:
+  default:
+    name: rspy-network
+
+services:
+
+  #############
+  # RS-SERVER #
+  #############
+
+  # Redirections to all rs-server services
+  nginx:
+    image: nginx:1.31.1-alpine
+    container_name: nginx
+    ports:
+      - 80:80 # just access it with http://localhost (without port)
+    depends_on:
+      - rs-server-frontend
+      - rs-server-adgs
+      - rs-server-cadip
+      - rs-server-prip
+      - rs-server-catalog
+      - rs-server-staging
+      - rs-dpr-service_py3.11.7-2024.5.2
+      - rs-dpr-service_py3.11.7-2026.1.2
+      - rs-dpr-service_py3.13.12-2026.3.0
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+  # NOTE: It is included only to display the aggregated endpoints; they are not functional in
+  # this docker compose setup.
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/frontend/.github/Dockerfile
+  rs-server-frontend:
+    image: ghcr.io/rs-python/rs-server-frontend:latest
+    container_name: rs-server-frontend
+    ports:
+      - 8007:8000
+    env_file:
+      - .env
+
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/adgs/.github/Dockerfile
+  rs-server-adgs:
+    image: ghcr.io/rs-python/rs-server-adgs:latest
+    container_name: rs-server-adgs
+    ports:
+      - 8001:8000
+    depends_on:
+      - rspy-pre-actions
+      - seaweedfs-s3
+      - adgs-station
+    env_file:
+      - .env
+      - .env-external-data-sources
+    environment:
+      CORS_ORIGINS: 'http://localhost:8101'
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+      # RSPY__TOKEN__xxx # from the k8s pod, replace http://mockup-station-adgs...:8080 by  http://adgs-station:5000
+    volumes:
+      - ./config/rs-server.yaml:/home/user/.config/rs-server.yaml # auth to external stations
+      - ./config/adgs_ws_config.yaml:${EODAG_ADGS_CONFIG}
+
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/prip/.github/Dockerfile
+  rs-server-prip:
+    image: ghcr.io/rs-python/rs-server-prip:latest
+    container_name: rs-server-prip
+    ports:
+      - 8005:8000
+    depends_on:
+      - rspy-pre-actions
+      - seaweedfs-s3
+      - prip-station
+    env_file:
+      - .env
+      - .env-external-data-sources
+    environment:
+      CORS_ORIGINS: 'http://localhost:8105'
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+      # RSPY__TOKEN__xxx # from the k8s pod, replace http://mockup-prip...:8080 by  http://prip-station:5000
+    volumes:
+      - ./config/rs-server.yaml:/home/user/.config/rs-server.yaml # auth to external stations
+      - ./config/prip_ws_config.yaml:${EODAG_PRIP_CONFIG}
+
+  # From: https://github.com/RS-PYTHON/rs-server/blob/develop/services/cadip/.github/Dockerfile
+  rs-server-cadip:
+    image: ghcr.io/rs-python/rs-server-cadip:latest
+    container_name: rs-server-cadip
+    ports:
+      - 8002:8000
+    depends_on:
+      - rspy-pre-actions
+      - seaweedfs-s3
+      - cadip-station
+    env_file:
+      - .env
+      - .env-external-data-sources
+    environment:
+      CORS_ORIGINS: 'http://localhost:8102'
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+      # RSPY__TOKEN__xxx # from the k8s pod, replace http://mockup-station-cadip...:8080 by  http://cadip-station:5000
+    volumes:
+      - ./config/rs-server.yaml:/home/user/.config/rs-server.yaml # auth to external stations
+      - ./config/cadip_ws_config.yaml:${EODAG_CADIP_CONFIG}
+
+  rs-server-catalog:
+    image: ghcr.io/rs-python/rs-server-catalog:latest
+    container_name: rs-server-catalog
+    ports:
+      - 8003:8000
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rs-server-osam:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      CORS_ORIGINS: 'http://localhost:8103'
+      RSPY_HOST_USER: ${USER}
+
+      CATALOG_METADATA_TITLE: "RS-PYTHON STAC Catalog"
+      ENABLE_TRANSACTIONS_EXTENSIONS: 1
+      CORS_METHODS: 'GET,POST,OPTIONS'
+      CORS_CREDENTIALS: "true"
+      CORS_HEADERS: '*'
+      PREFIX_PATH: "/catalog"
+      OPENAPI_URL: "/catalog/api"
+      DOCS_URL: "/catalog/api.html"
+
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+#      RELOAD: false
+#      ENVIRONMENT: local
+#      WEB_CONCURRENCY: 10
+#      VSI_CACHE: TRUE
+      GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      DB_MIN_CONN_SIZE: 1
+      DB_MAX_CONN_SIZE: 1
+      USE_API_HYDRATE: false
+      # pg stac database
+      PGUSER: ${PGSTAC_USER}
+      POSTGRES_USER: ${PGSTAC_USER}
+      PGPASSWORD: ${PGSTAC_PASSWORD}
+      POSTGRES_PASSWORD: ${PGSTAC_PASSWORD}
+      PGHOST: ${PGSTAC_HOST}
+      POSTGRES_HOST: ${PGSTAC_HOST}
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGDATABASE: ${PGSTAC_DB}
+      POSTGRES_DB: ${PGSTAC_DB}
+      RSPY_HOST_OSAM: ${RSPY_HOST_OSAM}
+      RSPY_DATA_LIFECYCLE_PERIOD: "10"
+
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+      # RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+
+  # NOTE: to debug using a dask LocalCluster, comment the line:
+  # DASK_GATEWAY_ADDRESS: ...
+  rs-server-staging:
+    image: ghcr.io/rs-python/rs-server-staging:latest
+    container_name: rs-server-staging
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
+    #network_mode: "host"
+    ports:
+      - 8004:8000
+    depends_on:
+      - adgs-station
+      - cadip-station
+      - rs-server-catalog
+      - postgres
+      - rs-server-osam
+    env_file:
+      - .env
+      - .env-external-data-sources
+    environment:
+      DASK_GATEWAY_ADDRESS: ${DASK_GATEWAY_STAGING_ADDRESS}
+      USE_SSL: True
+      # Token expiration settings
+      RSPY_TIME_BEFORE_ACCESS_TOKEN_EXPIRE: 60
+      RSPY_TIME_BEFORE_REFRESH_TOKEN_EXPIRE: 60
+      RSPY_HOST_OSAM: ${RSPY_HOST_OSAM}
+
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+      # RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+
+      # From the k8s pod, replace:
+      # http://mockup-station-adgs...:8080 by  http://adgs-station:5000
+      # http://mockup-prip...:8080 by  http://prip-station:5000
+      # http://mockup-station-cadip...:8080 by  http://cadip-station:5000
+      # RSPY__TOKEN__xxx
+    volumes:
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+      - ./config/staging.yaml:/etc/staging.yaml
+      - ./config/openapi.json:/etc/openapi.json
+      - ./config/rs-server.yaml:/home/user/.config/rs-server.yaml # auth to external stations
+
+  rs-server-osam:
+    image: ghcr.io/rs-python/rs-server-osam:latest
+    container_name: rs-server-osam
+    ports:
+      - 7001:8000
+    env_file:
+      - .env
+    # environment:
+    #   RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+    #   RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+    #   RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+    #   RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+    #   # OAuth2 authentication
+    #   OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+    #   OIDC_REALM: rspy
+    #   OIDC_CLIENT_ID: apikeymanager
+    #   OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+    #   RSPY_COOKIE_SECRET: secret
+    #   OVH_APPLICATION_KEY: xxx # DON'T SAVE THIS VALUE IN GIT !
+    #   OVH_APPLICATION_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+    #   OVH_CONSUMER_KEY: xxx # DON'T SAVE THIS VALUE IN GIT !
+    #   OVH_ENDPOINT: ovh-eu
+    #   OVH_SERVICE:
+    #   S3_ENDPOINT: https://s3.gra.io.cloud.ovh.net
+    #   S3_REGION: gra
+    volumes:
+      - ./config/expiration_bucket.csv:${BUCKET_CONFIG_FILE_PATH}
+
+  ##################
+  # RS-DPR-SERVICE #
+  ##################
+
+  # NOTE: to debug using a dask LocalCluster, use one of the images:
+  # image: ghcr.io/rs-python/dask/l0/localcluster
+  # image: ghcr.io/rs-python/dask/s1ard/localcluster
+  # ...
+  rs-dpr-service_py3.11.7-2024.5.2:
+    image: ghcr.io/rs-python/rs-dpr-service_py3.11.7-2024.5.2:latest
+    container_name: rs-dpr-service_py3.11.7-2024.5.2
+    ports:
+      - 6003:8000
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    # environment:
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+      # # OAuth2 authentication
+      # OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+      # OIDC_REALM: rspy
+      # OIDC_CLIENT_ID: apikeymanager
+      # OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+      # RSPY_COOKIE_SECRET: secret
+
+  rs-dpr-service_py3.11.7-2026.1.2:
+    image: ghcr.io/rs-python/rs-dpr-service_py3.11.7-2026.1.2:latest
+    container_name: rs-dpr-service_py3.11.7-2026.1.2
+    ports:
+      - 6004:8000
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+  rs-dpr-service_py3.13.12-2026.3.0:
+    image: ghcr.io/rs-python/rs-dpr-service_py3.13.12-2026.3.0:latest
+    container_name: rs-dpr-service_py3.13.12-2026.3.0
+    ports:
+      - 6005:8000
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+  ############
+  # STATIONS #
+  ############
+
+  # From: https://github.com/RS-PYTHON/rs-testmeans/blob/develop/src/ADGS/Dockerfile
+  adgs-station:
+    image: ghcr.io/rs-python/rs-testmeans_adgs-station-mock:latest
+    container_name: adgs-station
+    ports:
+      - 5001:5000
+    # env_file:
+    #   - .env # WARNING: does not work because it overrides env vars
+    environment:
+      # Token expiration settings
+      RSPY_EXPIRES_IN: ${RSPY_EXPIRES_IN}
+      RSPY_REFRESH_EXPIRES_IN: ${RSPY_REFRESH_EXPIRES_IN}
+
+  # From: https://github.com/RS-PYTHON/rs-testmeans/blob/develop/src/CADIP/Dockerfile
+  cadip-station:
+    image: ghcr.io/rs-python/rs-testmeans_cadip-station-mock:latest
+    container_name: cadip-station
+    ports:
+      - 5002:5000
+      - ${HTTP_REDIRECTION_PORT}:${HTTP_REDIRECTION_PORT}
+    # env_file:
+    #   - .env # WARNING: does not work because it overrides env vars
+    environment:
+      HTTP_REDIRECTION_HREF: http://cadip-station:5000
+      # Token expiration settings
+      RSPY_EXPIRES_IN: ${RSPY_EXPIRES_IN}
+      RSPY_REFRESH_EXPIRES_IN: ${RSPY_REFRESH_EXPIRES_IN}
+
+  lta-station:
+    image: ghcr.io/rs-python/rs-testmeans_lta-station-mock:latest
+    container_name: lta-station
+    ports:
+      - 5003:5000
+    # env_file:
+    #   - .env # WARNING: does not work because it overrides env vars
+
+  prip-station:
+    image: ghcr.io/rs-python/rs-testmeans_prip-station-mock:latest
+    container_name: prip-station
+    ports:
+      - 5004:5000
+    # env_file:
+    #   - .env # WARNING: does not work because it overrides env vars (to be tested ?)
+    environment:
+      # Token expiration settings
+      RSPY_EXPIRES_IN: ${RSPY_EXPIRES_IN}
+      RSPY_REFRESH_EXPIRES_IN: ${RSPY_REFRESH_EXPIRES_IN}
+
+  ########
+  # STAC #
+  ########
+
+  # STAC browser on rs-server-adgs
+  stac-browser-adgs:
+    image: ghcr.io/rs-python/stac-browser:latest
+    container_name: stac-browser-adgs
+    ports:
+      - 8101:8080
+    depends_on:
+      - rs-server-adgs
+    env_file:
+      - .env
+    environment:
+      SB_authConfig: |
+            {
+              "type": "openIdConnect",
+              "openIdConnectUrl": "https://iam.dev-rspy-ovh.esa-copernicus.eu/realms/rspy/.well-known/openid-configuration",
+              "oidcConfig": {
+                "client_id": "fastapi_public"
+              }
+            }
+      SB_allowExternalAccess: false
+      SB_historyMode: history
+      SB_catalogUrl: http://127.0.0.1:8001/auxip
+      SB_detectLocaleFromBrowser: true
+      SB_socialSharing: email,bsky,mastodon
+
+  # STAC browser on rs-server-cadip
+  stac-browser-cadip:
+    image: ghcr.io/rs-python/stac-browser:latest
+    container_name: stac-browser-cadip
+    ports:
+      - 8102:8080
+    depends_on:
+      - rs-server-cadip
+    env_file:
+      - .env
+    environment:
+      SB_authConfig: |
+            {
+              "type": "openIdConnect",
+              "openIdConnectUrl": "https://iam.dev-rspy-ovh.esa-copernicus.eu/realms/rspy/.well-known/openid-configuration",
+              "oidcConfig": {
+                "client_id": "fastapi_public"
+              }
+            }
+      SB_allowExternalAccess: false
+      SB_historyMode: history
+      SB_catalogUrl: http://127.0.0.1:8002/cadip
+      SB_detectLocaleFromBrowser: true
+      SB_socialSharing: email,bsky,mastodon
+
+  # STAC browser on rs-server-catalog
+  stac-browser-catalog:
+    image: ghcr.io/rs-python/stac-browser:latest
+    container_name: stac-browser-catalog
+    ports:
+      - 8103:8080
+    depends_on:
+      - rs-server-catalog
+    env_file:
+      - .env
+    environment:
+      SB_authConfig: |
+            {
+              "type": "openIdConnect",
+              "openIdConnectUrl": "https://iam.dev-rspy-ovh.esa-copernicus.eu/realms/rspy/.well-known/openid-configuration",
+              "oidcConfig": {
+                "client_id": "fastapi_public"
+              }
+            }
+      SB_allowExternalAccess: false
+      SB_historyMode: history
+      SB_catalogUrl: http://127.0.0.1:8003/catalog
+      SB_detectLocaleFromBrowser: true
+      SB_socialSharing: email,bsky,mastodon
+
+  # STAC browser on rs-server-prip
+  stac-browser-prip:
+    image: ghcr.io/rs-python/stac-browser:latest
+    container_name: stac-browser-prip
+    ports:
+      - 8105:8080
+    depends_on:
+      - rs-server-prip
+    env_file:
+      - .env
+    environment:
+      SB_authConfig: |
+            {
+              "type": "openIdConnect",
+              "openIdConnectUrl": "https://iam.dev-rspy-ovh.esa-copernicus.eu/realms/rspy/.well-known/openid-configuration",
+              "oidcConfig": {
+                "client_id": "fastapi_public"
+              }
+            }
+      SB_allowExternalAccess: false
+      SB_historyMode: history
+      SB_catalogUrl: http://127.0.0.1:8005/prip
+      SB_detectLocaleFromBrowser: true
+      SB_socialSharing: email,bsky,mastodon
+
+  ###########
+  # PREFECT #
+  ###########
+
+  prefect-server:
+    image: ghcr.io/rs-python/prefect/rs-client-libraries/local:latest
+    ports:
+      - 4200:4200
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - PREFECT_API_URL=http://127.0.0.1:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    command: ["prefect", "server", "start"]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import requests; assert requests.get('http://127.0.0.1:4200/api/health').ok\""]
+      interval: 2s
+      retries: 30
+
+  prefect-worker-integrated:
+    image: ghcr.io/rs-python/prefect/rs-client-libraries/local:latest
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["prefect", "worker", "start", "--pool", "$PREFECT_WORK_POOL_INTEGRATED", "--type", "process"]
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  prefect-worker-monitoring:
+    image: ghcr.io/rs-python/prefect/rs-client-libraries/local:latest
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      RSPY_HOST_OSAM: ${RSPY_HOST_OSAM}
+    command: ["prefect", "worker", "start", "--pool", "$PREFECT_WORK_POOL_MONITORING", "--type", "process"]
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  prefect-worker-sandbox:
+    image: ghcr.io/rs-python/prefect/rs-client-libraries/local:latest
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["prefect", "worker", "start", "--pool", "$PREFECT_WORK_POOL_SANDBOX", "--type", "process"]
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  ########
+  # DASK #
+  ########
+
+  dask-cpm2:
+    image: ghcr.io/rs-python/dask/cpm2/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-cpm3:
+    image: ghcr.io/rs-python/dask/cpm3/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-eopf-mockup:
+    image: ghcr.io/rs-python/dask/mockup/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    ports:
+      - 8703:8000
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-l0:
+    image: ghcr.io/rs-python/dask/l0/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    # Change memory per worker with e.g. DASK_MEMORY_EOPF=4G DASK_CORES_EOPF=4 docker compose up # ...
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-s1ard:
+    image: ghcr.io/rs-python/dask/s1ard/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    # Change memory per worker with e.g. DASK_MEMORY_EOPF=4G DASK_CORES_EOPF=4 docker compose up # ...
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-s3olci:
+    image: ghcr.io/rs-python/dask/s3olci/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    # Change memory per worker with e.g. DASK_MEMORY_EOPF=4G DASK_CORES_EOPF=4 docker compose up # ...
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+      --ClusterConfig.worker_memory="${DASK_MEMORY_EOPF}"
+      --ClusterConfig.worker_cores="${DASK_CORES_EOPF}"
+
+  dask-staging:
+    image: ghcr.io/rs-python/dask/staging/local:latest
+    environment:
+      PYTHONPATH: /opt/rs-demo-ext
+    volumes:
+      - ../notebooks/resources/dask_gateway/dask_gateway_local_ext.py:/opt/rs-demo-ext/dask_gateway_local_ext.py:ro
+      - ../notebooks/resources/dask_gateway/dask_gateway_config.py:/opt/rs-demo-ext/dask_gateway_config.py:ro
+    entrypoint: > # don't use '|' it doesn't work
+      tini -g -- dask-gateway-server
+      -f /opt/rs-demo-ext/dask_gateway_config.py
+
+  #############
+  # DATABASES #
+  #############
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      # Do we want persistance ??
+      # - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_multiple_dbs.sh:/docker-entrypoint-initdb.d/init_multiple_dbs.sh:ro
+
+  catalog-db:
+    image: ghcr.io/stac-utils/pgstac:v0.9.10
+    ports:
+      - ${PGSTAC_PORT}:5432
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PGSTAC_USER}
+      PGUSER: ${PGSTAC_USER}
+      POSTGRES_PASSWORD: ${PGSTAC_PASSWORD}
+      PGPASSWORD: ${PGSTAC_PASSWORD}
+      POSTGRES_PORT: ${PGSTAC_PORT}
+      POSTGRES_DB: ${PGSTAC_DB}
+      PGDATABASE: ${PGSTAC_DB}
+    command: postgres -N 500
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgstac-post-actions: # post actions for catalog-db
+    container_name: pgstac-post-actions
+    image: ghcr.io/stac-utils/pgstac-pypgstac:v0.9.10
+    depends_on:
+      - catalog-db
+    env_file:
+      - .env
+    environment: # set pgstac env vars, see: https://stac-utils.github.io/pgstac/pypgstac
+      PGHOST: catalog-db
+      PGPORT: 5432
+      PGUSER: ${PGSTAC_USER}
+      PGPASSWORD: ${PGSTAC_PASSWORD}
+      PGDATABASE: ${PGSTAC_DB}
+    volumes:
+      - ./scripts/pgstac_post_actions.py:/scripts/pgstac_post_actions.py
+    command: "bash -c 'pip3 install smart_open[http]; python3 /scripts/pgstac_post_actions.py'"
+
+#############
+# S3 BUCKET #
+#############
+
+  # Use seaweedfs for temp s3 storage
+  seaweedfs-s3:
+    image: chrislusf/seaweedfs:4.43
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESSKEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRETKEY}
+    ports:
+      - 9100:9000  # S3 Endpoint
+      - 9101:23646 # Admin UI
+      - 9102:9333  # Master UI
+      - 9103:8888  # Filer UI
+    volumes:
+      - seaweedfs_storage:/data
+    command: 'mini -dir=/data -s3.port=9000'
+
+###########
+# JUPYTER #
+###########
+
+  # Local Jupyter server.
+  # The logs will show shomething like: http://127.0.0.1:8888/lab?token=<token-value> in your terminal.
+  # Open (ctrl-click) this link to open the Jupyter web client (=Jupyter Notebook) in your browser.
+  jupyter:
+    image: ghcr.io/rs-python/jupyter/rs-client-libraries/local:latest
+    container_name: jupyter
+    ports:
+      - 8888:8888
+    depends_on:
+      - seaweedfs-s3 # used to check manually the s3 bucket contents
+    env_file:
+      - .env
+    environment:
+      RSPY_HOST_USER: ${USER}
+      # to import resources/ from the mounted volume below
+      PYTHONPATH: /home/jovyan/notebooks
+
+      # RSPY_LOCAL_MODE: 0 # set to 0 to use the apikey-manager
+      # RSPY_WEBSITE: http://rs-server-frontend:8000/docs # not used
+      # RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key # optional
+      # RSPY_UAC_HOMEPAGE: ${RSPY_UAC_HOMEPAGE}
+      # JUPYTERHUB_USER: pyteam
+      # # To generate this cookie from your browser, go to http://localhost:8001/auth/me
+      # # then from the devtools (press F12) copy the value of the cookie named "session".
+      # # In Chrome: in the "Application" tab, in Firefox: in the "Storage" tab.
+      # RSPY_OAUTH2_COOKIE: xxx # DON'T SAVE THIS VALUE IN GIT !
+    volumes:
+      - ../notebooks:/home/jovyan/notebooks
+      - ./config/expiration_bucket.csv:${BUCKET_CONFIG_FILE_PATH}
+      - ./scripts:/scripts # used by rs-demo/local-mode/run-notebooks.sh
+
+  # Optional: test the api-key manager.
+  # Uncomment these lines and add to the rs-server-xxx services:
+  #   RSPY_LOCAL_MODE: 0
+  #   RSPY_UAC_CHECK_URL: http://apikey-manager:8000/auth/check_key
+  #   RSPY_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+  #   OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+  #   OIDC_REALM: rspy
+  #   OIDC_CLIENT_ID: apikeymanager
+  #   OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+  #   RSPY_COOKIE_SECRET: secret
+  # apikey-manager:
+  #   image: ghcr.io/csgroup-oss/apikey-manager:latest
+  #   container_name: apikey-manager
+  #   ports:
+  #     - 9999:8000
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     APIKM_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+  #     APIKM_OIDC_ENDPOINT: https://iam.dev-rspy-ovh.esa-copernicus.eu
+  #     APIKM_OIDC_REALM: rspy
+  #     APIKM_OIDC_CLIENT_ID: apikeymanager
+  #     APIKM_OIDC_CLIENT_SECRET: xxx # DON'T SAVE THIS VALUE IN GIT !
+  #     APIKM_USE_AUTHLIB_OAUTH: true
+  #     APIKM_OAUTH2_ATTRIBUTES: "monthly-download-volume-limit-gb"
+
+  ###############
+  # PRE-ACTIONS #
+  ###############
+
+  # Run a bash container as root to run custom pre-actions:
+  #   - Give all permissions to the docker named volumes "rspy_working_dir"
+  #   - Copy stations configuration files
+  rspy-pre-actions:
+    image: bash:latest
+    container_name: rspy-pre-actions
+    privileged: true
+    volumes:
+      - .:/docker/compose/dir
+      - rspy_working_dir:${RSPY_WORKING_DIR} # docker named volume
+    entrypoint: /docker/compose/dir/scripts/rspy-pre-actions.sh
+
+############
+# PROFILES #
+############
+
+# Don't use real docker-compose profiles (https://docs.docker.com/compose/how-tos/profiles/)
+# because by default we want to run all services.
+# Use this solution instead: https://stackoverflow.com/a/54027899
+
+  cicd: # all needed services for the ci/cd demos
+    image: bash:latest
+    depends_on:
+      - nginx
+      - rs-server-adgs
+      - rs-server-cadip
+      - rs-server-catalog
+      - rs-server-prip
+      - rs-server-staging
+      - adgs-station
+      - cadip-station
+      - lta-station
+      - prip-station
+      - prefect-server
+      - prefect-worker-integrated
+      - prefect-worker-monitoring
+      - prefect-worker-sandbox
+      - dask-staging
+      - dask-eopf-mockup
+      - postgres
+      - catalog-db
+      - seaweedfs-s3
+      - jupyter
+      # Use the rs-dpr-service container with same python and dask version as the
+      # mockup DPR processor, which is the only processor used in the demos.
+      - rs-dpr-service_py3.11.7-2024.5.2
+    entrypoint: tail # use this so this service stays alive
+    command: -F anything
+
+
+#################
+# CONFIGURATION #
+#################
+
+# Docker named volumes
+volumes:
+  seaweedfs_storage: {}
+  prefect_storage: {}
+
+  # Used to:
+  #   - write a file lock
+  #   - for the demo, download files locally in laptop mode (downloaded by rs-server, read by jupyter)
+  rspy_working_dir: {}

@@ -1,0 +1,133 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mychart.Labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mychart.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.replicaCount }}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+  serviceName: {{ .Release.Name }}-headless
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        {{- include "mychart.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: "{{ template "mychart.image" .Values.image }}"
+        imagePullPolicy: {{ .Values.image.PullPolicy }}
+        resources:
+          requests:
+            memory: {{ .Values.resources.request.ram }}
+            cpu: {{ .Values.resources.request.cpu }}
+          limits:
+            memory: {{ .Values.resources.limit.ram }}
+            cpu: {{ .Values.resources.limit.cpu }}
+        volumeMounts:
+        - name: service-config-volume
+          mountPath: {{ .Values.app.confDir }}/{{ .Values.app.authConfigFile }}
+          subPath: {{ .Values.app.authConfigFile }}
+        - name: catalog-config-volume
+          mountPath: {{ .Values.app.confDir }}/Catalog/{{ .Values.app.catalogConfigFile }}
+          subPath: {{ .Values.app.catalogConfigFile }}
+        - mountPath: /opt/lta/config/Storage
+          name: opt-lta
+        ports:
+        - name: web
+          protocol: TCP
+          containerPort: {{ .Values.app.port }}
+        securityContext:
+          privileged: false
+        {{ if .Values.probe }}
+        {{ if .Values.probe.startup }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probe.startup.path }}
+            port: {{ .Values.probe.startup.port }}
+          initialDelaySeconds: {{ .Values.probe.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.startup.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.liveness }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probe.liveness.path }}
+            port: {{ .Values.probe.liveness.port }}
+          initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.readiness }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probe.readiness.path }}
+            port: {{ .Values.probe.readiness.port }}
+          initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
+        {{ end }}
+        {{ end }}
+      {{ if .Values.image }}
+      {{ if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+      - name:  {{ .Values.image.imagePullSecrets }}
+      {{ end }}
+      {{ end }}
+      restartPolicy: Always
+      securityContext: {}
+      volumes:
+      - name: service-config-volume
+        configMap:
+          name: {{ .Release.Name }}-service-config
+      - name: catalog-config-volume
+        configMap:
+          name: {{ .Release.Name }}-catalog-config
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: opt-lta
+        annotations:
+          helm.sh/resource-policy: {{ .Values.helmResourcePolicy }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.volume.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.volume.size }}
+  revisionHistoryLimit: 10

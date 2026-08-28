@@ -1,0 +1,157 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+replicas: 1
+
+admin:
+  existingSecret: grafana-credentials
+  userKey: GF_SECURITY_ADMIN_USER
+  passwordKey: GF_SECURITY_ADMIN_PASSWORD
+
+ingress:
+  enabled: false
+  ingressClassName: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  path: /
+  pathType: Prefix
+  hosts:
+    - monitoring.{{ platform_domain_name }}
+  tls:
+    - secretName: monitoring-{{ platform_domain_name | replace(".", "-") }}
+      hosts:
+        - monitoring.{{ platform_domain_name }}
+
+route:
+  main:
+    enabled: true
+    hostnames:
+    - monitoring.{{ platform_domain_name }}
+    parentRefs:
+    - name: monitoring
+      kind: ListenerSet
+      namespace: monitoring
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1024Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+envFromSecrets:
+  - name: grafana-credentials
+
+env:
+  GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE: "true"
+  GF_UNIFIED_ALERTING_SCREENSHOTS_UPLOAD_EXTERNAL_IMAGE_STORAGE: "false"
+  GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "true"
+  GF_AUTH_OAUTH_ALLOW_INSECURE_EMAIL_LOOKUP: "true"
+
+plugins:
+{% for item in grafana.custom_plugins %}
+  - "{{ item.name }}{% if item.version is defined and item.version %}@{{ item.version }}{% endif %}{% if item.url is defined and item.url %}@{{ item.url }}{% endif %}"
+{% endfor %}
+
+grafana.ini:
+  paths:
+    data: /var/lib/grafana/
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+
+  analytics:
+    check_for_updates: "false"
+    check_for_plugin_updates: "false"
+    reporting_enabled: "false"
+
+  log:
+    mode: console
+
+  server:
+    domain: monitoring.{{ platform_domain_name }}
+    root_url: https://monitoring.{{ platform_domain_name }}
+
+  auth:
+    disable_login_form: "true"
+    signout_redirect_url: "https://iam.{{ platform_domain_name }}/realms/rspy/protocol/openid-connect/logout?redirect_uri=https%3A%2F%2Fmonitoring.{{ platform_domain_name }}%2F"
+
+  auth.generic_oauth:
+    enabled: "true"
+    client_id: grafana
+    client_secret: ${GRAFANA_CLIENT_SECRET}
+    scopes: "openid profile email"
+    auth_url: https://iam.{{ platform_domain_name }}/realms/rspy/protocol/openid-connect/auth
+    token_url: https://iam.{{ platform_domain_name }}/realms/rspy/protocol/openid-connect/token
+    api_url: https://iam.{{ platform_domain_name }}/realms/rspy/protocol/openid-connect/userinfo
+    role_attribute_path: contains(roles[*], 'admin') && 'GrafanaAdmin' || contains(roles[*], 'editor') && 'Editor' || 'Viewer'
+    role_attribute_strict: "true"
+    oauth_allow_insecure_email_lookup: "true"
+    auto_login: "true"
+
+  plugins:
+    plugin_admin_enabled: "true"
+    allow_loading_unsigned_plugins: "{{ grafana.custom_plugins | map(attribute='name') | join(',') }}"
+
+  metrics:
+    enabled: "true"
+
+  smtp: {{ grafana.smtp }}
+
+  unified_alerting:
+    enabled: "true"
+
+persistence:
+  type: pvc
+  enabled: true
+  existingClaim: grafana-pvc
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: csi-cinder-high-speed-retain
+  size: 10Gi
+
+initChownData:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+  interval: 2m
+
+imageRenderer:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  resources:
+    limits:
+      cpu: 2
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+deploymentStrategy:
+  type: Recreate
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists

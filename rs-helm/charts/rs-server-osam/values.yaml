@@ -1,0 +1,207 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -- Namespace for the deployment
+namespace: processing
+
+# -- Number of replicas for the deployment
+replicaCount: 1
+
+service:
+  # -- Port for the service
+  port: 8080
+
+app:
+  # -- Port for the application
+  port: 8000
+  # -- URL suffix for the application. The same value should also be included into ingress.path
+  docsUrl: /docs
+  # -- Config directory for the application
+  confDir: /app/conf
+  # -- URL of the API Key Manager service (internal)
+  uacUrl: http://apikeymanager.processing.svc.cluster.local:8000/auth/check_key
+  # -- URL of the API Key Manager home page (public)
+  uacHomeUrl: https://apikeymanager.subdomain.example.com/docs
+  # -- Description template for ovh users when osam creates them
+  obsDescriptionTemplate: "## linked to keycloak user %keycloak-user% from platform XYZ"
+  # Bucket configuration from where the users can be taken
+  # Use an external configuration through an external configmap with the value "externalBucketConfigMapName"
+  # OR
+  # Set your own configuration in the value expirationBucketCsv
+  bucketConfig:
+    # -- Set to true to use an external configmap for the configuration instead of the one set in expirationBucketCsv
+    useExternalBucketConfigMap: false
+    # -- Name of the external configmap to use. Used only if externalBucketConfigMapName is true
+    externalBucketConfigMapName: ""
+    # -- Bucket configuration. Used only if externalBucketConfigMapName is false.
+    # Default config puts all data in a bucket called rspython-ops-catalog-all-production with a lifespan of 30 days.
+    expirationBucketCsv: |
+      *, *, *, 30, rspython-ops-catalog-all-production
+    # -- File name for the configuration.
+    # If you use an external configmap, put the name of the file of your configmap, so the environment variables are set properly
+    bucketConfigFileName: expiration_bucket.csv
+    # -- The default synchronization time in seconds of the keycloak users with the ovh users (default is twice per day)
+    defaultOsamFrequencySync: 43200
+    # -- Cache size (number of cached Keycloak usernames) for the /storage/account/credentials endpoint
+    osamCredentialsCacheSize: 1024
+    # -- Cache TTL (time to live) in seconds for the /storage/account/credentials endpoint (default is 2 hours)
+    osamCredentialsCacheTtl: 7200
+
+probe:
+  startup:
+    # -- Path for the liveness probe
+    path: /_mgmt/ping
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 20
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 2
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 1
+  liveness:
+    # -- Path for the liveness probe
+    path: /_mgmt/ping
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 5
+  readiness:
+    # -- Path for the readiness probe
+    path: /_mgmt/ping
+    # -- Port for the readiness probe
+    port: 8000
+    # -- InitialDelaySeconds for the readiness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the readiness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the readiness probe
+    timeoutSeconds: 5
+
+# -- Pod affinity
+affinity: {}
+
+# -- Pod toleration
+tolerations: []
+
+# -- Pod initContainers
+initContainers: []
+
+
+obs:
+  # -- URL of the object storage service endpoint
+  endpoint: http://seaweedfs-s3.seaweedfs.svc.cluster.local:9000
+  # -- Region of the object storage service
+  region: sbg
+  secret:
+    # -- Access Key to authenticate with the object storage service
+    ak: TDr8foJqSygBQ9YFmWDy
+    # -- Secret Key to authenticate with the object storage service
+    sk: z2RaqjFttnVZRTsLLqmy4PE6PzJOKzPsE47alDBs
+
+auth:
+  secret:
+    # -- OIDC End Point
+    oidc_endpoint: ""
+    # -- OIDC Realm
+    oidc_realm: ""
+    # -- OIDC CLient ID
+    oidc_client_id: ""
+    # -- OIDC Secret used to sync user info from Keycloak
+    oidc_client_secret: ""
+    # -- Random string used to encode cookie-based HTTP sessions in SessionMiddleware
+    cookie_secret: ""
+
+provider:
+  secret:
+    # -- OVH End Point
+    ovh_endpoint: ""
+    # -- OVH Application Key
+    ovh_application_key: ""
+    # -- OVH Application Secret
+    ovh_application_secret: ""
+    # -- OVH Consumer Key
+    ovh_consumer_key: ""
+    # OVH Service (used in endpoint /cloud/project/<ovh_service>/user )
+    ovh_service: ""
+image:
+  # -- Image registry
+  registry: ghcr.io
+  # -- Image repository
+  repository: rs-python
+  # -- Image name
+  name: rs-server-osam
+  # -- Image version, can be a tag or a digest
+  version: "1.0a12"
+  # -- Image pull policy
+  PullPolicy: IfNotPresent
+
+ingress:
+  # -- Enabled/Disable ingress
+  enabled: false
+  issuer:
+    # -- Ingress Issuer type
+    type: cluster-issuer
+    # -- Ingress Issuer name
+    name: letsencrypt-prod
+  # -- Ingress host name
+  host: subdomain.example.com
+  # -- Ingress path for the application
+  path:
+    - /storage
+
+gatewayapi:
+  # -- Enabled/Disable Gateway API
+  enabled: false
+  # -- HTTPRoute parentRefs, can either be a ListenerSet or a Gateway
+  # Example :
+  # parentRefs:
+  # - group: gateway.networking.k8s.io
+  #   kind: ListenerSet
+  #   name: mylistenerset
+  #   namespace: processing
+  parentRefs: []
+  # -- HTTPRoute host name
+  host: subdomain.example.com
+  # -- HTTPRoute path for the application
+  # Example :
+  # path:
+  #   - /storage
+  path: []
+
+resources:
+  request:
+    # -- Pod memory request
+    ram: "256Mi"
+    # -- Pod CPU request
+    cpu: "100m"
+  limit:
+    # -- Pod memory limit
+    ram: "1000Mi"
+    # -- Pod CPU limit
+    cpu: "500m"
+
+tempo:
+  # -- Grafana tempo endpoint.
+  endpoint: http://alloy.monitoring.svc.cluster.local:4317
+
+otel:
+  # -- Trace request headers with OpenTelemetry ?
+  trace_headers: false
+  # -- Trace request bodies and response contents with OpenTelemetry ?
+  trace_body: false

@@ -1,0 +1,592 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This module is used to share common functions between apis endpoints"""
+
+import os
+import os.path as osp
+import re
+import traceback
+from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+from threading import Thread
+from typing import Any
+
+import antimeridian
+import yaml
+from dateutil.parser import isoparse
+from eodag import EOProduct
+from fastapi import HTTPException, status
+from rs_server_common.footprint_facility import (
+    check_raw_antimeridian_jump,
+    rework_to_polygon_geometry,
+)
+from rs_server_common.utils.logging import Logging
+from shapely import get_parts, make_valid, union_all
+from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, mapping, shape
+from shapely.geometry.polygon import orient
+
+# pylint: disable=too-few-public-methods
+logger = Logging.default(__name__)
+LOCAL_PTYPE_MAPPING_FILE = (
+    Path(osp.realpath(osp.dirname(__file__))).parent.parent / "config" / "product_type_mapping.yaml"
+)
+PTYPE_MAPPING_FILE = Path(os.environ.get("PTYPE_MAPPING_CONFIG", LOCAL_PTYPE_MAPPING_FILE))
+with PTYPE_MAPPING_FILE.open("r", encoding="utf-8") as f:
+    product_type_data = yaml.safe_load(f)["types"]
+
+
+def validate_str_list(parameter: str) -> list | str:
+    """
+    Validates and parses a parameter that can be either a string or a comma-separated list of strings.
+
+    The function processes the input parameter to:
+    - Strip whitespace from each item in a comma-separated list.
+    - Return a single string if the list has only one item.
+    - Return a list of strings if the input contains multiple valid items.
+
+    Examples:
+        - Input: 'S1A'
+          Output: 'S1A' (str)
+
+        - Input: 'S1A, S2B'
+          Output: ['S1A', 'S2B'] (list of str)
+
+          # Test case bgfx, when input contains ',' but not a validd value, output should not be ['S1A', '']
+        - Input: 'S1A,'
+          Output: 'S1A' (str)
+
+        - Input: 'S1A, S2B, '
+          Output: ['S1A', 'S2B'] (list of str)
+    """
+    if parameter and "," in parameter:
+        items = [item.strip() for item in parameter.split(",") if item.strip()]
+        return items if len(items) > 1 else items[0]
+    return parameter
+
+
+def _iter_external_id_parts(value: str | list[str]) -> Iterable[str]:
+    values = value if isinstance(value, list) else [value]
+    for raw in values:
+        for part in (p.strip() for p in str(raw or "").split(",")):
+            if part:
+                yield part
+
+
+def normalize_external_ids(value: str | list[str], scheme: str) -> list[str] | None:
+    """Normalize externalIds search values for a given scheme."""
+    tokens: list[str] = []
+    scheme_only = False
+    other_scheme_only = False
+
+    for part in _iter_external_id_parts(value):
+        if ":" not in part:
+            tokens.append(part)
+            continue
+        part_scheme, val = (s.strip() for s in part.split(":", 1))
+        if not val:
+            if part_scheme == scheme:
+                scheme_only = True
+            else:
+                other_scheme_only = True
+            continue
+        if part_scheme == scheme:
+            tokens.append(val)
+
+    if tokens:
+        return tokens
+    if scheme_only:
+        return None
+    if other_scheme_only:
+        return []
+    return []
+
+
+def apply_external_ids(params: dict, scheme: str) -> dict:
+    """Apply normalized externalIds to OData parameters."""
+    params = dict(params)
+    if "externalIds" not in params:
+        return params
+    normalized = normalize_external_ids(params.pop("externalIds"), scheme)
+    if normalized is None:
+        return params
+    if not normalized:
+        params["externalIds"] = "__no_match__"
+    elif len(normalized) == 1:
+        params["externalIds"] = normalized[0]
+    else:
+        params["externalIdss"] = normalized
+    return params
+
+
+def validate_inputs_format(
+    date_time: str,
+    raise_errors: bool = True,
+) -> tuple[datetime | None, datetime | None, datetime | None]:
+    """
+    Validate the format and content of a time interval string.
+
+    This function checks whether the provided time interval string is in a valid format and
+    whether the start and stop dates conform to the ISO 8601 standard. It supports a variety
+    of interval formats, including open-ended intervals.
+
+    Args:
+        date_time (str): The time interval string to validate. Supported formats include:
+            - "2024-01-01T00:00:00Z/2024-01-02T23:59:59Z" (closed interval)
+            - "../2024-01-02T23:59:59Z" (open start interval)
+            - "2024-01-01T00:00:00Z/.." (open end interval)
+            - "2024-01-01T00:00:00Z" (fixed date)
+        raise_errors (bool): If True, raises an exception for invalid input.
+            If False, returns [None, None, None] for invalid input.
+
+    Returns:
+        List[Union[datetime, None]]: A list containing three elements:
+            - fixed_date (datetime or None): The single fixed date if applicable.
+            - start_date (datetime or None): The start date of the interval.
+            - stop_date (datetime or None): The stop date of the interval.
+            Returns [None, None, None] if the input is invalid or empty.
+
+    Raises:
+        HTTPException: If `raise_errors` is True and the input is invalid, an HTTP 400 or 422
+            error is raised.
+
+    Note:
+        - The input interval should use the ISO 8601 format for dates and times.
+        - If using an open-ended interval, one side of the interval can be omitted
+          (e.g., "../2024-01-02T23:59:59Z").
+    """
+    fixed_date, start_date, stop_date = "", "", ""
+    if not date_time:
+        return None, None, None
+    try:
+        if "/" in date_time:
+            # Open/Closed interval, ../2018-02-12T23:20:50Z or 2018-02-12T23:20:50Z/..
+            start_date, stop_date = date_time.split("/")
+        else:
+            fixed_date = date_time
+    except ValueError as exc:
+        logger.error("Missing start or stop in endpoint call!")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Missing start/stop") from exc
+
+    def is_valid_date(date: str) -> bool:
+        """Check if the string can be converted to a valid datetime."""
+        try:
+            isoparse(date)
+            return True
+        except ValueError:
+            return False
+
+    for date in [fixed_date, start_date, stop_date]:
+        if date.strip("'\".") and not is_valid_date(date):
+            message: str = f"Invalid date: {date}"
+            logger.warning(message)
+            if raise_errors:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            return None, None, None
+
+    def to_dt(dates: list[str]) -> list[datetime | None]:
+        """Converts a list of date strings to datetime objects or None if the conversion fails."""
+        return [isoparse(date) if is_valid_date(date) else None for date in dates]
+
+    fixed_date_dt, start_date_dt, stop_date_dt = to_dt([fixed_date, start_date, stop_date])
+
+    # if fixed_date_dt and "." not in fixed_date:
+    #     # If miliseconds are not defined, don't set to .000Z create a timeinterval, to gather all products
+    #     # from that milisecond
+    #     start_date_dt = fixed_date_dt.replace(microsecond=0)  # type: ignore
+    #     stop_date_dt = fixed_date_dt.replace(microsecond=999999)  # type: ignore
+    #     fixed_date_dt = None
+    #     return fixed_date_dt, start_date_dt, stop_date_dt
+    # if stop_date_dt and "." not in stop_date:
+    #     # If stop_date interval miliseconds value is not defined, set it to 999
+    #     stop_date_dt = stop_date_dt.replace(microsecond=999999)  # type: ignore
+
+    return fixed_date_dt, start_date_dt, stop_date_dt
+
+
+@lru_cache
+def map_stac_platform() -> dict:
+    """Function used to read and interpret from constellation.yaml"""
+    with open(Path(__file__).parent.parent.parent / "config" / "constellation.yaml", encoding="utf-8") as cf:
+        return yaml.safe_load(cf)
+
+
+def map_auxip_prip_mission(platform: str, constellation: str) -> tuple[str | None, str | None]:
+    """
+    Custom function for ADGS/PRIP, to read constellation mapper and return proper
+    values for platform and serial.
+    Eodag maps these values to platformShortName, platformSerialIdentifier.
+
+    Input: platform = sentinel-1a       Output: sentinel-1, A
+    Input: platform = sentinel-5P       Output: sentinel-5p, None
+    Input: constellation = sentinel-1   Output: sentinel-1, None
+    Input: platform = sentinel-3b,
+           constellation = sentinel-3   Output: sentinel-3, B
+    """
+    data = map_stac_platform()
+    platform_short_name: str | None = None
+    platform_serial_identifier: str | None = None
+
+    try:
+        if platform:
+            config = next(satellite[platform] for satellite in data["satellites"] if platform in satellite)
+            platform_short_name = config.get("constellation")
+            platform_serial_identifier = config.get("serialid")
+
+        if constellation:
+            if platform_short_name and platform_short_name != constellation:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="Invalid combination of platform-constellation",
+                )
+
+            if any(
+                satellite[list(satellite.keys())[0]]["constellation"] == constellation
+                for satellite in data["satellites"]
+            ):
+                platform_short_name = constellation
+            else:
+                raise KeyError
+
+        # Only a constellation was provided.
+        if constellation and not platform:
+            platform_serial_identifier = None
+
+    except (KeyError, IndexError, StopIteration) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Cannot map platform/constellation",
+        ) from exc
+
+    return platform_short_name, platform_serial_identifier
+
+
+def reverse_adgs_prip_map_mission(
+    platform: str | None,
+    constellation: str | None,
+) -> tuple[str | None, str | None]:
+    """Function used to re-map platform and constellation based on satellite value."""
+    if not (constellation or platform):
+        return None, None
+
+    if constellation:
+        constellation = constellation.lower()  # type: ignore
+
+    for satellite in map_stac_platform()["satellites"]:
+        for key, info in satellite.items():
+            # Check for matching serialid and constellation
+            if info.get("serialid") == platform and info.get("constellation").lower() == constellation:
+                return key, info.get("constellation")
+    return None, None
+
+
+def odata_to_stac(
+    feature_template: dict,
+    odata_dict: dict,
+    odata_stac_mapper: dict,
+    collection_provider: Callable[[dict], str | None] | None = None,
+) -> dict:
+    """
+    Maps OData values to a given STAC template.
+
+    Args:
+        feature_template (dict): The STAC feature template to be populated.
+        odata_dict (dict): The dictionary containing OData values.
+        odata_stac_mapper (dict): The mapping dictionary for converting OData keys to STAC properties.
+        collection_provider (Callable[[dict], str | None]): optional function that determines STAC collection
+                                                            for a given OData entity
+
+    Returns:
+        dict: The populated STAC feature template.
+
+    Raises:
+        ValueError: If the provided STAC feature template is invalid.
+    """
+    if not all(item in feature_template.keys() for item in ["properties", "id", "assets"]):
+        raise ValueError("Invalid stac feature template")
+    for stac_key, eodag_key in odata_stac_mapper.items():
+        if eodag_key not in odata_dict:
+            if stac_key in feature_template["properties"]:
+                feature_template["properties"].pop(stac_key, None)
+            continue
+        value = odata_dict[eodag_key]
+        if stac_key in feature_template["properties"]:
+            feature_template["properties"][stac_key] = [value] if stac_key == "instruments" else value
+            continue
+        if stac_key == "id":
+            feature_template["id"] = value
+            continue
+        if stac_key == "geometry" and value:
+            feature_template["geometry"] = repair_and_orient_geojson_geometry(value)
+            feature_template["bbox"] = shape(feature_template["geometry"]).bounds
+            continue
+        if stac_key in feature_template["assets"]["file"]:
+            feature_template["assets"]["file"][stac_key] = value
+
+    _apply_product_facets(feature_template, odata_dict)
+
+    # to pass pydantic validation, make sure we don't have a single timerange value
+    check_and_fix_timerange(feature_template)
+    # determine item collection
+    if collection_provider:
+        feature_template["collection"] = collection_provider(odata_dict)
+        if not feature_template["collection"]:
+            logger.warning(f"Unable to determine collection for {odata_dict}")
+    return feature_template
+
+
+def looks_like_swath_polygon(geometry: Polygon) -> bool:
+    """Return True for a polygon that can be rebuilt as a swath strip.
+
+    Criteria:
+    - no interior rings/holes;
+    - at least four exterior points, excluding closure;
+    - an even number of exterior points, so the ring can be split into two paired edges.
+    """
+    # Holes make the two-edge strip interpretation unsafe.
+    if geometry.interiors:
+        return False
+
+    points = [(float(lon), float(lat)) for lon, lat in geometry.exterior.coords[:-1]]
+    # A swath strip needs two paired edges; odd rings cannot be paired.
+    if len(points) < 4 or len(points) % 2:
+        return False
+
+    return True
+
+
+def rebuild_swath_polygon(geometry: Polygon) -> MultiPolygon | Polygon:
+    """Rebuild a two-edge swath footprint into antimeridian-safe geometry.
+
+    The polygon exterior is interpreted as two paired swath edges: the first half
+    of the coordinates is one edge, and the reversed second half is the opposite
+    edge. The footprint is rebuilt as consecutive quadrilateral cells between
+    paired vertices. Each cell is fixed for +/-180 longitude crossings, then the
+    fixed polygon parts are unioned back into a Polygon or MultiPolygon.
+
+    References:
+    - GeoJSON antimeridian cutting:
+      https://www.rfc-editor.org/rfc/rfc7946#section-3.1.9
+    - antimeridian segmentation algorithm:
+      https://www.gadom.ski/antimeridian/v0.4.5/the-algorithm/
+    - antimeridian.fix_shape API:
+      https://www.gadom.ski/antimeridian/v0.4.5/api/#antimeridian.fix_shape
+    """
+
+    def polygon_parts(geometry):
+        parts = []
+        for part in get_parts(geometry):
+            if isinstance(part, Polygon):
+                parts.append(part)
+            elif isinstance(part, (MultiPolygon, GeometryCollection)):
+                parts.extend(polygon_parts(part))
+        return parts
+
+    # Drop the closing coordinate and split the ring into the two swath borders.
+    points = [(float(lon), float(lat)) for lon, lat in geometry.exterior.coords[:-1]]
+    half = len(points) // 2
+    edge_a = points[:half]
+    edge_b = list(reversed(points[half:]))
+    parts = []
+
+    for index in range(half - 1):
+        # Rebuild one local strip cell between paired vertices on both borders.
+        quad = Polygon([edge_a[index], edge_a[index + 1], edge_b[index + 1], edge_b[index], edge_a[index]])
+        try:
+            # Fix the local cell at +/-180 without letting a global repair choose the wrong interior.
+            fixed_quad = shape(antimeridian.fix_shape(quad, fix_winding=True, great_circle=False))
+        except Exception as exception:  # pylint: disable=broad-exception-caught
+            logger.warning(f"antimeridian.fix_shape failed on swath quad, using local make_valid: {exception}")
+            fixed_quad = quad
+        if not fixed_quad.is_valid:
+            fixed_quad = make_valid(fixed_quad)
+        parts.extend(polygon_parts(fixed_quad))
+
+    if not parts:
+        return geometry
+
+    # Merge repaired cells back into a single polygonal footprint.
+    rebuilt = union_all(parts)
+    if not rebuilt.is_valid:
+        rebuilt = make_valid(rebuilt)
+    polygons = polygon_parts(rebuilt)
+    return MultiPolygon(polygons) if len(polygons) > 1 else polygons[0]
+
+
+def repair_and_orient_geojson_geometry(geometry: dict[str, Any]) -> dict[str, Any]:
+    """Repair invalid GeoJSON if needed and enforce RFC7946 ring orientation on polygonal results."""
+    shapely_geometry = shape(geometry)
+    # For raw polygonal footprints crossing the antimeridian, run the footprint-facility rework before
+    # generic make_valid. Shapely repairs lon/lat coordinates in a planar space; applying make_valid first
+    # can split a self-intersecting antimeridian footprint into a MultiPolygon that footprint-facility later
+    # treats as already reworked and may reject with AlreadyReworkedPolygonError. Use check_raw_antimeridian_jump
+    # here, not check_cross_antimeridian: a longitude jump > 180 is the raw-data signal that a segment
+    # should cross the antimeridian, while coordinates already placed on +/-180 are often the result of
+    # a previous split/rework and must not trigger another early polygon rework.
+    if isinstance(shapely_geometry, Polygon) and check_raw_antimeridian_jump(shapely_geometry):
+        if looks_like_swath_polygon(shapely_geometry):
+            # Swath footprints are strips encoded as two borders; rebuild them as small cells so
+            # antimeridian repair keeps the strip shape instead of guessing a large polygon interior.
+            shapely_geometry = rebuild_swath_polygon(shapely_geometry)
+        else:
+            shapely_geometry = rework_to_polygon_geometry(shapely_geometry)
+    elif isinstance(shapely_geometry, MultiPolygon) and check_raw_antimeridian_jump(shapely_geometry):
+        shapely_geometry = rework_to_polygon_geometry(shapely_geometry)
+
+    if not shapely_geometry.is_valid:
+        shapely_geometry = make_valid(shapely_geometry)
+
+    if isinstance(shapely_geometry, Polygon):
+        # RFC7946 expects exterior rings CCW and interior rings CW.
+        return mapping(orient(shapely_geometry, sign=1.0))
+
+    if isinstance(shapely_geometry, MultiPolygon):
+        # Apply the same ring orientation rule to each polygon component independently.
+        normalized = MultiPolygon([orient(polygon, sign=1.0) for polygon in shapely_geometry.geoms])
+        return mapping(normalized)
+
+    # If make_valid returns another valid geometry type, keep it unchanged.
+    return mapping(shapely_geometry)
+
+
+def check_and_fix_timerange(item: dict):
+    """This function ensures the item does not have a single timerange value"""
+    properties = item.get("properties", {})
+
+    start_dt = properties.get("start_datetime")
+    end_dt = properties.get("end_datetime")
+    dt = properties.get("datetime")
+
+    if start_dt and not end_dt:
+        properties["end_datetime"] = max(start_dt, dt) if dt else start_dt
+        logger.warning(f"Forced end_datetime property in {item}")
+    elif end_dt and not start_dt:
+        properties.pop("end_datetime", None)
+        logger.warning(f"Removed end_datetime property from {item}")
+
+
+def extract_eo_product(eo_product: EOProduct, mapper: dict) -> dict:
+    """This function is creating key:value pairs from an EOProduct properties"""
+    eo_product.properties.update(
+        {item.get("Name", None): item.get("Value", None) for item in eo_product.properties.get("attrs", [])},
+    )
+    return {key: value for key, value in eo_product.properties.items() if key in mapper.values()}
+
+
+def _apply_product_facets(feature: dict, _odata: dict) -> None:
+    """Sets product:type, processing:level - temporary hardcoded until RSPY-760 is DONE"""
+    props: dict[str, str] = feature["properties"]
+    if not (
+        all(k in props for k in ("product:type", "processing:level"))
+        and any(k in props for k in ("sar:instrument_mode", "eopf:instrument_mode", "instrument_mode"))
+    ):
+        return
+
+    legacy_type = find_product_type(props["product:type"])
+    props["product:type"] = legacy_type["productType"]
+    props["processing:level"] = legacy_type["processingLevel"]
+
+    instrument_mode_key = "eopf:instrument_mode" if legacy_type["mission"] == "S2" else "sar:instrument_mode"
+
+    # Remove any previous/generic instrument_mode keys, then set the selected one
+    for k in ("instrument_mode", "sar:instrument_mode", "eopf:instrument_mode"):
+        props.pop(k, None)
+
+    props[instrument_mode_key] = legacy_type["instrumentMode"]
+
+
+def find_product_type(product_type: str):
+    """
+    Finds the first product type entry whose 'legacyType' matches the given product_type.
+    Works with both exact strings and regex patterns.
+
+    Args:
+        product_type: The string to test.
+
+    Returns:
+        The first matching dictionary entry, or a default item if no match.
+    """
+
+    default = {key: None for key in product_type_data[0]}
+    for item in product_type_data:
+        pattern = item.get("legacyType", "")
+
+        try:
+            # Try regex full match first
+            if re.fullmatch(pattern, product_type):
+                return item
+        except (TypeError, re.error):
+            # If regex fails (invalid pattern), fall back to plain equality
+            if pattern == product_type:
+                return item
+
+    return default
+
+
+def validate_sort_input(sortby: str):
+    """Used to transform stac sort parameter to odata type.
+    -datetime = startTimeFromAscendingNode DESC.
+    """
+    sortby = sortby.strip("'\"").lower().replace("properties.", "")
+    return [(sortby[1:] if sortby[0] in ["-", "+"] else sortby, "DESC" if sortby[0] == "-" else "ASC")]
+
+
+def strftime_millis(date: datetime):
+    """Format datetime with milliseconds precision"""
+    return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def run_threads(threads: Iterable[Thread]) -> None:
+    """Start all threads, then join them."""
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+
+def run_in_threads(
+    func: Callable[..., Any],
+    args_list: Sequence[tuple],
+    max_workers: int | None = None,
+    raise_exceptions: bool = False,
+) -> list[Any]:
+    """
+    Executes a function in parallel using threads, and returns the list of non-None results.
+
+    Each thread runs `func` with the corresponding arguments provided in `args_list`.
+
+    Args:
+        func (Callable[..., Any]): The function to be executed concurrently.
+        args_list (Sequence[tuple]): A sequence of argument tuples for each thread.
+        max_workers (int | None): The maximum number of threads to use.
+        raise_exceptions (bool): If True, re-raise exceptions. If False, add exceptions to the return list.
+
+    Returns:
+        list[Any]: A list of results, one per thread, excluding any result that is None, in the same order as args_list.
+    """
+    results: list[Any] = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for future in [executor.submit(func, *args) for args in args_list]:
+            try:
+                if (result := future.result()) is not None:
+                    results.append(result)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                if raise_exceptions:
+                    raise
+                logger.error(traceback.format_exc())
+                results.append(e)
+    return results

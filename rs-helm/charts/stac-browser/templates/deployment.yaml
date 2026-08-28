@@ -1,0 +1,130 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mychart.Labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mychart.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 50%
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        {{- include "mychart.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: "{{ template "mychart.image" .Values.image }}"
+        imagePullPolicy: {{ .Values.image.PullPolicy }}
+        resources:
+          requests:
+            memory: {{ .Values.resources.request.ram }}
+            cpu: {{ .Values.resources.request.cpu }}
+          limits:
+            memory: {{ .Values.resources.limit.ram }}
+            cpu: {{ .Values.resources.limit.cpu }}
+        ports:
+        - name: web
+          protocol: TCP
+          containerPort: {{ .Values.app.port }}
+        env:
+        - name: SB_allowExternalAccess
+          value: {{ .Values.app.SB_allowExternalAccess | quote }}
+        - name: SB_detectLocaleFromBrowser
+          value: {{ .Values.app.SB_detectLocaleFromBrowser | quote }}
+        - name: SB_historyMode
+          value: {{ .Values.app.SB_historyMode }}
+        - name: SB_catalogUrl
+          value: {{ .Values.app.SB_catalogUrl }}
+        - name: SB_authConfig
+          value: |
+            {
+              "type": "openIdConnect",
+              "openIdConnectUrl": "{{ .Values.app.oidc_endpoint }}/realms/{{ .Values.app.oidc_realm }}/.well-known/openid-configuration",
+              "oidcConfig": {
+                "client_id": "{{ .Values.app.oidc_client_id }}"
+              }
+            }
+        - name: SB_socialSharing
+          value: {{ .Values.app.SB_socialSharing }}
+        - name: SB_maxEntriesPerPage
+          value: {{ .Values.app.SB_maxEntriesPerPage | quote }}
+        securityContext:
+          privileged: false
+        {{ if .Values.probe }}
+        {{ if .Values.probe.startup }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probe.startup.path }}
+            port: {{ .Values.probe.startup.port }}
+          initialDelaySeconds: {{ .Values.probe.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.startup.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.liveness }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probe.liveness.path }}
+            port: {{ .Values.probe.liveness.port }}
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.readiness }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probe.readiness.path }}
+            port: {{ .Values.probe.readiness.port }}
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
+        {{ end }}
+        {{ end }}
+      {{ if .Values.image }}
+      {{ if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+      - name:  {{ .Values.image.imagePullSecrets }}
+      {{ end }}
+      {{ end }}
+      restartPolicy: Always
+      securityContext: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  revisionHistoryLimit: 10

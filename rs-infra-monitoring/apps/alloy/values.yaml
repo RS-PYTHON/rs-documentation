@@ -1,0 +1,284 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+controller:
+  type: daemonset
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+    - key: role
+      value: infra
+      effect: NoSchedule
+    - key: role
+      value: rs_server
+      effect: NoSchedule
+    - key: role
+      value: rs_env
+      effect: NoSchedule
+    - key: role
+      value: access_csc
+      effect: NoSchedule
+    - key: role
+      value: prefect_flow
+      effect: NoSchedule
+    - key: role
+      value: dask_scheduler
+      effect: NoSchedule
+    - key: role
+      value: dask_worker_on_demand
+      effect: NoSchedule
+    - key: role
+      value: big_dask_worker_on_demand
+      effect: NoSchedule
+
+serviceMonitor:
+  enabled: true
+
+alloy:
+  extraPorts:
+    - name: "otlp-grpc"
+      port: 4317
+      targetPort: 4317
+      protocol: "TCP"
+
+  resources:
+    limits:
+      memory: 640Mi
+    requests:
+      memory: 6Mi
+
+  configMap:
+    content: |
+      livedebugging {
+        enabled = true
+      }
+
+      otelcol.receiver.otlp "default" {
+        http {}
+        grpc {}
+        output {
+          logs    = [otelcol.processor.batch.default.input]
+          traces  = [otelcol.processor.batch.default.input]
+          metrics = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      otelcol.processor.batch "default" {
+        output {
+          logs    = [otelcol.exporter.otlphttp.loki.input]
+          traces  = [otelcol.exporter.otlp.tempo.input]
+          metrics = [otelcol.exporter.prometheus.default.input]
+        }
+      }
+
+      otelcol.exporter.prometheus "default" {
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      otelcol.exporter.otlphttp "loki" {
+        client {
+          endpoint = "http://loki-gateway.logging.svc.cluster.local/loki/api/v1/push"
+        }
+      }
+
+      otelcol.exporter.otlp "tempo" {
+        client {
+          endpoint = "tempo-distributed-distributor.logging.svc.cluster.local:4317"
+          tls {
+            insecure = true
+          }
+        }
+      }
+
+      prometheus.exporter.unix "local_system" {
+        // Optional: enable or disable specific collectors
+        // enable_collectors = ["cpu", "meminfo", "diskstats"]
+      }
+
+      prometheus.scrape "scrape_metrics" {
+        targets         = prometheus.exporter.unix.local_system.targets
+        forward_to      = [prometheus.remote_write.default.receiver]
+        scrape_interval = "10s"
+      }
+
+      prometheus.remote_write "default" {
+        endpoint {
+          url = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/prometheus/api/v1/write"
+        }
+      }
+
+      loki.write "k8s" {
+        endpoint {
+          url = "http://loki-gateway.logging.svc.cluster.local/loki/api/v1/push"
+        }
+      }
+
+      // discovery.kubernetes allows you to find scrape targets from Kubernetes resources.
+      // It watches cluster state and ensures targets are continually synced with what is currently running in your cluster.
+      discovery.kubernetes "pod" {
+        role = "pod"
+      }
+
+      // discovery.relabel rewrites the label set of the input targets by applying one or more relabeling rules.
+      // If no rules are defined, then the input targets are exported as-is.
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pod.targets
+
+        // Label creation - "namespace" field from "__meta_kubernetes_namespace"
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action = "replace"
+          target_label = "namespace"
+        }
+
+        // Label creation - "node_name" field from "__meta_kubernetes_pod_node_name"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          action = "replace"
+          target_label = "node_name"
+        }
+
+        // Label creation - "pod" field from "__meta_kubernetes_pod_name"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          action = "replace"
+          target_label = "pod"
+        }
+
+        // Label creation - "container" field from "__meta_kubernetes_pod_container_name"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action = "replace"
+          target_label = "container"
+        }
+
+        // Label creation -  "app" field from "__meta_kubernetes_pod_label_app_kubernetes_io_name"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          action = "replace"
+          target_label = "app"
+        }
+
+        // Label creation -  "component" field from "__meta_kubernetes_pod_label_app_kubernetes_io_component" and "__meta_kubernetes_pod_label_component"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component", "__meta_kubernetes_pod_label_component"]
+          action = "replace"
+          target_label = "component"
+          regex = "^;*([^;]+)(;.*)?$"
+        }
+
+        // Label creation -  "instance" field from "__meta_kubernetes_pod_label_app_kubernetes_io_instance" and "__meta_kubernetes_pod_label_instance"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_instance", "__meta_kubernetes_pod_label_instance"]
+          action = "replace"
+          target_label = "instance"
+          regex = "^;*([^;]+)(;.*)?$"
+        }
+
+        // Label creation -  "job" field from "__meta_kubernetes_namespace" and "__meta_kubernetes_pod_container_name"
+        // Concatenate values __meta_kubernetes_namespace/__meta_kubernetes_pod_container_name
+        rule {
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+          action = "replace"
+          target_label = "job"
+          separator = "/"
+          replacement = "$1"
+        }
+
+        // Label creation - "container" field from "__meta_kubernetes_pod_uid" and "__meta_kubernetes_pod_container_name"
+        // Concatenate values __meta_kubernetes_pod_uid/__meta_kubernetes_pod_container_name.log
+        rule {
+          source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+          action = "replace"
+          target_label = "__path__"
+          separator = "/"
+          replacement = "/var/log/pods/*$1/*.log"
+        }
+
+        // Label creation -  "container_runtime" field from "__meta_kubernetes_pod_container_id"
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_id"]
+          action = "replace"
+          target_label = "container_runtime"
+          regex = "^(\\S+):\\/\\/.+$"
+          replacement = "$1"
+        }
+      }
+
+      // loki.source.kubernetes tails logs from Kubernetes containers using the Kubernetes API.
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.process.pod_logs.receiver]
+      }
+
+      // loki.process receives log entries from other Loki components, applies one or more processing stages,
+      // and forwards the results to the list of receivers in the component's arguments.
+      loki.process "pod_logs" {
+        forward_to = [loki.write.k8s.receiver]
+
+        stage.cri {}
+        stage.decolorize {}
+
+        stage.match {
+          selector = "{app=~\"rs-.+\"}"
+
+          stage.regex {
+            expression = "(?:(?s)(?P<time>\\S+?) (?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL) \\[(?P<otel>.+?)\\] \\((?P<logger>.+?)\\) )?(?P<msg>.*)"
+          }
+
+          stage.labels {
+            values = {
+              otel = "",
+              level  = "",
+              logger = "",
+            }
+          }
+
+          stage.logfmt {
+            mapping = {
+              service_name  = "resource.service.name",
+              trace_sampled = "",
+            }
+            source = "otel"
+          }
+
+          stage.template {
+            source   = "service_name"
+            template = "{% raw %}{{`{{if .service_name}}`}}{{`{{.service_name}}`}}{{`{{else}}`}}{{`{{.app | replace \"-\" \".\"}}`}}{{`{{end}}`}}{% endraw %}"
+
+          }
+
+          stage.labels {
+            values = {
+              service_name = "",
+              trace_sampled = "",
+            }
+          }
+
+          stage.template {
+            source   = "output_msg"
+            template = "{% raw %}{{`{{ .otel }}`}} {{`{{ .logger }}`}} {{`{{ .msg }}`}}{% endraw %}"
+          }
+
+          stage.output {
+            source = "output_msg"
+          }
+
+          stage.label_drop {
+            values = [ "otel", "span_id", "msg", "logger" ]
+          }
+        }
+      }

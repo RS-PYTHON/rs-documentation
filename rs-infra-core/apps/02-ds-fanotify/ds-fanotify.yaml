@@ -1,0 +1,77 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: "{{ app_name }}"
+spec:
+  selector:
+    matchLabels:
+      app: "{{ app_name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ app_name }}"
+    spec:
+      #restartPolicy: Always
+      hostPID: true
+      hostNetwork: true
+      #hostIPC: true
+      containers:
+      - name: pause
+        image: registry.k8s.io/pause:latest
+        resources:
+          limits:
+            memory: 8Mi
+          requests:
+            memory: 256Ki
+      initContainers:
+      - name: sysctl-init
+        image: busybox:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+           sysctl -w fs.fanotify.max_user_groups=256  # Set the maximum number of opened file
+           sysctl -w fs.inotify.max_user_instances=8192
+           sysctl -w fs.inotify.max_user_watches=65536
+        securityContext:
+          privileged: true
+          #runAsUser: 0
+      tolerations:
+        - key: role
+          value: infra
+          effect: NoSchedule
+        - key: role
+          value: rs_server
+          effect: NoSchedule
+        - key: role
+          value: rs_env
+          effect: NoSchedule
+        - key: role
+          value: access_csc
+          effect: NoSchedule
+        - key: role
+          value: prefect_flow
+          effect: NoSchedule
+        - key: role
+          value: dask_scheduler
+          effect: NoSchedule
+        - key: role
+          value: dask_worker_on_demand
+          effect: NoSchedule
+        - key: role
+          value: big_dask_worker_on_demand
+          effect: NoSchedule

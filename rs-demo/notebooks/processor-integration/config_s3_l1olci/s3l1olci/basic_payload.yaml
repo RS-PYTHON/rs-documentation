@@ -1,0 +1,129 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# NOTE: Taken as is from https://gitlab.eopf.copernicus.eu/S3/OLCI/s3olci/-/blob/main/resources/payloads/payload_ol1.yaml
+
+general_configuration:
+  logging:
+    level: INFO
+  triggering__use_basic_logging: true
+  triggering__wait_before_exit: 0
+  triggering__use_datatree: true
+  triggering__create_temporary: true
+  triggering__use_default_filename: false
+dask_context:
+  cluster_type: local
+  cluster_config:
+    n_workers: 1
+    threads_per_worker: 8
+    memory_limit: 100GiB
+  client_config: {}
+  performance_report_file: report.html
+  dask_config:
+    distributed.worker.local_directory: ~/eopf/output
+_store_params:
+  store_params: &id001
+    secret_alias: s3input
+    storage_options:
+      key: $S3_KEY
+      secret: $S3_SECRET
+      client_kwargs:
+        endpoint_url: $S3_ENDPOINT_URL
+        region_name: $S3_REGION_NAME
+workflow:
+- name: processor_ol1
+  active: true
+  module: s3olci.s3_ol1.ol1_processor
+  processing_unit: OL1Processor
+  inputs:
+    S3OLCIL0_1: dt_l0_1
+    S3OLCIL0_2: dt_l0_2
+    S3OLCIL0_3: dt_l0_3
+    S3NAVL0_1: dt_nat
+  adfs:
+    OLPRG: OLPRG_ADF
+    OLINS: OLINS_ADF
+    OLEOP: OLEOP_ADF
+    OLCAL: OLCAL_ADF
+    OLLUT: OLLUT_ADF
+    WATER: WATER_ADF
+    FRO: FRO_ADF
+    OSF: OSF_ADF
+  parameters:
+    start_datetime: '2023-05-12T17:47:02.000000Z'
+    end_datetime: '2023-05-12T17:47:10.000000Z'
+    # start_datetime: '2023-05-12T17:48:02.000000Z'
+    # end_datetime: '2023-05-12T17:50:02.000000Z'
+    no_pdgs: false
+    lossless_data_split: false
+  outputs:
+    S03OLCEFR: ol1_product_fr
+    S03OLCERR: ol1_product_rr
+I/O:
+  input_products:
+  - store_params: *id001
+    id: dt_l0_1
+    path: s3://dpr-s3-input/Validation/OLCI/MINI_DATA_FOR_TESTS/S3B_20230512T174702/S03OLCL0__20230512T174522_0119_B212_TD60.zarr.zip
+    store_type: zarr
+  - store_params: *id001
+    id: dt_l0_2
+    path: s3://dpr-s3-input/Validation/OLCI/MINI_DATA_FOR_TESTS/S3B_20230512T174702/S03OLCL0__20230512T174722_0119_B212_T135.zarr.zip
+    store_type: zarr
+  - store_params: *id001
+    id: dt_l0_3
+    path: s3://dpr-s3-input/Validation/OLCI/MINI_DATA_FOR_TESTS/S3B_20230512T174702/S03OLCL0__20230512T174922_0119_B212_TD1E.zarr.zip
+    store_type: zarr
+  - store_params: *id001
+    id: dt_nat
+    path: s3://dpr-s3-input/Validation/OLCI/MINI_DATA_FOR_TESTS/S3B_20230512T174702/S03NATL0__20230512T172755_6006_B212__7DE.zarr.zip
+    store_type: zarr
+  adfs:
+  - store_params: *id001
+    id: OLPRG_ADF
+    path: s3://dpr-s3-input/Auxiliary/OL1/S3B_ADF_OLPRG_20180425T000000_20991231T235959_20240427T201544.zarr
+  - store_params: *id001
+    id: OLINS_ADF
+    path: s3://dpr-s3-input/Auxiliary/OL1/S3B_ADF_OLINS_20180425T000000_20991231T235959_20240427T201452.zarr
+  - store_params: *id001
+    id: OLEOP_ADF
+    path: s3://dpr-s3-input/Auxiliary/OL1/S3B_ADF_OLEOP_20160216T000000_20991231T235959_20231030T154253.json
+  - store_params: *id001
+    id: OLCAL_ADF
+    path: s3://dpr-s3-input/Auxiliary/OL1/S03B_ADF_OLCAL_20220930T000000_20991231T235959_20250423T152536.zarr
+  - store_params: *id001
+    id: OLLUT_ADF
+    path: s3://dpr-s3-input/Auxiliary/OL1/S3B_ADF_OLLUT_20180425T000000_20991231T235959_20240427T201222.zarr
+  - store_params: *id001
+    id: WATER_ADF
+    # path: s3://dpr-s3-input/Auxiliary/COMMON/S00__ADF_WATER_20000101T000000_21000101T000000_20250408T085114.zarr.zip
+    path: /mount/internal/work-st/projects/cs-412/2078-dpr/workspace/tlamalle/S00__ADF_WATER_20000101T000000_21000101T000000_20250408T085114.zarr
+  - store_params: *id001
+    id: FRO_ADF
+    path: s3://dpr-s3-input/Validation/Nominal/ADF/S3B/S3B_AX___FRO_AX_20230509T000000_20230519T000000_20230512T065237___________________EUM_O_AL_001.SEN3/S3B_OPER_MPL_ORBRES_20230509T000000_20230519T000000_0001.EOF
+  - store_params: *id001
+    id: OSF_ADF
+    path: s3://dpr-s3-input/Validation/Nominal/ADF/S3B/S3B_AX___OSF_AX_20180425T191855_99991231T235959_20240507T090659___________________EUM_O_AL_001.SEN3/S3B_OPER_MPL_ORBSCT_20180425T191855_99999999T999999_0011.TGZ
+  output_products:
+  - id: ol1_product_fr
+    path: /tmp/eopf_S03OLCEFR.zarr
+    type: filename
+    opening_mode: CREATE
+    store_type: zarr
+    store_params: {}
+  - id: ol1_product_rr
+    path: /tmp/eopf_S03OLCERR.zarr
+    type: filename
+    opening_mode: CREATE
+    store_type: zarr
+    store_params: {}

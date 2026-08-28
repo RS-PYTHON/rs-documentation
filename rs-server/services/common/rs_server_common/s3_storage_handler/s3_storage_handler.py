@@ -1,0 +1,1487 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Set of functions to connect to an S3 endpoint and run various operations."""
+
+import asyncio
+import io
+import logging
+import ntpath
+import os
+import threading
+import time
+import traceback
+from collections import defaultdict, deque
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+from urllib.parse import urlparse
+
+import boto3
+import botocore
+import botocore.exceptions
+import requests
+from rs_server_common.ftp_handler.ftp_handler import FTPClient
+from rs_server_common.utils.logging import Logging
+from rs_server_common.utils.utils2 import S3Credentials
+
+# seconds
+DWN_S3FILE_RETRY_TIMEOUT = 6
+DWN_S3FILE_RETRIES = 20
+UP_S3FILE_RETRY_TIMEOUT = 6
+UP_S3FILE_RETRIES = 20
+SLEEP_TIME = 0.2
+S3_MAX_RETRIES = 3
+S3_RETRY_TIMEOUT = 5
+SET_PREFECT_LOGGING_LEVEL = "DEBUG"
+S3_ERR_FORBIDDEN_ACCESS = "403"
+S3_ERR_NOT_FOUND = "404"
+HTTP_CONNECTION_TIMEOUT = 10
+HTTP_READ_TIMEOUT = 120
+# should we use env vars?
+HTTP_RATE_LIMIT_WINDOW_SECONDS = 60
+HTTP_RATE_LIMIT_MAX_RETRIES = 3
+HTTP_RATE_LIMIT_BACKOFF_SECONDS = 1
+PRESIGNED_URL_EXPIRATION_TIME = int(os.environ.get("RSPY_PRESIGNED_URL_EXPIRATION_TIME", "3600"))
+# the maximum number of attempts that are made on a single request
+# this defines the number of retries at the s3 protocol level
+# there is also another retry mechanism set on the application level
+# see functions like delete_key_from_s3 / get_keys_from_s3 / put_files_to_s3
+S3_PROTOCOL_MAX_ATTEMPTS = 5
+
+# The boto3 delete_objects function takes max 1000 items to delete.
+MAX_DELETE_FILES = 1000
+
+
+class DomainRateLimiter:
+    """Simple per-domain sliding-window rate limiter."""
+
+    def __init__(self):
+        self._requests_by_domain: defaultdict[str, deque[float]] = defaultdict(deque)
+        self._lock = threading.Lock()
+
+    def acquire(self, domain: str, max_requests_per_minute: int | None):
+        """Wait until one more request can be sent for the given domain."""
+        if not domain or not max_requests_per_minute:
+            return
+
+        while True:
+            with self._lock:
+                # uze monotonic time instea of time.time() to avoid issues with system clock changes
+                now = time.monotonic()
+                requests_for_domain = self._requests_by_domain[domain]
+                while requests_for_domain and now - requests_for_domain[0] >= HTTP_RATE_LIMIT_WINDOW_SECONDS:
+                    requests_for_domain.popleft()
+
+                if len(requests_for_domain) < max_requests_per_minute:
+                    requests_for_domain.append(now)
+                    return
+
+                wait_time = HTTP_RATE_LIMIT_WINDOW_SECONDS - (now - requests_for_domain[0])
+
+            time.sleep(max(wait_time, 0))
+
+
+DOMAIN_RATE_LIMITER = DomainRateLimiter()
+
+
+class DownloadProgressStream:
+    """Wrap a provider stream and report each block read by boto3."""
+
+    def __init__(self, stream: Any, download_progress_callback: Callable[[int], None] | None):
+        self._stream = stream
+        self._download_progress_callback = download_progress_callback
+
+    def read(self, *args: Any, **kwargs: Any) -> Any:
+        """Read one block and report its size to the progress callback."""
+        chunk = self._stream.read(*args, **kwargs)
+        if chunk and self._download_progress_callback:
+            self._download_progress_callback(len(chunk))
+        return chunk
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+
+# pylint: disable=too-many-lines
+@dataclass
+class GetKeysFromS3Config:
+    """S3 configuration for download
+
+    Attributes:
+        s3_files (list): A list with the  S3 object keys to be downloaded.
+        bucket (str): The S3 bucket name.
+        local_prefix (str): The local prefix where files will be downloaded.
+        overwrite (bool, optional): Flag indicating whether to overwrite existing files. Default is False.
+        max_retries (int, optional): The maximum number of download retries. Default is DWN_S3FILE_RETRIES.
+
+    """
+
+    s3_files: list
+    bucket: str
+    local_prefix: str
+    overwrite: bool = False
+    max_retries: int = DWN_S3FILE_RETRIES
+
+
+@dataclass
+class PutFilesToS3Config:
+    """Configuration for uploading files to S3.
+
+    Attributes:
+        files (List): A list with the local file paths to be uploaded.
+        bucket (str): The S3 bucket name.
+        s3_path (str): The S3 path where files will be uploaded.
+        max_retries (int, optional): The maximum number of upload retries. Default is UP_S3FILE_RETRIES.
+
+    """
+
+    files: list
+    bucket: str
+    s3_path: str
+    max_retries: int = UP_S3FILE_RETRIES
+
+
+@dataclass
+class TransferFromS3ToS3Config:
+    """S3 configuration for copying a list with keys between buckets
+
+    Attributes:
+        s3_files (list): A list with the S3 object keys to be copied.
+        bucket_src (str): The source S3 bucket name.
+        bucket_dst (str): The destination S3 bucket name.
+        max_retries (int, optional): The maximum number of download retries. Default is DWN_S3FILE_RETRIES.
+
+    """
+
+    s3_files: list
+    bucket_src: str
+    bucket_dst: str
+    copy_only: bool = False
+    max_retries: int = DWN_S3FILE_RETRIES
+
+
+class CustomSessionRedirect(requests.Session):
+    """
+    Custom session to handle HTTP 307 redirects and retain Authorization headers for allowed hosts.
+    """
+
+    def __init__(self, trusted_domains=list[str] | None):
+        """
+        Initialize the CustomSession instance.
+
+        Args:
+            trusted_domains (list): List of allowed hosts for redirection in case of change of protocol (HTTP <> HTTPS).
+        """
+        super().__init__()
+        self.trusted_domains: list[str] = trusted_domains or []  # List of allowed hosts for redirection
+
+    def should_strip_auth(self, old_url, new_url) -> bool:
+        """
+        Override the default behavior of stripping Authorization headers during redirection.
+
+        Args:
+            old_url (str): The URL of the original request.
+            new_url (str): The URL to which the request is redirected.
+
+        Returns:
+            bool: Whether to strip Authorization headers (False to retain them).
+        """
+        old_parsed = urlparse(old_url)
+        new_parsed = urlparse(new_url)
+
+        # Check if the new host is in the allowed list
+        # Also, include the original domain as an implicitly allowed domain
+        if new_parsed.hostname == old_parsed.hostname or new_parsed.hostname in self.trusted_domains:
+            # Allow protocol changes (HTTPS -> HTTP or vice versa) within the same or trusted hosts
+            return False  # Do not strip auth
+
+        return super().should_strip_auth(old_url, new_url)
+
+
+def _retry_after_seconds(response: requests.Response, fallback_seconds: int) -> int:
+    """Return the Retry-After delay in seconds, or a fallback if it is missing/invalid."""
+    retry_after = response.headers.get("retry-after")
+    if not retry_after:
+        return fallback_seconds
+
+    try:
+        return max(0, int(retry_after))
+    except ValueError:
+        return fallback_seconds
+
+
+class S3StorageHandler:
+    """Interacts with an S3 storage
+
+    S3StorageHandler for interacting with an S3 storage service.
+
+    WARNING: THIS CLASS IS NOT THREAD-SAFE because of the connect_s3 and disconnect_s3 methods.
+
+    Attributes:
+        s3_credentials (S3Credentials): S3 credentials
+        s3_client (boto3.client): The s3 client to interact with the s3 storage
+    """
+
+    def __init__(self, s3_credentials: S3Credentials):
+        """Initialize the S3StorageHandler instance.
+
+        Args:
+            s3_credentials (S3Credentials): S3 credentials
+
+        Raises:
+            RuntimeError: If the connection to the S3 storage cannot be established.
+        """
+        self.logger = Logging.default(__name__)
+
+        self.s3_credentials = s3_credentials
+        self.s3_client: boto3.client = None
+        self.connect_s3()
+        # Suppress botocore debug messages
+        logging.getLogger("botocore").setLevel(logging.INFO)
+        logging.getLogger("boto3").setLevel(logging.INFO)
+        logging.getLogger("urllib3").setLevel(logging.INFO)
+        self.logger.debug("S3StorageHandler created !")
+
+    def __get_s3_client(self):
+        """Retrieve or create an S3 client instance.
+
+        Returns:
+            client (boto3): An S3 client instance.
+        """
+
+        client_config = botocore.config.Config(
+            max_pool_connections=100,
+            # timeout for connection
+            connect_timeout=5,
+            # attempts in trying connection
+            # note:  the default behaviour of boto3 is retrying
+            # connections multiple times and exponentially backing off in between
+            retries={"total_max_attempts": S3_PROTOCOL_MAX_ATTEMPTS},
+        )
+        try:
+            return boto3.client(
+                "s3",
+                aws_access_key_id=self.s3_credentials.access_key_id,
+                aws_secret_access_key=self.s3_credentials.secret_access_key,
+                endpoint_url=self.s3_credentials.endpoint_url,
+                region_name=self.s3_credentials.region_name,
+                config=client_config,
+            )
+
+        except Exception as e:
+            self.logger.exception(f"Client error exception: {e}")
+            raise RuntimeError("Client error exception ") from e
+
+    def connect_s3(self):
+        """Establish a connection to the S3 service.
+
+        If the S3 client is not already instantiated, this method calls the private __get_s3_client
+        method to create an S3 client instance using the provided credentials and configuration (see __init__).
+        """
+        if self.s3_client is None:
+            self.s3_client = self.__get_s3_client()
+
+    def disconnect_s3(self):
+        """Close the connection to the S3 service."""
+        if self.s3_client is None:
+            return
+        self.s3_client.close()
+        self.s3_client = None
+
+    def delete_key_from_s3(self, bucket, key, max_retries=S3_MAX_RETRIES):
+        """Delete a file from S3.
+        The functionality implies a retry mechanism at the application level, which is different
+        than the retry mechanism from the s3 protocol level, with "retries" parameter from the s3 Config
+
+
+        Args:
+            bucket (str): The S3 bucket name.
+            key (str): The S3 object key.
+            max_retries (int): Maximum number of deletion attempts before raising an error. Defaults to S3_MAX_RETRIES.
+
+        Raises:
+            RuntimeError: If an error occurs during the bucket access check.
+        """
+        if bucket is None or key is None:
+            raise RuntimeError("Input error for deleting the file")
+        attempt = 0
+        while attempt < max_retries:
+            try:
+                self.connect_s3()
+                self.logger.debug("Deleting s3 key s3://%s/%s", bucket, key)
+                s3_key_exists, _ = self.check_s3_key_on_bucket(bucket, key)
+                if not s3_key_exists:
+                    self.logger.debug("S3 key to be deleted s3://%s/%s does not exist", bucket, key)
+                    return
+                self.s3_client.delete_object(Bucket=bucket, Key=key)
+                self.logger.info("S3 key deleted: s3://%s/%s", bucket, key)
+                return
+            except (botocore.client.ClientError, botocore.exceptions.BotoCoreError) as e:
+                attempt += 1
+                if attempt < max_retries:
+                    # keep retrying
+                    self.disconnect_s3()
+                    self.logger.error(
+                        f"Failed to delete key s3://{bucket}/{key}: {e} \nRetrying in {S3_RETRY_TIMEOUT} seconds. ",
+                    )
+                    self.wait_timeout(S3_RETRY_TIMEOUT)
+                    continue
+                self.logger.exception(f"Failed to delete key s3://{bucket}/{key}. Reason: {e}")
+                raise RuntimeError(f"Failed to delete key s3://{bucket}/{key}. Reason: {e}") from e
+            except RuntimeError as e:
+                self.logger.exception(f"Failed to check the key s3://{bucket}/{key}. Useless to retry. Reason: {e}")
+                raise RuntimeError(
+                    f"Failed to check the key s3://{bucket}/{key}. Useless to retry. Reason: {e}",
+                ) from e
+            except Exception as e:
+                self.logger.exception(f"Failed to delete key s3://{bucket}/{key}. Reason: {e}")
+                raise RuntimeError(f"Failed to delete key s3://{bucket}/{key}. Reason: {e}") from e
+
+    @staticmethod
+    def is_s3_not_found_error(error: botocore.client.ClientError) -> bool:
+        """Return True if the S3 client error is a key-not-found response."""
+        error_code = error.response.get("Error", {}).get("Code")
+        return error_code in ("404", "NoSuchKey", "NotFound", S3_ERR_NOT_FOUND)
+
+    @staticmethod
+    def parse_s3_uri(s3_uri: str) -> tuple[str, str]:
+        """Parse an s3://bucket/key URI into bucket and key."""
+        parsed = urlparse(s3_uri)
+        # A delete target must include both the S3 scheme and a bucket name.
+        if parsed.scheme != "s3" or not parsed.netloc:
+            raise RuntimeError(f"Invalid S3 URI: {s3_uri}")
+        # Object keys are passed to boto3 without the URI path's leading slash.
+        key = parsed.path.lstrip("/")
+        if not key:
+            raise RuntimeError(f"Invalid S3 URI without object key/prefix: {s3_uri}")
+        return parsed.netloc, key
+
+    @staticmethod
+    def should_delete_as_prefix(key: str) -> bool:
+        """Return True for directory-like keys that should be listed as prefixes."""
+        return key.endswith("/") or key.endswith(".zarr")
+
+    def list_s3_delete_target_keys(self, bucket: str, key: str) -> list[str]:
+        """
+        Resolve one delete target to concrete object keys.
+
+        Zarr assets are directory-like prefixes. For normal keys, prefer exact object deletion to avoid
+        prefix collisions such as ``0.1`` also matching ``0.10``.
+        """
+        # Directory-like assets must be expanded into their concrete objects.
+        if self.should_delete_as_prefix(key):
+            return self.list_s3_files_obj(bucket, key.rstrip("/") + "/")
+
+        # Prefer an exact object match to avoid deleting similarly named prefixes.
+        try:
+            self.s3_client.head_object(Bucket=bucket, Key=key)
+            return [key]
+        except botocore.client.ClientError as error:
+            if not self.is_s3_not_found_error(error):
+                raise
+
+        # If no exact object exists, treat the target as a prefix.
+        return self.list_s3_files_obj(bucket, key.rstrip("/") + "/")
+
+    def delete_objects_batch(self, bucket: str, keys: list[str], max_retries: int) -> tuple[int, bool]:
+        """Delete up to MAX_DELETE_FILES keys and retry transient/partial failures."""
+        # Keep a separate list so partial retries do not modify the caller's input.
+        pending_keys = list(keys)
+        attempt = 0
+        had_retry = False
+
+        while pending_keys:
+            attempt += 1
+            try:
+                response = self.s3_client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": key} for key in pending_keys], "Quiet": True},
+                )
+                errors = response.get("Errors", [])
+                if not errors:
+                    return len(keys), had_retry
+
+                failed_keys = [error["Key"] for error in errors if error.get("Key")]
+                if not failed_keys:
+                    raise RuntimeError(f"Failed to delete key(s) from bucket {bucket}: {errors}")
+                message = f"Failed to delete {len(failed_keys)} key(s) from bucket {bucket}: {errors}"
+                if attempt >= max_retries:
+                    raise RuntimeError(message)
+
+                # Retry only the keys explicitly reported as failed by S3.
+                pending_keys = failed_keys
+                had_retry = True
+                self.logger.warning("%s. Retrying in %s seconds.", message, S3_RETRY_TIMEOUT)
+                self.wait_timeout(S3_RETRY_TIMEOUT)
+
+            except Exception as error:  # pylint: disable=broad-exception-caught
+                if attempt >= max_retries:
+                    raise
+                # Reconnect before retrying the current pending set.
+                self.disconnect_s3()
+                had_retry = True
+                self.logger.warning(
+                    "Failed to delete %d key(s) from bucket %s: %s. Retrying in %s seconds.",
+                    len(pending_keys),
+                    bucket,
+                    error,
+                    S3_RETRY_TIMEOUT,
+                )
+                self.wait_timeout(S3_RETRY_TIMEOUT)
+                self.connect_s3()
+
+        return len(keys), had_retry
+
+    def count_remaining_delete_targets(self, keys: list[str]) -> int:
+        """Return the number of still-existing keys for the original delete targets."""
+        # Bucket/key pairs deduplicate objects coming from overlapping targets.
+        remaining_keys: set[tuple[str, str]] = set()
+        for s3_uri in keys:
+            bucket, key = self.parse_s3_uri(s3_uri)
+            remaining_keys.update((bucket, object_key) for object_key in self.list_s3_delete_target_keys(bucket, key))
+        return len(remaining_keys)
+
+    def delete_keys_from_s3(  # pylint: disable=too-many-branches,too-many-nested-blocks
+        self,
+        keys: list[str],
+        max_retries: int = S3_MAX_RETRIES,
+    ):
+        """Delete a list of keys from the S3 location.
+        The functionality implies a retry mechanism at the application level, which is different
+        than the retry mechanism from the s3 protocol level, with "retries" parameter from the s3 Config.
+        It expands prefixes once, then deletes concrete object keys in S3 multi-delete batches.
+        Args:
+            keys (list[str]): The S3 object keys.
+            max_retries (int): The maximum number of retries.
+        Raises:
+            RuntimeError: If an error occurs during the bucket access check.
+        """
+        if keys is None:
+            raise RuntimeError("Input error for deleting the files")
+
+        try:
+            self.connect_s3()
+            buckets_collection: dict[str, set[str]] = defaultdict(set)
+
+            for s3_uri in keys:
+                bucket, path = self.parse_s3_uri(s3_uri)
+                for object_key in self.list_s3_delete_target_keys(bucket, path):
+                    buckets_collection[bucket].add(object_key)
+
+            total_keys = sum(len(file_keys) for file_keys in buckets_collection.values())
+            if not total_keys:
+                self.logger.info("No S3 keys found for deletion")
+                return
+
+            deleted_keys = 0
+            batches_count = 0
+            had_any_retry = False
+
+            # Split each bucket's keys into S3 multi-delete batches.
+            for bucket, file_keys in buckets_collection.items():
+                # Keep batch composition deterministic for reproducible retries and logs.
+                file_keys_list = sorted(file_keys)
+                for index in range(0, len(file_keys_list), MAX_DELETE_FILES):
+                    batches_count += 1
+                    deleted_count, had_retry = self.delete_objects_batch(
+                        bucket,
+                        file_keys_list[index : index + MAX_DELETE_FILES],
+                        max_retries,
+                    )
+                    deleted_keys += deleted_count
+                    # had_retry is per batch; accumulate it to trigger final verification after any retry.
+                    had_any_retry = had_any_retry or had_retry
+
+            if had_any_retry:
+                remaining_keys = self.count_remaining_delete_targets(keys)
+                if remaining_keys:
+                    # Propagate the failure; catalog DELETE catches it and starts its outer cleanup retry.
+                    raise RuntimeError(f"{remaining_keys} S3 key(s) remain after delete operation")
+
+            self.logger.info(
+                "The files were deleted successfully: requested_targets=%d expanded_keys=%d "
+                "deleted_keys=%d batches=%d",
+                len(keys),
+                total_keys,
+                deleted_keys,
+                batches_count,
+            )
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            message = f"Failed to delete S3 keys: {e}"
+            self.logger.error(message)
+            self.logger.debug("S3 delete traceback", exc_info=True)
+            raise RuntimeError(message) from e
+
+    async def adelete_keys_from_s3(self, *args, **kwargs):
+        """Async version of delete_files_from_s3. Call sync function in a separate thread."""
+        return await asyncio.to_thread(self.delete_keys_from_s3, *args, **kwargs)
+
+    # helper functions
+
+    @staticmethod
+    def get_secrets_from_file(secrets, secret_file):
+        """Read secrets from a specified file.
+
+        It reads the secrets from .s3cfg or aws credentials files
+        This function should not be used in production
+
+        Args:
+            secrets (dict): Dictionary to store retrieved secrets.
+            secret_file (str): Path to the file containing secrets.
+        """
+        dict_filled = 0
+        with open(secret_file, encoding="utf-8") as aws_credentials_file:
+            lines = aws_credentials_file.readlines()
+            for line in lines:
+                if not secrets["s3endpoint"] and "host_bucket" in line:
+                    dict_filled += 1
+                    secrets["s3endpoint"] = line.strip().split("=")[1].strip()
+                elif not secrets["accesskey"] and "access_key" in line:
+                    dict_filled += 1
+                    secrets["accesskey"] = line.strip().split("=")[1].strip()
+                elif not secrets["secretkey"] and "secret_" in line and "_key" in line:
+                    dict_filled += 1
+                    secrets["secretkey"] = line.strip().split("=")[1].strip()
+                if dict_filled == 3:
+                    break
+
+    @staticmethod
+    def get_basename(input_path):
+        """Get the filename from a full path.
+
+        Args:
+            input_path (str): The full path.
+
+        Returns:
+            filename (str): The filename.
+        """
+        path, filename = ntpath.split(input_path)
+        return filename or ntpath.basename(path)
+
+    @staticmethod
+    def s3_path_parser(s3_url):
+        """
+        Parses S3 URL to extract bucket, prefix, and file.
+
+        Args:
+            s3_url (str): The S3 URL.
+
+        Returns:
+            (bucket, prefix, s3_file) (tuple): Tuple containing bucket, prefix, and file.
+        """
+        s3_data = s3_url.replace("s3://", "").split("/")
+        bucket = ""
+        start_idx = 0
+        if s3_url.startswith("s3://"):
+            bucket = s3_data[0]
+
+            start_idx = 1
+        prefix = ""
+        if start_idx < len(s3_data):
+            prefix = "/".join(s3_data[start_idx:-1])
+        s3_file = s3_data[-1]
+        return bucket, prefix, s3_file
+
+    def files_to_be_downloaded(self, bucket, paths):
+        """Create a list with the S3 keys to be downloaded.
+
+        The list will have the s3 keys to be downloaded from the bucket.
+        It contains pairs (local_prefix_where_the_file_will_be_downloaded, full_s3_key_path)
+        If a s3 key doesn't exist, the pair will be (None, requested_s3_key_path)
+
+        Args:
+            bucket (str): The S3 bucket name.
+            paths (list): List of S3 object keys.
+
+        Returns:
+            list_with_files (list): List of tuples (local_prefix, full_s3_key_path).
+        """
+        # declaration of the list
+        list_with_files: list[Any] = []
+        # for each key, identify it as a file or a folder
+        # in the case of a folder, the files will be recursively gathered
+        for key in paths:
+            path = key.strip().lstrip("/")
+            s3_files = self.list_s3_files_obj(bucket, path)
+            if len(s3_files) == 0:
+                self.logger.warning("No key %s found.", path)
+                list_with_files.append((None, path))
+                continue
+            self.logger.debug("total: %s | s3_files = %s", len(s3_files), s3_files)
+            basename_part = self.get_basename(path)
+
+            # check if it's a file or a dir
+            if len(s3_files) == 1 and path == s3_files[0]:
+                # the current key is a file, append it to the list
+                list_with_files.append(("", s3_files[0]))
+                self.logger.debug("Append files: list_with_files = %s", list_with_files)
+            else:
+                # the current key is a folder, append all its files (recursively gathered) to the list
+                for s3_file in s3_files:
+                    split = s3_file.split("/")
+                    split_idx = split.index(basename_part)
+                    list_with_files.append((os.path.join(*split[split_idx:-1]), s3_file.strip("/")))
+
+        return list_with_files
+
+    def files_to_be_uploaded(self, paths):
+        """Creates a list with the local files to be uploaded.
+
+        The list contains pairs (s3_path, absolute_local_file_path)
+        If the local file doesn't exist, the pair will be (None, requested_file_to_upload)
+
+        Args:
+            paths (list): List of local file paths.
+
+        Returns:
+            list_with_files (list): List of tuples (s3_path, absolute_local_file_path).
+        """
+
+        list_with_files = []
+        for local in paths:
+            path = local.strip()
+            # check if it is a file
+            self.logger.debug("path = %s", path)
+            if os.path.isfile(path):
+                self.logger.debug("Add %s", path)
+                list_with_files.append(("", path))
+
+            elif os.path.isdir(path):
+                for root, dir_names, filenames in os.walk(path):
+                    for file in filenames:
+                        full_file_path = os.path.join(root, file.strip("/"))
+                        self.logger.debug("full_file_path = %s | dir_names = %s", full_file_path, dir_names)
+                        if not os.path.isfile(full_file_path):
+                            continue
+                        self.logger.debug(
+                            "get_basename(path) = %s | root = %s | replace = %s",
+                            self.get_basename(path),
+                            root,
+                            root.replace(path, ""),
+                        )
+
+                        keep_path = os.path.join(self.get_basename(path), root.replace(path, "").strip("/")).strip("/")
+                        self.logger.debug("path = %s | keep_path = %s | root = %s", path, keep_path, root)
+
+                        self.logger.debug("Add: %s | %s", keep_path, full_file_path)
+                        list_with_files.append((keep_path, full_file_path))
+            else:
+                self.logger.warning("The path %s is not a directory nor a file, it will not be uploaded", path)
+
+        return list_with_files
+
+    def list_s3_files_obj(self, bucket, prefix):
+        """Retrieve the content of an S3 directory.
+
+        Args:
+            bucket (str): The S3 bucket name.
+            prefix (str): The S3 object key prefix.
+
+        Returns:
+            s3_files (list): List containing S3 object keys.
+        """
+
+        s3_files = []
+
+        try:
+            paginator: Any = self.s3_client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
+            for page in pages:
+                for item in page.get("Contents", ()):
+                    if item is not None:
+                        s3_files.append(item["Key"])
+        except Exception as error:
+            self.logger.exception(f"Exception when trying to list files from s3://{bucket}/{prefix}: {error}")
+            raise RuntimeError(f"Listing files from s3://{bucket}/{prefix}") from error
+
+        return s3_files
+
+    def check_bucket_access(self, bucket):
+        """Check the accessibility of an S3 bucket.
+
+        Args:
+            bucket (str): The S3 bucket name.
+
+        Raises:
+            RuntimeError: If an error occurs during the bucket access check.
+        """
+
+        try:
+            self.connect_s3()
+            self.s3_client.head_bucket(Bucket=bucket)
+        except botocore.client.ClientError as error:
+            # check that it was a 404 vs 403 errors
+            # If it was a 404 error, then the bucket does not exist.
+            error_code = error.response["Error"]["Code"]
+            if error_code == S3_ERR_FORBIDDEN_ACCESS:
+                self.logger.exception(f"{bucket} is a private bucket. Forbidden access!")
+                raise RuntimeError(f"{bucket} is a private bucket. Forbidden access!") from error
+            if error_code == S3_ERR_NOT_FOUND:
+                self.logger.exception(f"{bucket} bucket does not exist!")
+                raise RuntimeError(f"{bucket} bucket does not exist!") from error
+            self.logger.exception(f"Exception when checking the access to {bucket} bucket: {error}")
+            raise RuntimeError(f"Exception when checking the access to {bucket} bucket") from error
+        except botocore.exceptions.EndpointConnectionError as error:
+            self.logger.exception(f"Failed to connect to the endpoint when trying to access {bucket}: {error}")
+            raise RuntimeError(f"Failed to connect to the endpoint when trying to access {bucket}!") from error
+        except Exception as error:
+            self.logger.exception(f"General exception when trying to access bucket {bucket}: {error}")
+            raise RuntimeError(f"General exception when trying to access bucket {bucket}") from error
+
+    def check_s3_key_on_bucket(self, bucket: str, s3_key: str) -> tuple[bool, int]:
+        """Check if an S3 key exists in a bucket and return its size if available."""
+        size = -1
+        try:
+            self.connect_s3()
+            self.logger.debug(f"Checking for the presence of the s3 key s3://{bucket}/{s3_key}")
+
+            try:
+                # Try to treat the key as a file/object
+                response = self.s3_client.head_object(Bucket=bucket, Key=s3_key)
+                if isinstance(response, dict):
+                    size = response.get("ContentLength", -1)
+                return True, size
+            except botocore.client.ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                # Handle "not found" cases (AWS S3 / moto / MinIO variations)
+                if error_code in ("404", "NoSuchKey", "NotFound", S3_ERR_NOT_FOUND):
+
+                    # Check if it is actually a "directory" prefix
+                    response = self.s3_client.list_objects_v2(
+                        Bucket=bucket,
+                        Prefix=s3_key.rstrip("/") + "/",
+                        MaxKeys=1,
+                    )
+
+                    if "Contents" in response:
+                        return True, size  # directory exists
+
+                    self.logger.exception(f"The key s3://{bucket}/{s3_key} does not exist!")
+                    return False, size
+                # Access denied
+                if error_code == S3_ERR_FORBIDDEN_ACCESS:
+                    self.logger.exception(f"{bucket} is a private bucket. Forbidden access!")
+                    raise RuntimeError(f"{bucket} is a private bucket. Forbidden access!") from error
+
+                self.logger.exception(f"Exception when checking the access to key s3://{bucket}/{s3_key}: {error}")
+                raise RuntimeError(f"Exception when checking the access to {bucket} bucket") from error
+        except Exception:
+            self.logger.exception(f"General exception when trying to access key s3://{bucket}/{s3_key}")
+            raise
+
+    def get_object_attributes(self, bucket: str, key: str) -> dict:
+        """Get S3 object attributes for an object key.
+
+        This uses the S3-compatible GetObjectAttributes API supported by OVH Object Storage.
+        Only the Checksum attribute is requested because it is needed for the STAC file:checksum field.
+
+        Args:
+            bucket (str): The S3 bucket name.
+            key (str): The S3 object key.
+
+        Returns:
+            dict: The raw response returned by the S3 client.
+        """
+        try:
+            self.connect_s3()
+            self.logger.debug("Getting object attributes for s3://%s/%s", bucket, key)
+            return self.s3_client.get_object_attributes(
+                Bucket=bucket,
+                Key=key,
+                ObjectAttributes=["Checksum"],
+            )
+        except (botocore.client.ClientError, botocore.exceptions.BotoCoreError) as error:
+            self.logger.exception("Failed to get object attributes for s3://%s/%s: %s", bucket, key, error)
+            raise RuntimeError(f"Failed to get object attributes for s3://{bucket}/{key}") from error
+
+    def wait_timeout(self, timeout):
+        """
+        Wait for a specified timeout duration (minimum 200 ms).
+
+        This function implements a simple timeout mechanism, where it sleeps for 0.2 seconds
+        in each iteration until the cumulative sleep time reaches the specified timeout duration.
+
+        Args:
+            timeout (float): The total duration to wait in seconds.
+
+        """
+        time_cnt = 0.0
+        while time_cnt < timeout:
+            time.sleep(SLEEP_TIME)
+            time_cnt += SLEEP_TIME
+
+    def check_file_overwriting(self, local_file, overwrite):
+        """Check if file exists and determine if it should be overwritten.
+
+        Args:
+            local_file (str): Path to the local file.
+            overwrite (bool): Whether to overwrite the existing file.
+
+        Returns:
+            bool (bool): True if the file should be overwritten, False otherwise.
+
+        Note:
+        - If the file already exists and the overwrite flag is set to True, the function logs a message,
+        deletes the existing file, and returns True.
+        - If the file already exists and the overwrite flag is set to False, the function logs a warning
+        message, and returns False. In this case, the existing file won't be deleted.
+        - If the file doesn't exist, the function returns True.
+
+        """
+        if os.path.isfile(local_file):
+            if overwrite:  # The file already exists, so delete it first
+                self.logger.info(
+                    "File %s already exists. Deleting it before downloading",
+                    S3StorageHandler.get_basename(local_file),
+                )
+                os.remove(local_file)
+            else:
+                self.logger.warning(
+                    "File %s already exists. Ignoring (use the overwrite flag if you want to overwrite this file)",
+                    S3StorageHandler.get_basename(local_file),
+                )
+                return False
+
+        return True
+
+    def get_keys_from_s3(self, config: GetKeysFromS3Config) -> list:
+        """Download S3 keys specified in the configuration.
+
+        Args:
+            config (GetKeysFromS3Config): Configuration for the S3 download.
+
+        Returns:
+            List[str]: A list with the S3 keys that couldn't be downloaded.
+
+        Raises:
+            Exception: Any unexpected exception raised during the download process.
+
+        The function attempts to download files from S3 according to the provided configuration.
+        It returns a list of S3 keys that couldn't be downloaded successfully.
+
+        """
+
+        # check the access to the bucket first, or even if it does exist
+        self.check_bucket_access(config.bucket)
+
+        # collection_files: list of files to be downloaded
+        #                   the list contains pair objects with the following
+        #                   syntax: (local_path_to_be_added_to_the_local_prefix, s3_key)
+        #                   the local_path_to_be_added_to_the_local_prefix may be none if the file doesn't exist
+        collection_files = self.files_to_be_downloaded(config.bucket, config.s3_files)
+
+        self.logger.debug("collection_files = %s | bucket = %s", collection_files, config.bucket)
+        failed_files = []
+
+        for collection_file in collection_files:
+            if collection_file[0] is None:
+                failed_files.append(collection_file[1])
+                continue
+
+            local_path = os.path.join(config.local_prefix, collection_file[0].strip("/"))
+            s3_file = collection_file[1]
+            # for each file to download, create the local dir (if it does not exist)
+            os.makedirs(local_path, exist_ok=True)
+            # create the path for local file
+            local_file = os.path.join(local_path, self.get_basename(s3_file).strip("/"))
+
+            if not self.check_file_overwriting(local_file, config.overwrite):
+                continue
+            # download the files
+            downloaded = False
+            for keep_trying in range(config.max_retries):
+                try:
+                    self.connect_s3()
+                    dwn_start = datetime.now()
+                    self.s3_client.download_file(config.bucket, s3_file, local_file)
+                    self.logger.debug(
+                        "s3://%s/%s downloaded to %s in %s ms",
+                        config.bucket,
+                        s3_file,
+                        local_file,
+                        datetime.now() - dwn_start,
+                    )
+                    downloaded = True
+                    break
+                except (botocore.client.ClientError, botocore.exceptions.EndpointConnectionError) as error:
+                    self.logger.exception(
+                        "Error when downloading the file %s. \
+Exception: %s. Retrying in %s seconds for %s more times",
+                        s3_file,
+                        error,
+                        DWN_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.disconnect_s3()
+                    self.wait_timeout(DWN_S3FILE_RETRY_TIMEOUT)
+                except RuntimeError:
+                    self.logger.exception(
+                        "Error when downloading the file %s. \
+Failed to get the s3 client. Retrying in %s seconds for %s more times",
+                        s3_file,
+                        DWN_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.wait_timeout(DWN_S3FILE_RETRY_TIMEOUT)
+
+            if not downloaded:
+                self.logger.error(
+                    "Failed to download the file %s. The download was \
+retried for %s times. Aborting",
+                    s3_file,
+                    config.max_retries,
+                )
+                failed_files.append(s3_file)
+
+        return failed_files
+
+    def put_files_to_s3(self, config: PutFilesToS3Config) -> list:
+        """Upload files to S3 according to the provided configuration.
+
+        Args:
+            config (PutFilesToS3Config): Configuration for the S3 upload.
+
+        Returns:
+            List[str]: A list with the local file paths that couldn't be uploaded.
+
+        Raises:
+            Exception: Any unexpected exception raised during the upload process.
+
+        The function attempts to upload files to S3 according to the provided configuration.
+        It returns a list of local files that couldn't be uploaded successfully.
+
+        """
+
+        # check the access to the bucket first, or even if it does exist
+        self.check_bucket_access(config.bucket)
+
+        collection_files = self.files_to_be_uploaded(config.files)
+        failed_files = []
+
+        for collection_file in collection_files:
+            if collection_file[0] is None:
+                self.logger.error("The file %s can't be uploaded, its s3 prefix is None", collection_file[0])
+                failed_files.append(collection_file[1])
+                continue
+
+            file_to_be_uploaded = collection_file[1]
+            # create the s3 key
+            key = os.path.join(config.s3_path, collection_file[0], os.path.basename(file_to_be_uploaded).strip("/"))
+            uploaded = False
+            for keep_trying in range(config.max_retries):
+                try:
+                    # get the s3 client
+                    self.connect_s3()
+                    self.logger.info(
+                        "Upload file %s to s3://%s/%s",
+                        file_to_be_uploaded,
+                        config.bucket,
+                        key.lstrip("/"),
+                    )
+
+                    self.s3_client.upload_file(file_to_be_uploaded, config.bucket, key)
+                    uploaded = True
+                    break
+                except (
+                    botocore.client.ClientError,
+                    botocore.exceptions.EndpointConnectionError,
+                    boto3.exceptions.S3UploadFailedError,
+                ) as error:
+                    self.logger.exception(
+                        "Error when uploading the file %s. \
+Exception: %s. Retrying in %s seconds for %s more times",
+                        file_to_be_uploaded,
+                        error,
+                        UP_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.disconnect_s3()
+                    self.wait_timeout(UP_S3FILE_RETRY_TIMEOUT)
+                except RuntimeError:
+                    self.logger.exception(
+                        "Error when uploading the file %s. \
+Failed to get the s3 client. Retrying in %s seconds for %s more times",
+                        file_to_be_uploaded,
+                        UP_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.wait_timeout(UP_S3FILE_RETRY_TIMEOUT)
+
+            if not uploaded:
+                self.logger.error(
+                    "Failed to upload the file %s. The upload was \
+retried for %s times. Aborting",
+                    file_to_be_uploaded,
+                    config.max_retries,
+                )
+                failed_files.append(file_to_be_uploaded)
+
+        return failed_files
+
+    def transfer_from_s3_to_s3(self, config: TransferFromS3ToS3Config) -> list:
+        """Copy S3 keys specified in the configuration.
+        Args:
+            config (TransferFromS3ToS3Config): Configuration object containing bucket source, bucket destination,
+                      S3 files, maximum retries.
+
+        Returns:
+            list: A list of S3 keys that failed to be copied.
+
+        Raises:
+            Exception: Any unexpected exception raised during the upload process.
+        """
+        # check the access to both buckets first, or even if they do exist
+        self.check_bucket_access(config.bucket_src)
+        self.check_bucket_access(config.bucket_dst)
+
+        # collection_files: list of files to be downloaded
+        #                   the list contains pair objects with the following
+        #                   syntax: (local_path_to_be_added_to_the_local_prefix, s3_key)
+
+        collection_files = self.files_to_be_downloaded(config.bucket_src, config.s3_files)
+
+        self.logger.debug("collection_files = %s | bucket = %s", collection_files, config.bucket_src)
+        failed_files = []
+        copy_src = {"Bucket": config.bucket_src, "Key": ""}
+
+        for collection_file in collection_files:
+            if collection_file[0] is None:
+                failed_files.append(collection_file[1])
+                continue
+
+            copied = False
+            for keep_trying in range(config.max_retries):
+                self.logger.debug(
+                    "keep_trying %s | range(config.max_retries) %s ",
+                    keep_trying,
+                    range(config.max_retries),
+                )
+                try:
+                    self.connect_s3()
+                    dwn_start = datetime.now()
+                    copy_src["Key"] = collection_file[1]
+                    self.logger.debug("copy_src = %s", copy_src)
+                    self.s3_client.copy_object(CopySource=copy_src, Bucket=config.bucket_dst, Key=collection_file[1])
+                    self.logger.debug(
+                        "s3://%s/%s copied to s3://%s/%s in %s ms",
+                        config.bucket_src,
+                        collection_file[1],
+                        config.bucket_dst,
+                        collection_file[1],
+                        datetime.now() - dwn_start,
+                    )
+                    if not config.copy_only:
+                        self.delete_key_from_s3(config.bucket_src, collection_file[1])
+                    copied = True
+                    break
+                except (botocore.client.ClientError, botocore.exceptions.EndpointConnectionError) as error:
+                    self.logger.exception(
+                        "Error when copying the file s3://%s/%s to s3://%s. \
+Exception: %s. Retrying in %s seconds for %s more times",
+                        config.bucket_src,
+                        collection_file[1],
+                        config.bucket_dst,
+                        error,
+                        DWN_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.disconnect_s3()
+                    self.wait_timeout(DWN_S3FILE_RETRY_TIMEOUT)
+                except RuntimeError:
+                    self.logger.exception(
+                        "Error when copying the file s3://%s/%s to s3://%s. \
+Failed to get the s3 client. Retrying in %s seconds for %s more times",
+                        config.bucket_src,
+                        collection_file[1],
+                        config.bucket_dst,
+                        DWN_S3FILE_RETRY_TIMEOUT,
+                        config.max_retries - keep_trying,
+                    )
+                    self.wait_timeout(DWN_S3FILE_RETRY_TIMEOUT)
+
+            if not copied:
+                self.logger.error(
+                    "Failed to copy the file s3://%s/%s to s3://%s. The copy was \
+retried for %s times. Aborting",
+                    config.bucket_src,
+                    collection_file[1],
+                    config.bucket_dst,
+                    config.max_retries,
+                )
+                failed_files.append(collection_file[1])
+
+        return failed_files
+
+    def s3_streaming_upload(
+        self,
+        request: requests.Request,
+        trusted_domains: list[str],
+        bucket: str,
+        key: str,
+        max_requests_per_minute: int | None = None,
+        download_progress_callback: Callable[[int], None] | None = None,
+    ):
+        """
+        Upload a file to an S3 bucket using HTTP byte-streaming with retries.
+
+        This method retrieves data from `stream_url` in chunks and uploads it to the specified S3 bucket
+        (`bucket`) under the specified key (`key`). It includes retry logic for network and S3 client errors,
+        with exponential backoff between retries. The method handles errors during both the HTTP request and the
+        S3 upload process, raising a `RuntimeError` if the retries are exhausted without success.
+
+        Args:
+            request (requests.Request): Prepared HTTP request pointing to the source file URL to stream from.
+            trusted_domains (list): List of allowed hosts for redirection in case of change of protocol (HTTP <> HTTPS).
+            bucket (str): The name of the target S3 bucket.
+            key (str): The S3 object key (file path) to store the streamed file.
+            max_requests_per_minute (int | None): Optional maximum number of HTTP requests per minute for the domain.
+            download_progress_callback: Optional callback called with source byte increments as the stream is read.
+
+        Raises:
+            ConnectionError: If there is a failure due to the HTTP request or the S3 upload
+            RuntimeError: If any unhandled exception is caught.
+
+        Exception Handling:
+            - HTTP errors such as timeouts or bad responses (4xx, 5xx) are handled using
+                `requests.exceptions.RequestException`.
+            - S3 client errors such as `ClientError` and `BotoCoreError` are captured, logged, and retried.
+            - Any other unexpected errors are caught and re-raised as `RuntimeError`.
+        """
+        if bucket is None or key is None:
+            raise RuntimeError(f"Input error for streaming the file from {request.url} to s3://{bucket}/{key}")
+        timeout: tuple[int, int] = (HTTP_CONNECTION_TIMEOUT, HTTP_READ_TIMEOUT)
+
+        try:
+            session = CustomSessionRedirect(trusted_domains)
+            self.logger.debug(f"trusted_domains = {trusted_domains}")
+            prepared_request = session.prepare_request(request)
+            self.connect_s3()
+            self.logger.info(f"Starting the streaming of {request.url} to s3://{bucket}/{key}")
+
+            # PreparedRequest.url may be typed as str or bytes. Normalize it to str before parsing the hostname.
+            prepared_url = (
+                prepared_request.url.decode() if isinstance(prepared_request.url, bytes) else prepared_request.url
+            )
+
+            # The rate limit is applied per external download domain, e.g. download.dataspace.copernicus.eu.
+            domain = urlparse(prepared_url or "").hostname or ""
+            self.logger.info(
+                "Prepared streaming request for domain '%s' with max_requests_per_minute=%s",
+                domain or "unknown",
+                max_requests_per_minute,
+            )
+            backoff_seconds = HTTP_RATE_LIMIT_BACKOFF_SECONDS
+            for attempt in range(HTTP_RATE_LIMIT_MAX_RETRIES + 1):
+                # Proactive protection: wait before sending if this domain already reached its request budget.
+                self.logger.info(
+                    "Waiting for rate-limit slot before downloading from domain '%s' (attempt %s/%s)",
+                    domain or "unknown",
+                    attempt + 1,
+                    HTTP_RATE_LIMIT_MAX_RETRIES + 1,
+                )
+                DOMAIN_RATE_LIMITER.acquire(domain, max_requests_per_minute)
+                self.logger.info(
+                    "Sending streaming request to %s (attempt %s/%s)",
+                    prepared_url,
+                    attempt + 1,
+                    HTTP_RATE_LIMIT_MAX_RETRIES + 1,
+                )
+                with session.send(prepared_request, stream=True, timeout=timeout) as response:
+                    self.logger.debug(f"Request headers: {response.request.headers}")
+                    self.logger.info(
+                        "Received HTTP status %s while streaming %s",
+                        response.status_code,
+                        request.url,
+                    )
+                    if response.status_code == 429 and attempt < HTTP_RATE_LIMIT_MAX_RETRIES:
+                        # Reactive protection: honor Retry-After when present, otherwise use exponential backoff.
+                        # read the 'retry-after' from response header, if not present use the backoff_seconds
+                        wait_time = _retry_after_seconds(response, backoff_seconds)
+                        self.logger.warning(
+                            "Rate limited while streaming %s. Retrying in %s seconds.",
+                            request.url,
+                            wait_time,
+                        )
+                        time.sleep(wait_time)
+                        backoff_seconds *= 2
+                        continue
+
+                    response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
+                    self.logger.info(
+                        "HTTP response is valid; starting upload stream to s3://%s/%s",
+                        bucket,
+                        key,
+                    )
+
+                    # Default chunksize is set to 64Kb, can be manually increased
+                    chunk_size = 64 * 1024  # 64kb
+                    with response.raw as data_stream:
+                        # Measure provider reads before boto3 uploads each block to the destination.
+                        source_stream = DownloadProgressStream(data_stream, download_progress_callback)
+                        self.s3_client.upload_fileobj(
+                            source_stream,
+                            bucket,
+                            key,
+                            Config=boto3.s3.transfer.TransferConfig(multipart_threshold=chunk_size * 2),
+                        )
+                    self.logger.info(f"Successfully uploaded to s3://{bucket}/{key}")
+                    break
+        except Exception as e:
+            message = f"Failed to stream the file from {request.url} to s3://{bucket}/{key}: {traceback.format_exc()}"
+
+            connection_error = isinstance(
+                e,
+                (
+                    requests.exceptions.RequestException,
+                    botocore.client.ClientError,
+                    botocore.exceptions.BotoCoreError,
+                ),
+            )
+            if not connection_error:
+                message = f"General exception.\n{message}"
+
+            self.logger.exception(message)
+            if connection_error:
+                raise ConnectionError(message) from e
+            raise RuntimeError(message) from e
+
+    def s3_streaming_from_http(
+        self,
+        stream_url: str,
+        trusted_domains: list[str],
+        auth: Any,
+        bucket: str,
+        key: str,
+        max_requests_per_minute: int | None = None,
+        download_progress_callback: Callable[[int], None] | None = None,
+    ):
+        """
+        Upload a file from an http source to an S3 bucket.
+
+        Args:
+            stream_url (str): The URL of the file to be streamed and uploaded.
+            trusted_domains (list): List of allowed hosts for redirection in case of change of protocol (HTTP <> HTTPS).
+            auth (Any): Authentication credentials for the HTTP request (if required).
+            bucket (str): The name of the target S3 bucket.
+            key (str): The S3 object key (file path) to store the streamed file.
+            max_requests_per_minute (int | None): Optional maximum number of HTTP requests per minute for the domain.
+            download_progress_callback: Optional callback called with source byte increments as the stream is read.
+        """
+        # Prepare the request
+        request = requests.Request(
+            method="GET",
+            url=stream_url,
+            auth=auth,
+        )
+
+        # Start streaming with formatted request
+        self.s3_streaming_upload(
+            request,
+            trusted_domains,
+            bucket,
+            key,
+            max_requests_per_minute,
+            download_progress_callback,
+        )
+
+    def s3_streaming_from_s3(
+        self,
+        source_url: str,
+        source_endpoint_url: str,
+        source_access_key: str,
+        source_secret_key: str,
+        destination_bucket: str,
+        destination_key: str,
+        trusted_domains: list[str],
+        download_progress_callback: Callable[[int], None] | None = None,
+    ):
+        """
+        Upload a file from an external S3 bucket to an S3 bucket.
+
+        Args:
+            source_url (str): Source S3 URL of the form 's3://bucket/key' to stream from.
+            source_endpoint_url (str): Endpoint URL of the source S3 bucket.
+            source_access_key (str): Access key to the external S3 bucket.
+            source_secret_key (str): Secret key to the external S3 bucket.
+            destination_bucket (str): The name of the target S3 bucket.
+            destination_key (str): The S3 object key (file path) to store the streamed file.
+            trusted_domains (list): List of allowed hosts for redirection in case of change of protocol (HTTP <> HTTPS).
+            download_progress_callback: Optional callback called with source byte increments as the stream is read.
+        """
+        # Format input values
+        if not source_url.startswith("s3://"):
+            raise ValueError(
+                f"Wrong source URL for S3 to S3 streaming (expected URL starting with 's3://', got '{source_url}').",
+            )
+        source_url = source_url.removeprefix("s3://")
+        source_params = {"Bucket": source_url.split("/", 1)[0], "Key": source_url.split("/", 1)[1]}
+
+        # Connect to external s3 to generate URL
+        try:
+            source_s3_client = boto3.client(
+                "s3",
+                endpoint_url=source_endpoint_url,
+                aws_access_key_id=source_access_key,
+                aws_secret_access_key=source_secret_key,
+                use_ssl=True,
+            )
+            presigned_url = source_s3_client.generate_presigned_url(
+                "get_object",
+                Params=source_params,
+                ExpiresIn=PRESIGNED_URL_EXPIRATION_TIME,
+            )
+        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as error:
+            self.logger.error(f"Failed to connect to external s3 endpoint {source_endpoint_url}: {error}.")
+            raise ConnectionError(
+                f"Failed to connect to external s3 endpoint {source_endpoint_url}: {error}.",
+            ) from error
+
+        # Prepare the request
+        request = requests.Request(
+            method="GET",
+            url=presigned_url,
+        )
+
+        # Start streaming with formatted request
+        self.s3_streaming_upload(
+            request,
+            trusted_domains,
+            destination_bucket,
+            destination_key,
+            download_progress_callback=download_progress_callback,
+        )
+
+    @staticmethod
+    def parse_ftps_path(url: str) -> tuple[str, str]:
+        """
+        Parse an FTPS-style path with format: ftps://<station>/NOMINAL/<path>
+
+        Returns:
+            station (str): extracted station key
+            remote_path (str): remaining FTP file path after NOMINAL/
+
+        Raises:
+            ValueError: if format is invalid
+        """
+        if not url.lower().startswith("ftps://"):
+            raise ValueError(f"Invalid path scheme: expected 'ftps://', got '{url}'")
+
+        # remove scheme
+        cleaned = url[7:]  # remove ftps://
+
+        parts = cleaned.split("/", 2)  # PREFIX, NOMINAL, REST
+
+        if len(parts) < 3:
+            raise ValueError(f"Invalid FTPS structure, missing NOMINAL or path: {url}")
+
+        station, nominal, path = parts
+
+        if nominal.upper() != "NOMINAL":
+            raise ValueError(f"Invalid segment: expected 'NOMINAL', got '{nominal}'")
+
+        return station, f"/{nominal}/{path}"
+
+    def s3_streaming_from_ftp(
+        self,
+        ftp_path: str,
+        bucket: str,
+        key: str,
+        chunk_size: int = 8 * 1024 * 1024,
+    ):
+        """
+        Stream a remote file from an FTP server and upload it to Amazon S3 using
+        multipart upload, avoiding local disk usage and keeping memory consumption
+        low. The file is retrieved in binary mode, chunked in memory, and each chunk
+        is uploaded as an individual S3 multipart part until the entire transfer is
+        complete.
+
+        Args:
+            ftp_path (str): Path of the file to read from the FTP server.
+            bucket (str): Target S3 bucket where the file will be stored.
+            key (str): S3 object key for the uploaded file.
+            chunk_size (int): In-memory buffer size used for multipart uploads.
+
+        Raises:
+            RuntimeError: If any FTP or S3 upload operation fails.
+        """
+        station, ftp_path = S3StorageHandler.parse_ftps_path(ftp_path)
+        client = FTPClient(station)
+        client.connect()
+        self.logger.info("Connected to FTP server %s:%s", client.host, client.port)
+        self.logger.info("Starting streaming upload from station %s to s3://%s/%s", station, bucket, key)
+
+        # Start multipart upload
+        multipart = self.s3_client.create_multipart_upload(Bucket=bucket, Key=key)
+        upload_id = multipart["UploadId"]
+        parts = []
+        part_number = 1
+        buffer = io.BytesIO()
+
+        def handle_chunk(data):
+            """
+            Handle a streamed binary chunk retrieved from FTP, buffering it until the
+            configured chunk size is reached, then uploading that portion as a part of an
+            ongoing S3 multipart upload.
+            """
+            nonlocal buffer, part_number  # noqa: F824
+            buffer.write(data)
+            # When buffer reaches chunk size, upload it as a part
+            if buffer.tell() >= chunk_size:
+                buffer.seek(0)
+                response = self.s3_client.upload_part(
+                    Bucket=bucket,
+                    Key=key,
+                    PartNumber=part_number,
+                    UploadId=upload_id,
+                    Body=buffer.read(),
+                )
+                parts.append({"PartNumber": part_number, "ETag": response["ETag"]})
+                buffer.seek(0)
+                buffer.truncate(0)
+                part_number += 1
+
+        try:
+            # Stream data from FTP
+            client.ftp.retrbinary(f"RETR {ftp_path}", callback=handle_chunk)
+
+            # Upload any remaining data
+            if buffer.tell() > 0:
+                buffer.seek(0)
+                response = self.s3_client.upload_part(
+                    Bucket=bucket,
+                    Key=key,
+                    PartNumber=part_number,
+                    UploadId=upload_id,
+                    Body=buffer.read(),
+                )
+                parts.append({"PartNumber": part_number, "ETag": response["ETag"]})
+
+            # Complete multipart upload
+            self.s3_client.complete_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+            self.logger.info(f"Successfully uploaded {ftp_path} to s3://{bucket}/{key}")
+
+        except Exception as e:
+            # Abort on failure
+            self.s3_client.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id)
+            raise RuntimeError(f"FTP→S3 upload failed: {e}") from e
+        finally:
+            client.close()

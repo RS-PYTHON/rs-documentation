@@ -1,0 +1,131 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+general_configuration:
+  logging:
+    level: DEBUG
+  # setup a basic logging configuration
+  triggering__use_basic_logging: true
+  # Wait before stopping the dask cluster, usefull for localCluster to access the dashboard
+  triggering__wait_before_exit: 10
+  triggering__use_default_filename: false
+
+external_modules:
+- name : l0.cadu_processing.cadu_store
+  nested : true
+
+workflow:
+- name: s1_l0_processor
+  # Activate or not this unit, if not active its outputs will not be available
+  active: true
+  # python module to import from
+  module: l0.s1.s1_l0_processor
+  processing_unit: S1L0Processor
+  # input products IDs
+  inputs:
+    CADUS: S1ACADUS
+
+  outputs:
+    .*: output_folder
+
+  adfs:
+    osf: OSF
+    fro: FRO
+    calibration: calibration
+
+  parameters:
+    streaming_mode: false
+    temporary_path: ./output_params/tmp
+    acquisition_report_output_path: ./output_params/s1
+
+
+I/O:
+  # input products descriptions and access parameters
+  input_products:
+
+  - id: S1ACADUS
+    path: s3://rs-dev-cluster-temp/stations/CADIP/test-l0-develop/s1l0/CADUs_full
+    store_type: cadu
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  adfs:
+
+  - id: OSF
+    path : s3://rs-dev-cluster-temp/stations/ADGS/test-l0-develop/s1l0/S1A_OPER_MPL_ORBSCT_20140507T150704_99999999T999999_0026.EOF
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  - id: FRO
+    path : s3://rs-dev-cluster-temp/stations/ADGS/test-l0-develop/s1l0/S1A_OPER_MPL_ORBPRE_20240404T021403_20240411T021403_0001.EOF
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  - id: calibration
+    path: s3://rs-dev-cluster-temp/stations/ADGS/test-l0-develop/s1l0/s1a-aux-cal.zarr
+    store_params:
+      # s3_secret_alias: s3_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY_CLUSTER}
+        secret: ${S3_SECRETKEY_CLUSTER}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT_CLUSTER}
+          region_name: ${S3_REGION_CLUSTER}
+
+  output_products:
+  - id: output_folder
+    path: ${OUTPUT_DIR}/s1l0/S1A_20250611050700059594
+    # Type can be filename or folder, in case of folder the product naming will depends on the triggering__use_default_filename EOConfiguration
+    type: folder
+    opening_mode: "CREATE_OVERWRITE"
+    store_type: zarr
+
+# Dask context configuration, see eopf.daskconfig.dask_context_manager
+    store_params:
+      # s3_secret_alias: s3_local_or_cluster # see secrets.json
+      storage_options:
+        key: ${S3_ACCESSKEY}
+        secret: ${S3_SECRETKEY}
+        client_kwargs:
+          endpoint_url: ${S3_ENDPOINT}
+          region_name: ${S3_REGION}
+
+# Any logging file(s) to load to the EOLogging facility
+logging:
+- ../logging_config.yaml
+
+# Any config file(s) to load to the EOConfiguration facility, general_configuration and env variables will overload them
+config:
+- ./s1_default_configuration.yaml
+- ../cadu_configuration.yaml
+secret:
+  - ../secrets.json

@@ -1,0 +1,35 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml stac-item-lifecycle
+John -> RS_Client_Libraries: Generate Product
+RS_Client_Libraries -> DPR: eopf trigger
+DPR -> DPR: +created=now()
+DPR -> DPR: +[start|end]datetime=<sensing*>
+DPR -> DPR: +asset.href=s3://<tmp_bucket>/file.zarr
+DPR --> RS_Client_Libraries: STAC item
+RS_Client_Libraries -> RS_Client_Libraries: +origin_datetime=max(input)
+RS_Client_Libraries --> John: STAC item
+John -> RS_Server_Catalog: POST /catalog/John/collections/S1L1/items
+RS_Server_Catalog -> RS_Server_Catalog: +owner=John, +collection=S1L1
+RS_Server_Catalog -> RS_Server_Catalog: +asset.alternate.href=s3://<cat_bucket>/file.zarr
+RS_Server_Catalog -> RS_Server_Catalog: +asset.href=https://rs-server//catalog/John/collections/S1L1/items/{itemId}/download/zarr
+RS_Server_Catalog -> RS_Server_Catalog: +published=now(), +updated=now()
+RS_Server_Catalog -> RS_Server_Catalog: +expires=now()+30d
+RS_Server_Catalog --> John: STAC item
+RS_DataLifecycle -> RS_DataLifecycle: -assets
+RS_DataLifecycle -> RS_DataLifecycle: +unpublished=now() (30d later)
+RS_DataLifecycle -> RS_Server_Catalog: PATCH /catalog/John/collections/S1L1/items/{itemId}
+
+@enduml

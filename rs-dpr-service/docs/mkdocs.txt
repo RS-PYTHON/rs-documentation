@@ -1,0 +1,20 @@
+    - rs_dpr_service:
+      - index: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/index.md
+      - jobs_table: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/jobs_table.md
+      - main: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/main.md
+      - openapi_validation: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/openapi_validation.md
+      - safe_to_zarr: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/safe_to_zarr.md
+      - dask:
+        - call_dask: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/dask/call_dask.md
+        - dask_cluster_handler: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/dask/dask_cluster_handler.md
+      - processors:
+        - conversion_processor: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/processors/conversion_processor.md
+        - eopf_processors: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/processors/eopf_processors.md
+        - generic_processor: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/processors/generic_processor.md
+      - utils:
+        - init_opentelemetry: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/utils/init_opentelemetry.md
+        - job_logger: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/utils/job_logger.md
+        - logging: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/utils/logging.md
+        - middlewares: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/utils/middlewares.md
+        - settings: rs-dpr-service/docs/doc/pydoc/rs_dpr_service/utils/settings.md
+

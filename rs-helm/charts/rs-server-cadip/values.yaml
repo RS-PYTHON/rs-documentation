@@ -1,0 +1,172 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -- Namespace for the deployment
+namespace: processing
+
+# -- Number of replicas for the deployment
+replicaCount: 1
+
+service:
+  # -- Port for the service
+  port: 8080
+
+app:
+  # -- Port for the application
+  port: 8000
+  # -- Config directory for the application
+  confDir: /app/conf
+  # -- Cadip search configuration file for the application
+  cadipSearchConfigFile: cadip_search_config.yaml
+  # -- EODAG configuration file for the application. Uses cadip_ws_config.yaml by default.
+  # -- Set properly the EODAG_CADIP_CONFIG env var.
+  eodagConfigFile: cadip_ws_config.yaml
+  station:
+    # -- CADIP station name
+    mti:
+      # -- CADIP station URL - Example: http://mockup-station-cadip-cadip.processing.svc.cluster.local:8080
+      endpoint: ""
+      # -- CADIP config file name - Example: cadip_service_config.yaml
+      configFile: mti_service_config.yaml
+  # -- URL of the API Key Manager service
+  uacURL: http://apikeymanager.processing.svc.cluster.local:8000/auth/check_key
+  # -- OAuth2 attributes to read and save, as a comma-separated str
+  oauth2Attributes: monthly-download-volume-limit-gb
+
+probe:
+  startup:
+    # -- Path for the liveness probe
+    path: /health
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 10
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 2
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 1
+  liveness:
+    # -- Path for the liveness probe
+    path: /health
+    # -- Port for the liveness probe
+    port: 8000
+    # -- InitialDelaySeconds for the liveness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the liveness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the liveness probe
+    timeoutSeconds: 5
+  readiness:
+    # -- Path for the readiness probe
+    path: /health
+    # -- Port for the readiness probe
+    port: 8000
+    # -- InitialDelaySeconds for the readiness probe
+    initialDelaySeconds: 0
+    # -- periodSeconds for the readiness probe
+    periodSeconds: 30
+    # -- timeoutSeconds for the readiness probe
+    timeoutSeconds: 5
+
+# -- Pod affinity
+affinity: {}
+
+# -- Pod toleration
+tolerations: []
+
+# -- Pod initContainers
+initContainers: []
+
+auth:
+  secret:
+    # -- OIDC End Point
+    oidc_endpoint: ""
+    # -- OIDC Realm
+    oidc_realm: ""
+    # -- OIDC CLient ID
+    oidc_client_id: ""
+    # -- OIDC Secret used to sync user info from Keycloak
+    oidc_client_secret: ""
+    # -- Random string used to encode cookie-based HTTP sessions in SessionMiddleware
+    cookie_secret: ""
+
+image:
+  # -- Image registry
+  registry: ghcr.io
+  # -- Image repository
+  repository: rs-python
+  # -- Image name
+  name: rs-server-cadip
+  # -- Image version, can be a tag or a digest
+  version: "1.0a12"
+  # -- Image pull policy
+  PullPolicy: IfNotPresent
+
+ingress:
+  # -- Enabled/Disable ingress
+  enabled: false
+  issuer:
+    # -- Ingress Issuer type
+    type: cluster-issuer
+    # -- Ingress Issuer name
+    name: letsencrypt-prod
+  # -- Ingress host name
+  host: subdomain.example.com
+  # -- Ingress path
+  path: /cadip
+
+gatewayapi:
+  # -- Enabled/Disable Gateway API
+  enabled: false
+  # -- HTTPRoute parentRefs, can either be a ListenerSet or a Gateway
+  # Example :
+  # parentRefs:
+  # - group: gateway.networking.k8s.io
+  #   kind: ListenerSet
+  #   name: mylistenerset
+  #   namespace: processing
+  parentRefs: []
+  # -- HTTPRoute host name
+  host: subdomain.example.com
+  # -- HTTPRoute path for the application
+  # Example :
+  # path:
+  #   - /cadip
+  path: []
+
+resources:
+  request:
+    # -- Pod memory request
+    ram: "256Mi"
+    # -- Pod CPU request
+    cpu: "100m"
+  limit:
+    # -- Pod memory limit
+    ram: "1000Mi"
+    # -- Pod CPU limit
+    cpu: "500m"
+
+cors:
+  # -- A list of origins that should be permitted to make cross-origin requests. Needed for STAC Browser
+  origins: https://stac-browser-cadip.subdomain.example.com,http://localhost:8080
+
+tempo:
+  # -- Grafana tempo endpoint.
+  endpoint: http://alloy.monitoring.svc.cluster.local:4317
+
+otel:
+  # -- Trace request headers with OpenTelemetry ?
+  trace_headers: false
+  # -- Trace request bodies and response contents with OpenTelemetry ?
+  trace_body: false

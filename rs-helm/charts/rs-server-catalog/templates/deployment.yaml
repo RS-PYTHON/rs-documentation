@@ -1,0 +1,192 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mychart.Labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mychart.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 50%
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        {{- include "mychart.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: "{{ template "mychart.image" .Values.image }}"
+        imagePullPolicy: {{ .Values.image.PullPolicy }}
+        resources:
+          requests:
+            memory: {{ .Values.resources.request.ram }}
+            cpu: {{ .Values.resources.request.cpu }}
+          limits:
+            memory: {{ .Values.resources.limit.ram }}
+            cpu: {{ .Values.resources.limit.cpu }}
+        ports:
+        - name: web
+          protocol: TCP
+          containerPort: {{ .Values.app.port }}
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-obs
+        - secretRef:
+            name: {{ .Release.Name }}-auth
+        - secretRef:
+            name: {{ .Release.Name }}-postgres
+        env:
+        - name: RSPY_UAC_CHECK_URL
+          value: {{ .Values.app.uacURL }}
+        - name: RSPY_OAUTH2_ATTRIBUTES
+          value: {{ .Values.app.oauth2Attributes }}
+        - name: RSPY_UAC_HOMEPAGE
+          value: {{ .Values.app.uacHomeUrl }}
+        - name: RSPY_CATALOG_BUCKET
+          value: {{ .Values.app.catalogBucket }}
+        - name: RSPY_PRESIGNED_URL_EXPIRATION_TIME
+          value: {{ .Values.app.presignedUrlExpirationTime | quote }}
+        - name: RSPY_DATA_LIFECYCLE_PERIOD
+          value: {{ .Values.app.dataLifecyclePeriod | quote }}
+        - name: RSPY_CATALOG_DELETE_MAX_RETRIES
+          value: {{ .Values.app.catalogDeleteMaxRetries | quote }}
+        - name: RSPY_S3_PUBLISH_CHECK_MAX_WORKERS
+          value: {{ .Values.app.publishCheckMaxWorkers | quote }}
+        - name: APP_HOST
+          value: "0.0.0.0"
+        - name: APP_PORT
+          value: "8000"
+        - name: PGHOST
+          value: {{ .Values.postgres.host }}
+        - name: PGDATABASE
+          value: {{ .Values.postgres.db }}
+        - name: GDAL_HTTP_MERGE_CONSECUTIVE_RANGES
+          value: "YES"
+        - name: GDAL_DISABLE_READDIR_ON_OPEN
+          value: EMPTY_DIR
+        - name: DB_MIN_CONN_SIZE
+          value: "1"
+        - name: DB_MAX_CONN_SIZE
+          value: "1"
+        - name: USE_API_HYDRATE
+          value: "false"
+        - name: ENABLE_TRANSACTIONS_EXTENSIONS
+          value: "1"
+        - name: CATALOG_METADATA_ID
+          value: "{{ .Values.app.metadata.id }}"
+        - name: CATALOG_METADATA_TITLE
+          value: "{{ .Values.app.metadata.title }}"
+        - name: CATALOG_METADATA_DESCRIPTION
+          value: "{{ .Values.app.metadata.description }}"
+        - name: PREFIX_PATH
+          value: "{{ .Values.app.prefixPath }}"
+        - name: OPENAPI_URL
+          value: "{{ .Values.app.openApiUrl }}"
+        - name: DOCS_URL
+          value: "{{ .Values.app.docsUrl }}"
+        - name: POSTGRES_HOST
+          value: {{ .Values.postgres.host }}
+        - name: POSTGRES_PORT
+          value: {{ .Values.postgres.port | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.db }}
+        - name: S3_ENDPOINT
+          value: {{ .Values.obs.endpoint }}
+        - name: S3_REGION
+          value: {{ .Values.obs.region }}
+        - name: CORS_ORIGINS
+          value: {{ .Values.cors.origins | squote }}
+        - name: CORS_METHODS
+          value: {{ .Values.cors.methods | squote }}
+        - name: CORS_CREDENTIALS
+          value: "{{ .Values.cors.credentials }}"
+        - name: CORS_HEADERS
+          value: {{ .Values.cors.headers | squote }}
+        - name: RSPY_HOST_OSAM
+          value: {{ .Values.app.endpointOsam }}
+        {{ if .Values.tempo }}
+        {{ if .Values.tempo.endpoint }}
+        - name: TEMPO_ENDPOINT
+          value: {{ .Values.tempo.endpoint }}
+        {{ end }}
+        {{ end }}
+        - name: OTEL_PYTHON_REQUESTS_TRACE_HEADERS
+          value: {{ .Values.otel.trace_headers | quote }}
+        - name: OTEL_PYTHON_REQUESTS_TRACE_BODY
+          value: {{ .Values.otel.trace_body | quote }}
+        securityContext:
+          privileged: false
+        {{ if .Values.probe }}
+        {{ if .Values.probe.startup }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probe.startup.path }}
+            port: {{ .Values.probe.startup.port }}
+          initialDelaySeconds: {{ .Values.probe.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.startup.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.liveness }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probe.liveness.path }}
+            port: {{ .Values.probe.liveness.port }}
+          initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
+        {{ end }}
+        {{ if .Values.probe.readiness }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probe.readiness.path }}
+            port: {{ .Values.probe.readiness.port }}
+          initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
+        {{ end }}
+        {{ end }}
+      {{ if .Values.image }}
+      {{ if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+      - name:  {{ .Values.image.imagePullSecrets }}
+      {{ end }}
+      {{ end }}
+      restartPolicy: Always
+      securityContext: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  revisionHistoryLimit: 10
