@@ -1,0 +1,160 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+variables:
+  cslcs_path: &cslcs_path ${OUTPUT_DIR}/S01SIWCSL_20240416T171518_0027_A015_S000_00000_DV.zarr
+  nrb_path: &nrb_path ${OUTPUT_DIR}/S01SIWNRB_20240416T171518_0027_A015_S000_00000_DV.zarr
+  reference_date: &reference_date "2024-04-16"
+  dynamic_working_directory: &dynamic_working_directory ${WORKING_DIR}/DYNAMIC
+  static_working_directory: &static_working_directory ${WORKING_DIR}/STATIC
+
+general_configuration:
+  logging:
+    level: DEBUG
+  triggering__use_basic_logging: true
+  triggering__validate_run: false
+
+workflow:
+  - name: calibration
+    module: s1_l12_rp.computing.ard_processing_units
+    processing_unit: Calibration
+    adfs:
+      CONFIG: CONFIG
+      ETAD: ETAD
+    parameters:
+      slcs_path:
+        - s3://rs-dev-cluster-temp/ARD_V2/SAFE/S1A_IW_SLC__1SDV_20240416T171518_20240416T171545_053462_067C88_DA9D.SAFE
+        - s3://rs-dev-cluster-temp/ARD_V2/SAFE/S1A_IW_SLC__1SDV_20240428T171518_20240428T171545_053637_068367_71A2.SAFE
+      multiburst: true
+      dynamic_working_directory: *dynamic_working_directory
+      indices: [0,1,9,10,18,19,27,28,36,37,45,46]
+
+  - name: reference_dem
+    module: s1_l12_rp.computing.ard_processing_units
+    processing_unit: ReferenceDEM
+    inputs:
+      slcs: calibration.slcs # Contains the input SLCs
+    adfs:
+      CONFIG: CONFIG
+      DEM: DEM
+    parameters:
+      dynamic_working_directory: *dynamic_working_directory
+      spacing: { "x": 30, "y": 30 }
+
+  - name: reference_geometry
+    module: s1_l12_rp.computing.ard_processing_units
+    processing_unit: ReferenceGeometry
+    inputs:
+      slcs: calibration.slcs # Contains the input SLCs
+      dem: reference_dem.DEM # Digital Elevation Model
+    adfs:
+      CONFIG: CONFIG
+    parameters:
+      reference_date: *reference_date
+      static_working_directory: *static_working_directory
+      dynamic_working_directory: *dynamic_working_directory
+      recompute: true
+
+  - name: coregistration
+    module: s1_l12_rp.computing.ard_processing_units
+    processing_unit: Coregistration
+    inputs:
+      slcs: calibration.slcs # Contains the input SLCs
+      dem: reference_dem.DEM # Digital Elevation Model resampled and cropped over the slcs BB
+      simulation_ref: reference_geometry.simulation_ref # Reference simulation cropped over the slcs BB (same AOI of DEM)
+    adfs:
+      CONFIG: CONFIG
+    parameters:
+      reference_date: *reference_date
+      static_working_directory: *static_working_directory
+      dynamic_working_directory: *dynamic_working_directory
+    outputs:
+      cslcs: cslcs
+
+I/O:
+  input_products:
+    - id: slcs
+      path: /NOT_USED
+      store_params:
+        chunks: {}
+      store_type: zarr
+
+  adfs:
+
+    - id: CONFIG
+      path: s3://rs-dev-cluster-temp/ARD_V2/ADFS/CONFIG/ard.json
+      store_params:
+        # s3_secret_alias: s3_cluster # see secrets.json
+        storage_options:
+          key: ${S3_ACCESSKEY_CLUSTER}
+          secret: ${S3_SECRETKEY_CLUSTER}
+          client_kwargs:
+            endpoint_url: ${S3_ENDPOINT_CLUSTER}
+            region_name: ${S3_REGION_CLUSTER}
+
+    - id: S2_TILES
+      path: s3://rs-dev-cluster-temp/ARD_V2/ADFS/KML/S2A_OPER_GIP_TILPAR_MPC__20151209T095117_V20150622T000000_21000101T000000_B00.kml
+      store_params:
+        # s3_secret_alias: s3_cluster # see secrets.json
+        storage_options:
+          key: ${S3_ACCESSKEY_CLUSTER}
+          secret: ${S3_SECRETKEY_CLUSTER}
+          client_kwargs:
+            endpoint_url: ${S3_ENDPOINT_CLUSTER}
+            region_name: ${S3_REGION_CLUSTER}
+
+    - id: ETAD
+      path: s3://rs-dev-cluster-temp/ARD_V2/ADFS/BRESSO/ETAD
+      store_params:
+        # s3_secret_alias: s3_cluster # see secrets.json
+        storage_options:
+          key: ${S3_ACCESSKEY_CLUSTER}
+          secret: ${S3_SECRETKEY_CLUSTER}
+          client_kwargs:
+            endpoint_url: ${S3_ENDPOINT_CLUSTER}
+            region_name: ${S3_REGION_CLUSTER}
+
+    - id: DEM
+      path: s3://rs-dev-cluster-temp/ARD_V2/ADFS/BRESSO/DEM
+      store_params:
+        # s3_secret_alias: s3_cluster # see secrets.json
+        storage_options:
+          key: ${S3_ACCESSKEY_CLUSTER}
+          secret: ${S3_SECRETKEY_CLUSTER}
+          client_kwargs:
+            endpoint_url: ${S3_ENDPOINT_CLUSTER}
+            region_name: ${S3_REGION_CLUSTER}
+
+  output_products:
+    - id: cslcs
+      path: *cslcs_path
+      type: filename
+      opening_mode: "CREATE_OVERWRITE"
+      store_type: zarr
+      store_params:
+        consolidate: True
+    - id: nrb
+      path: *nrb_path
+      type: filename
+      opening_mode: "CREATE_OVERWRITE"
+      store_type: zarr
+      store_params:
+        consolidate: True
+
+# Any secret files to be loaded in the secrets dictionary of EOConfiguration
+secret:
+  - ../secrets.json
+
+# Any logging file(s) to load to the EOLogging facility
+logging: ../logging_config.yaml

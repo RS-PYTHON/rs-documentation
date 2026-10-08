@@ -1,0 +1,109 @@
+{
+    "workflow": "benchmarking",
+    "scenarios": {
+        "A": {
+            "processor_versions": {
+                "1.4.0": {
+                    "pipeline": "s1_l0_full",
+                    "priority": "low",
+                    "processing_mode": [
+                        "always"
+                    ],
+                    "owner_identifier": "copernicus",
+                    "dask_cluster_name": "dask-l0.mine.latest",
+                    "catalog_session_collection": "s01-cadip-benchmarking",
+                    "auxiliary_product_to_collection_identifier": [
+                        {
+                            "product_type": "MPL_ORBPRE",
+                            "collection_name": "oper_mpl_orbpre"
+                        },
+                        {
+                            "product_type": "MPL_ORBRES",
+                            "collection_name": "oper_mpl_orbpre"
+                        }
+                    ],
+                    "generated_product_to_collection_identifier": [
+                        {
+                            "name": "S01SARRAW",
+                            "product_type": "*",
+                            "collection_name": "s01-output-benchmarking"
+                        }
+                    ]
+                },
+                "1.5.0": {
+                    "pipeline": "s1_l0_full",
+                    "priority": "low",
+                    "processing_mode": [
+                        "always"
+                    ],
+                    "owner_identifier": "copernicus",
+                    "dask_cluster_name": "dask-l0.mine.v2",
+                    "catalog_session_collection": "s01-cadip-benchmarking",
+                    "auxiliary_product_to_collection_identifier": [
+                        {
+                            "product_type": "MPL_ORBPRE",
+                            "collection_name": "oper_mpl_orbpre"
+                        }
+                    ],
+                    "generated_product_to_collection_identifier": [
+                        {
+                            "name": "S01SARRAW",
+                            "product_type": "*",
+                            "collection_name": "s01-output-benchmarking"
+                        },
+                        {
+                            "name": "S01GPSRAW",
+                            "product_type": "*",
+                            "collection_name": "s01-output-benchmarking"
+                        }
+                    ]
+                }
+            }
+        },
+        "B": {
+            "processor_versions": {
+                "1.4.0": {
+                    "pipeline": "s1_l0_partial",
+                    "priority": "low",
+                    "processing_mode": [
+                        "always"
+                    ],
+                    "owner_identifier": "paul",
+                    "dask_cluster_name": "dask-l0.prod.latest",
+                    "catalog_session_collection": "s01-cadip-production",
+                    "auxiliary_product_to_collection_identifier": [
+                        {
+                            "product_type": "MPL_ORBSCT",
+                            "collection_name": "oper_mpl_orbsct"
+                        }
+                    ],
+                    "generated_product_to_collection_identifier": [
+                        {
+                            "name": "S01HKMRAW",
+                            "product_type": "*",
+                            "collection_name": "s01hkmraw-production"
+                        }
+                    ]
+                },
+                "1.5.0": {
+                    "pipeline": "s1_l0_partial",
+                    "priority": "low",
+                    "processing_mode": [
+                        "always"
+                    ],
+                    "owner_identifier": "esa",
+                    "dask_cluster_name": "dask-l0.prod.v2",
+                    "catalog_session_collection": "s01-cadip-production-v2",
+                    "auxiliary_product_to_collection_identifier": [],
+                    "generated_product_to_collection_identifier": [
+                        {
+                            "name": "S01AISRAW",
+                            "product_type": "*",
+                            "collection_name": "s01aisraw-production"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

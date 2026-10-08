@@ -1,0 +1,126 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Logging utility."""
+
+import asyncio
+import logging
+import re
+from threading import Lock
+
+
+class Logging:  # pylint: disable=too-few-public-methods
+    """
+    Logging utility.
+
+    Attributes:
+        lock: For code synchronization
+        level: Minimal log level to use for all new logging instances.
+    """
+
+    lock = Lock()
+    level = logging.DEBUG
+
+    _HANDLER_NAME = "rspy-console-handler"
+
+    @classmethod
+    def default(cls, name="rspy"):
+        """
+        Return a default Logger class instance.
+
+        Args:
+            name (str): Logger name. You can pass __name__ to use your current module name.
+        """
+        logger = logging.getLogger(name=name)
+
+        with cls.lock:
+            # Don't propagate to root logger
+            logger.propagate = False
+
+            # If we have already set our handler for the logger with this name, do nothing more
+            for handler in logger.handlers:
+                if getattr(handler, "name", None) == cls._HANDLER_NAME:
+                    return logger
+
+            # Set the minimal log level to use for all new logging instances.
+            logger.setLevel(cls.level)
+
+            # Create console handler
+            handler = logging.StreamHandler()
+            handler.setFormatter(CustomFormatter())
+            handler.name = cls._HANDLER_NAME
+            logger.addHandler(handler)
+
+            return logger
+
+
+class CustomFormatter(logging.Formatter):
+    """
+    Custom logging formatter with colored text.
+    See: https://stackoverflow.com/a/56944256
+    """
+
+    _RED = "\x1b[31m"
+    _BOLD_RED = "\x1b[31;1m"
+    _GREEN = "\x1b[32m"
+    _YELLOW = "\x1b[33m"
+    _PURPLE = "\x1b[35m"
+    _RESET = "\x1b[0m"
+
+    _FORMAT = (
+        f"%(asctime)s.%(msecs)03d {{color}}%(levelname)s{_RESET} [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s"
+        " resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] (%(name)s) %(message)s"
+    )
+    _DATETIME = "%H:%M:%S"
+
+    _FORMATS = {
+        logging.NOTSET: _FORMAT.format(color=""),
+        logging.DEBUG: _FORMAT.format(color=_PURPLE),
+        logging.INFO: _FORMAT.format(color=_GREEN),
+        logging.WARNING: _FORMAT.format(color=_YELLOW),
+        logging.ERROR: _FORMAT.format(color=_BOLD_RED),
+        logging.CRITICAL: _FORMAT.format(color=_RED),
+    }
+
+    def format(self, record):
+
+        # Set default OpenTelemetry values if missing
+        for key in "otelTraceID", "otelSpanID", "otelServiceName", "otelTraceSampled":
+            if key not in record.__dict__:
+                record.__dict__[key] = None
+
+        level_format = self._FORMATS.get(record.levelno)
+        formatter = logging.Formatter(level_format, self._DATETIME)
+        return formatter.format(record)
+
+
+class JobLogHandler(logging.Handler):
+    """Custom log handler that routes Dask worker logs to per job asyncio Queues for SSE streaming."""
+
+    def __init__(self):
+        super().__init__()
+        self.queues: dict[str, list[asyncio.Queue[str]]] = {}
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            match = re.search(r"\[JOB:([^\]]+)\]\s*(.*)", msg, re.DOTALL)
+            if match:
+                job_id = match.group(1)
+                clean_msg = match.group(2)
+                for q in self.queues.get(job_id, []):
+                    # use put_nowait to avoid blocking the logging thread
+                    q.put_nowait(clean_msg)
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.handleError(record)

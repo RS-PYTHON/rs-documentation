@@ -1,0 +1,98 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# =============================================================
+# Logging Configuration File for L0 Processing
+# =============================================================
+# This configuration file defines the logging setup for the L0 data processor.
+# It configures loggers, formatters, handlers, and the root logger to control
+# how log messages are processed, formatted, and output. This follows the
+# Python logging module configuration format (version 1).
+
+version: 1
+
+# -------------------------------------------------------------
+# Loggers Configuration
+# -------------------------------------------------------------
+# Logger definitions for specific modules or components.
+# Each logger can have its own handlers and propagation settings.
+# Propagation controls whether log messages are passed to parent loggers.
+loggers:
+  eopf:                                    # EOPF (Earth Observation Processing Framework) logger
+    handlers:
+      - console                            # Output to console handler
+    propagate: 0                           # Do not propagate messages to parent loggers
+
+  l0.cadu_processing:                      # L0 CADU processing module logger
+    handlers:
+      - console                            # Output to console handler
+    propagate: 0                           # Do not propagate messages to parent loggers
+
+# -------------------------------------------------------------
+# Formatters Configuration
+# -------------------------------------------------------------
+# Formatter definitions that control the format of log messages.
+# Each formatter specifies how log records are converted to strings.
+formatters:
+  console:                                 # Console formatter for simple, readable output
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    # Format fields:
+    # - %(asctime)s: Human-readable time when the log record was created
+    # - %(name)s: Name of the logger used to log the call
+    # - %(levelname)s: Text logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    # - %(message)s: The logged message
+
+  file:                                    # File formatter for detailed output with process/thread information
+    format: "%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : %(lineno)d : (Process Details : (%(process)d, %(processName)s), Thread Details : (%(thread)d, %(threadName)s))\nLog : %(message)s"
+    # Format fields:
+    # - %(asctime)s: Human-readable time when the log record was created
+    # - %(levelname)s: Text logging level
+    # - %(module)s: Module name where the logging call was made
+    # - %(funcName)s: Function name where the logging call was made
+    # - %(lineno)d: Line number where the logging call was made
+    # - %(process)d: Process ID
+    # - %(processName)s: Process name
+    # - %(thread)d: Thread ID
+    # - %(threadName)s: Thread name
+    # - %(message)s: The logged message
+
+# -------------------------------------------------------------
+# Handlers Configuration
+# -------------------------------------------------------------
+# Handler definitions that determine where log messages are sent.
+# Each handler specifies a destination (file, console, etc.) and
+# associated formatter and log level.
+handlers:
+  file:                                    # File handler for writing logs to disk
+    class: logging.FileHandler             # Python logging class for file output
+    level: DEBUG                           # Minimum log level: DEBUG (captures all levels)
+    formatter: file                        # Use the 'file' formatter for detailed output
+    filename: l0.log                       # Output file name for log messages
+
+  console:                                 # Console handler for writing logs to standard output
+    class: logging.StreamHandler           # Python logging class for stream output
+    level: DEBUG                           # Minimum log level: DEBUG (captures all levels)
+    formatter: console                     # Use the 'console' formatter for readable output
+
+# -------------------------------------------------------------
+# Root Logger Configuration
+# -------------------------------------------------------------
+# Configuration for the root logger, which is the parent of all loggers.
+# Messages from loggers that propagate will reach the root logger.
+# The root logger acts as a catch-all for unhandled log messages.
+root:
+  level: INFO                              # Minimum log level: INFO (captures INFO, WARNING, ERROR, CRITICAL)
+  handlers:
+    - file                                 # Send messages to file handler
+    - console                              # Send messages to console handler

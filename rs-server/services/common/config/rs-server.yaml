@@ -1,0 +1,296 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# THIS FILE WAS AUTOMATICALLY CREATED FROM:
+#  - rs-server/services/common/config/rs-server.template.yaml
+#  - rs-server/resources/sync_config_files.py
+# DON'T MODIFY IT DIRECTLY !
+
+external_data_sources:
+  adgs:
+    domain: mockup-station-adgs.processing.svc.cluster.local
+    service:
+      name: auxip
+      url: http://127.0.0.1:5000
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5000/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+    trusteddomains:
+    - trusted.domain1.eu
+    - trusted.domain2.eu
+  adgs2:
+    domain: mockup-station-adgs2.processing.svc.cluster.local
+    service:
+      name: auxip
+      url: http://127.0.0.1:5001
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5001/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  cadip:
+    domain: mockup-station-cadip-cadip.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5000
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5000/oauth2/token
+      grant_type: password
+      scope: sss
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  ins:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5002
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5002/oauth2/token
+      grant_type: password
+      scope: sss
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  mps:
+    domain: mockup-station-cadip-mps.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5003
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5004/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  mti:
+    domain: mockup-station-cadip-mti.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5004
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5004/oauth2/token
+      grant_type: password
+      scope: openid
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  nsg:
+    domain: mockup-station-cadip-nsg.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5005
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5005/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  sgs:
+    domain: mockup-station-cadip-sgs.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5006
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5006/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  cadip_session:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5000
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5000/oauth2/token
+      grant_type: password
+      scope: sss
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  ins_session:
+    domain: mockup-station-cadip-ins.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5001
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5001/oauth2/token
+      grant_type: password
+      scope: sss
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  mps_session:
+    domain: mockup-station-cadip-mps.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5002
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5002/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  mti_session:
+    domain: mockup-station-cadip-mti.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5003
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5003/oauth2/token
+      grant_type: password
+      scope: openid
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  nsg_session:
+    domain: mockup-station-cadip-nsg.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5004
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5004/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  sgs_session:
+    domain: mockup-station-cadip-sgs.processing.svc.cluster.local
+    service:
+      name: cadip
+      url: http://127.0.0.1:5005
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5005/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: null
+  lta:
+    domain: mockup-lta-lta.processing.svc.cluster.local
+    service:
+      name: lta
+      url: http://127.0.0.1:5006
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5006/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  s1a:
+    domain: mockup-prip-s1a.processing.svc.cluster.local
+    service:
+      name: prip
+      url: http://127.0.0.1:5007
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5007/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  s2b:
+    domain: mockup-prip-s2b.processing.svc.cluster.local
+    service:
+      name: prip
+      url: http://127.0.0.1:5008
+    authentication:
+      auth_type: oauth2
+      token_url: http://127.0.0.1:5008/oauth2/token
+      grant_type: password
+      scope: null
+      username: test
+      password: test
+      client_id: client_id
+      client_secret: client_secret
+      authorization: Basic test
+  s3test:
+    domain: s3.gra.io.cloud.ovh.net
+    service:
+      name: s3
+      url: https://s3.gra.io.cloud.ovh.net
+    authentication:
+      auth_type: s3
+      access_key: ${access_key}
+      secret_key: ${secret_key}
+  cdse:
+    domain: eodata.dataspace.copernicus.eu
+    service:
+      name: s3
+      url: https://eodata.dataspace.copernicus.eu
+    authentication:
+      auth_type: s3
+      access_key: example_s3_access_key
+      secret_key: example_s3_secret_key

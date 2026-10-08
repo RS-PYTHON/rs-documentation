@@ -1,0 +1,288 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+global:
+  extraArgs:
+    - -config.expand-env=true
+  extraEnvFrom:
+    - secretRef:
+        name: loki-s3-credentials
+
+loki:
+  auth_enabled: false
+  schemaConfig:
+    configs:
+      - from: 2024-04-01
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  ingester:
+    chunk_encoding: snappy
+  tracing:
+    enabled: true
+  querier:
+    # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
+    max_concurrent: 4
+  storage:
+    type: s3
+    s3:
+      region: "{{ s3.region }}"
+      endpoint: "{{ s3.endpoint }}"
+      accessKeyId: ${S3_ACCESS_KEY}
+      secretAccessKey: ${S3_SECRET_KEY}
+      s3forcepathstyle: true
+    bucketNames:
+      chunks: "{{ loki.bucket.chunks }}"
+      ruler: "{{ loki.bucket.ruler }}"
+
+deploymentMode: Distributed
+
+ingester:
+  # -- Number of replicas for the ingester
+  replicas: 3
+  # -- Resource requests and limits for the ingester
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      memory: 174Mi
+  podDisruptionBudget:
+    maxUnavailable: 1
+  zoneAwareReplication:
+    enabled: false
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+querier:
+  # -- Number of replicas for the querier
+  replicas: 3
+  # -- Resource requests and limits for the querier
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 89Mi
+  podDisruptionBudget:
+    maxUnavailable: 2
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+queryFrontend:
+  # -- Number of replicas for the query-frontend
+  replicas: 2
+  # -- Resource requests and limits for the query-frontend
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 139Mi
+  podDisruptionBudget:
+    maxUnavailable: 1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+queryScheduler:
+  # -- Number of replicas for the query-scheduler.
+  # It should be lower than `-querier.max-concurrent` to avoid generating back-pressure in queriers;
+  # it's also recommended that this value evenly divides the latter
+  replicas: 2
+  # -- Resource requests and limits for the query-scheduler
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 20Mi
+  podDisruptionBudget:
+    maxUnavailable: 1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+distributor:
+  # -- Number of replicas for the distributor
+  replicas: 3
+  # -- Resource requests and limits for the distributor
+  resources:
+    limits:
+      memory: 122Mi
+    requests:
+      memory: 47Mi
+  podDisruptionBudget:
+    maxUnavailable: 2
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+compactor:
+  # -- Number of replicas for the compactor
+  replicas: 1
+  # -- Resource requests and limits for the compactor
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      memory: 45Mi
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+indexGateway:
+  # -- Number of replicas for the index-gateway
+  replicas: 2
+  # -- Resource requests and limits for the index-gateway
+  resources:
+    limits:
+      memory: 72Mi
+    requests:
+      memory: 47Mi
+  podDisruptionBudget:
+    maxUnavailable: 1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+chunksCache:
+  # -- Total number of chunks-cache replicas
+  replicas: 1
+  # -- Amount of memory allocated to chunks-cache for object storage (in MB).
+  allocatedMemory: 8192
+  # -- Max memory to use for cache write back
+  writebackSizeLimit: 500MB
+  # By default a safe memory limit will be requested based on allocatedMemory value (floor (* 1.2 allocatedMemory)).
+  resources:
+    requests:
+      cpu: 500m
+      memory: 8192Mi
+    limits:
+      memory: 9830Mi
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+gateway:
+  # -- Number of replicas for the gateway
+  replicas: 1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+  resources:
+    limits:
+      memory: 18Mi
+    requests:
+      memory: 12Mi
+
+resultsCache:
+  # -- Total number of results-cache replicas
+  replicas: 1
+  # -- Amount of memory allocated to results-cache for object storage (in MB).
+  allocatedMemory: 1024
+  # -- Max memory to use for cache write back
+  writebackSizeLimit: 500MB
+  # -- Resource requests and limits for the results-cache
+  # By default a safe memory limit will be requested based on allocatedMemory value (floor (* 1.2 allocatedMemory)).
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+    limits:
+      memory: 1229Mi
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+
+lokiCanary:
+  enabled: false
+
+test:
+  enabled: false
+
+# Optional experimental components
+bloomPlanner:
+  enabled: false
+  replicas: 0
+
+bloomBuilder:
+  enabled: false
+  replicas: 0
+
+bloomGateway:
+  enabled: false
+  replicas: 0
+
+# Enable minio for storage
+minio:
+  enabled: false
+
+# Zero out replica counts of other deployment modes
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+singleBinary:
+  replicas: 0
+
+ruler:
+  # -- The ruler component is optional and can be disabled if desired.
+  enabled: false

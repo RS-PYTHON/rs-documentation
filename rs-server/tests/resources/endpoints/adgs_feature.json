@@ -1,0 +1,65 @@
+{
+    "type": "Feature",
+    "geometry": null,
+    "properties": {
+        "datetime": "2021-02-21T10:21:05.821Z",
+        "created": "2024-04-12T10:21:05.821Z",
+        "start_datetime": "2021-02-21T10:21:05.821Z",
+        "end_datetime": "2021-02-21T10:21:05.821Z",
+        "platform": "sentinel-1a",
+        "constellation": "sentinel-1",
+        "externalIds": [
+            {
+                "scheme": "auxip",
+                "value": "0a88d2a2-6e73-41a1-abce-2cdf29dfcf04"
+            }
+        ],
+        "published": "2021-02-14T10:21:05.821Z",
+        "product:type": "AUX_OBMEMC",
+        "processing:datetime": "2021-02-21T10:21:05.821Z",
+        "processing:facility": "FOS"
+    },
+    "id": "S1A_OPER_MPL_ORBPRE_20210214T021411_20210221T021411_0001",
+    "stac_version": "1.1.0",
+    "assets": {
+        "S1A_OPER_MPL_ORBPRE_20210214T021411_20210221T021411_0001.EOF": {
+            "href": "http://127.0.0.1:5001/Products(0a88d2a2-6e73-41a1-abce-2cdf29dfcf04)/$value",
+            "type": "application/octet-stream",
+            "file:size": 2100565,
+            "file:checksum": "144921a67fc7ede75e4818121fcf4d6c",
+            "eviction_datetime": "2021-02-21T10:21:05.821Z"
+        }
+    },
+    "links": [
+        {
+            "rel": "collection",
+            "type": "application/json",
+            "title": "S1A_OPER_MPL_ORBPRE_20210214T021411_20210221T021411_0001",
+            "href": "http://testserver/auxip/collections/s2_adgs2_AUX_OBMEMC"
+        },
+        {
+            "rel": "parent",
+            "type": "application/json",
+            "title": "Parent Catalog",
+            "href": "http://testserver/auxip/collections/s2_adgs2_AUX_OBMEMC"
+        },
+        {
+            "rel": "root",
+            "type": "application/json",
+            "title": "STAC Root Catalog",
+            "href": "http://testserver/auxip/"
+        },
+        {
+            "rel": "self",
+            "type": "application/geo+json",
+            "title": "This collection",
+            "href": "http://testserver/auxip/collections/s2_adgs2_AUX_OBMEMC/items/S1A_OPER_MPL_ORBPRE_20210214T021411_20210221T021411_0001"
+        }
+    ],
+    "stac_extensions": [
+        "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/external-ids/v1.0.0/schema.json"
+    ],
+    "collection": "s2_adgs2_AUX_OBMEMC"
+}

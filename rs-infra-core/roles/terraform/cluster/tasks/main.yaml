@@ -1,0 +1,403 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Check if ssh_key exists
+  stat:
+    path: "{{ inventory_dir }}/privatekey.pem"
+  register: privatekey
+
+- name: Create ssh key
+  shell: |
+    ssh-keygen -b 2048 -t rsa -m PEM -N "" -f {{ inventory_dir }}/privatekey.pem;\
+    echo -e "$(grep -v "public_key" {{ inventory_dir }}/cluster.tfvars)\npublic_key = \"$(ssh-keygen -f {{ inventory_dir }}/privatekey.pem -y)\"" > {{ inventory_dir }}/cluster.tfvars
+  when: privatekey.stat.exists == False
+  args:
+    executable: /bin/bash
+
+- name: Get terraform state bucket
+  ansible.builtin.shell: grep "bucket =" {{ inventory_dir }}/backend.tfvars | cut -d '"' -f 2
+  register: tf_backend_bucket
+
+- name: Create terraform bucket
+  amazon.aws.s3_bucket:
+    name: "{{ tf_backend_bucket.stdout }}"
+    endpoint_url: "{{ s3.endpoint }}"
+    region: "{{ s3.region }}"
+    aws_access_key: "{{ s3.access_key }}"
+    aws_secret_key: "{{ s3.secret_key }}"
+    validate_bucket_name: false
+    state: present
+  run_once: true
+
+- name: Terraform init
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; set +o allexport; terraform init -reconfigure -backend-config="{{ inventory_dir }}/backend.tfvars"
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Create terraform cluster
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform apply -auto-approve -var-file="{{ inventory_dir }}/cluster.tfvars"
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get bastion ip from terraform output
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform output -raw bastion_ip
+  register: bastion_ip
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get kubeconfig file from terraform output
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform output -raw kubeconfig_file
+  register: kubeconfig_file
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get manila username from terraform output
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform output -raw manila_username
+  register: manila_username
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get manila password from terraform output
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform output -raw manila_password
+  register: manila_password
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get share network id from terraform output
+  shell: |
+    set -o allexport; source {{ inventory_dir }}/.env; source {{ inventory_dir }}/openrc.sh; set +o allexport; terraform output -raw sharenetwork_id
+  register: sharenetwork_id
+  args:
+    chdir: roles/terraform/cluster/tasks/
+    executable: /bin/bash
+
+- name: Get projectName (=OS_TENANT_NAME) from openrc
+  shell: |
+    set -o allexport
+    source {{ inventory_dir }}/openrc.sh
+    set +o allexport
+    echo "$OS_TENANT_NAME"
+  args:
+    executable: /bin/bash
+  register: osprojectname
+  changed_when: false
+
+- name: Save projectName as Ansible fact
+  set_fact:
+    osprojectname: "{{ osprojectname.stdout }}"
+
+- name: Configure share network and manila credentials
+  set_fact:
+    manila_username: "{{ manila_username.stdout }}"
+    manila_password: "{{ manila_password.stdout }}"
+    sharenetwork_id: "{{ sharenetwork_id.stdout }}"
+
+- name: Write share network and manila credentials to sharenetwork.yaml
+  copy:
+    dest: "{{ inventory_dir }}/host_vars/setup/sharenetwork.yaml"
+    content: |
+      sharenetwork:
+        manila_username: "{{ manila_username }}"
+        manila_password: "{{ manila_password }}"
+        sharenetwork_id: "{{ sharenetwork_id }}"
+        osprojectname: "{{ osprojectname }}"
+
+- name: Set ansible private key
+  delegate_to: "{{ bastion_ip.stdout }}"
+  set_fact:
+    ansible_ssh_private_key_file: "{{ inventory_dir }}/privatekey.pem"
+
+- name: Add bastion to in-memory inventory
+  ansible.builtin.add_host:
+    hostname: "{{ bastion_ip.stdout }}"
+    ansible_host: "{{ bastion_ip.stdout }}"
+    ansible_ssh_private_key_file: "{{ ansible_ssh_private_key_file }}"
+    ansible_ssh_user: ubuntu
+
+- name: Create kube config directory
+  ansible.builtin.file:
+    path: /home/ubuntu/.kube
+    state: directory
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Copy kubeconfig file to bastion
+  ansible.builtin.copy:
+    content: "{{ kubeconfig_file.stdout }}"
+    dest: "/home/ubuntu/.kube/config"
+    mode: '0600'
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Copy full working directory to bastion
+  ansible.builtin.synchronize:
+    src: "{{ playbook_dir }}/"
+    dest: "ubuntu@{{ bastion_ip.stdout }}:/home/ubuntu/rs-infra-core"
+    recursive: true
+    private_key: "{{ ansible_ssh_private_key_file }}"
+
+- name: Update bastion
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Install dependencies
+  ansible.builtin.apt:
+    pkg:
+    - curl
+    - wget
+    - jq
+    - bash-completion
+    - unzip
+    - software-properties-common
+    - python3-passlib
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Get latest kubectl version
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: true
+  register: version
+
+- name: Create kubectl versioned directory
+  ansible.builtin.file:
+    path: /opt/kubectl-{{ version.content }}
+    state: directory
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download the latest kubectl release
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/{{ version.content }}/bin/linux/amd64/kubectl
+    dest: /opt/kubectl-{{ version.content }}
+  register: kubectl
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download the kubectl checksum
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/{{ version.content }}/bin/linux/amd64/kubectl.sha256
+    dest: /opt/kubectl-{{ version.content }}
+  register: kubectl
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Get kubectl sha256sum
+  ansible.builtin.shell: sha256sum /opt/kubectl-{{ version.content }}/kubectl | cut -d " " -f1
+  register: file_shasum
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- set_fact:
+    kubectl_shasum1={{ file_shasum.stdout }}
+
+- debug: var=kubectl_shasum1
+  run_once: true
+
+- name: Get sha256sum value from file
+  ansible.builtin.command: cat /opt/kubectl-{{ version.content }}/kubectl.sha256
+  register: downloaded_shasum
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- set_fact:
+    kubectl_shasum2={{ downloaded_shasum.stdout }}
+
+- debug: var=kubectl_shasum2
+  run_once: true
+
+- name: Assert that the kubectl binary is OK
+  ansible.builtin.assert:
+    that:
+      - file_shasum.stdout == downloaded_shasum.stdout
+    fail_msg: "Shasum does not correspond"
+    success_msg: "kubectl shasum verified: ok"
+
+- name: Change kubectl file permission
+  ansible.builtin.file:
+    path: "/opt/kubectl-{{ version.content }}/kubectl"
+    mode: '0755'
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create a symlink to kubectl
+  ansible.builtin.file:
+    src: "/opt/kubectl-{{ version.content }}/kubectl"
+    dest: "/usr/local/bin/kubectl"
+    state: link
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download Helm 3 install script
+  ansible.builtin.uri:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /opt/get_helm.sh
+    follow_redirects: safe
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Change Helm 3 install script file permission
+  ansible.builtin.file:
+    path: /opt/get_helm.sh
+    mode: '0700'
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Install Helm 3
+  ansible.builtin.shell: /opt/get_helm.sh
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download k9s latest deb package
+  ansible.builtin.apt:
+    deb: https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Add ansible repository from PPA
+  ansible.builtin.apt_repository:
+    repo: ppa:ansible/ansible
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Install dependencies
+  ansible.builtin.apt:
+    pkg: ansible
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create Kustomize directory
+  ansible.builtin.file:
+    path: /opt/kustomize
+    state: directory
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download Kustomize install script
+  ansible.builtin.uri:
+    url: https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
+    dest: /opt/kustomize/install_kustomize.sh
+    follow_redirects: safe
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Change Kustomize install script file permission
+  ansible.builtin.file:
+    path: /opt/kustomize/install_kustomize.sh
+    mode: '0700'
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Install Kustomize
+  ansible.builtin.shell: /opt/kustomize/install_kustomize.sh /opt/kustomize
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create a symlink to kustomize
+  ansible.builtin.file:
+    src: "/opt/kustomize/kustomize"
+    dest: "/usr/local/bin/kustomize"
+    state: link
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create Kubectl node-shell plugin directory
+  ansible.builtin.file:
+    path: /opt/node-shell
+    state: directory
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download Kubectl node-shell plugin
+  ansible.builtin.uri:
+    url: https://github.com/kvaps/kubectl-node-shell/raw/master/kubectl-node_shell
+    dest: /opt/node-shell/kubectl-node_shell
+    follow_redirects: safe
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Change Kubectl node-shell plugin file permission
+  ansible.builtin.file:
+    path: /opt/node-shell/kubectl-node_shell
+    mode: '0775'
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create a symlink to Kubectl node-shell plugin
+  ansible.builtin.file:
+    src: "/opt/node-shell/kubectl-node_shell"
+    dest: "/usr/local/bin/kubectl-node_shell"
+    state: link
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create yq directory
+  ansible.builtin.file:
+    path: /opt/yq
+    state: directory
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Download yq from makefarah github
+  ansible.builtin.uri:
+    url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+    dest: /opt/yq/yq
+    follow_redirects: safe
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Change yq file permission
+  ansible.builtin.file:
+    path: /opt/yq/yq
+    mode: '0700'
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create a symlink to yq
+  ansible.builtin.file:
+    src: "/opt/yq/yq"
+    dest: "/usr/local/bin/yq"
+    state: link
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Create a symlink to yq
+  ansible.builtin.file:
+    src: "/opt/yq/yq"
+    dest: "/usr/bin/yq"
+    state: link
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"
+
+- name: Clean install scripts
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /opt/kustomize/install_kustomize.sh
+    - /opt/get_helm.sh
+    - /opt/kubectl-{{ version.content }}/kubectl.sha256
+  become: true
+  delegate_to: "{{ bastion_ip.stdout }}"

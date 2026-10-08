@@ -1,0 +1,443 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Implement tests that are common to several services.
+
+NOTE: COPY-PASTED FROM pytest_common_tests.py in RS-SERVER.
+"""
+
+import json
+from collections.abc import Callable
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.testclient import TestClient
+from starlette import status
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.cors import CORSMiddleware
+
+from rs_dpr_service.utils import middlewares
+from rs_dpr_service.utils.logging import Logging
+from rs_dpr_service.utils.middlewares import (
+    HandleExceptionsMiddleware,
+    HealthMiddleware,
+    Rfc7807ErrorResponse,
+    StacErrorResponse,
+)
+
+# mypy: disable-error-code="typeddict-item,assignment,method-assign"
+
+logger = Logging.default(__name__)
+
+rfc7807_response = HandleExceptionsMiddleware.rfc7807_response
+
+
+def test_middleware_order(client):
+    """
+    Check that the FastAPI application middlewares were inserted in the right order.
+
+    When sending a request, the order of the middlewares must be:
+    Health -> CORS -> HandleExceptions -> Session -> Authentication -> [any other middlewares ...]
+    Then after processing the request, the response is sent in the opposite order:
+    [any other middlewares ...] -> Authentication -> Session -> HandleExceptions -> CORS -> Health
+
+    The reason for this is that:
+      - Health returns an HTTP 200 OK status for the /health and /ping probe endpoints, it must be first to be
+        as responsive as possible.
+      - Then CORS will respond to requests coming from the stac browsers.
+      - Then HandleExceptions is used to format error responses coming from all following middlewares and service.
+      - Then Authentication will block access to unauthorized users to all following middlewares and service. But it
+        must be preceded by the SessionMiddleware.
+
+    But some services don't use the AuthenticationMiddleware, instead the authentication is implemented as an
+    endpoint dependency. In this case the SessionMiddleware it at the end.
+    """
+    service_middlewares = [m.cls for m in client.app.user_middleware]
+    str_middlewares = "\n  - ".join([""] + [m.__name__ for m in service_middlewares])
+    logger.debug(f"FastAPI middlewares: {str_middlewares}")
+
+    tested_middlewares = [
+        (HealthMiddleware, False),
+        (CORSMiddleware, True),
+        (HandleExceptionsMiddleware, False),
+    ]
+
+    # Test the order of the middlewares
+    for tested, optional in tested_middlewares:
+        if optional and (tested not in service_middlewares):
+            continue
+
+        # Assert that the tested middleware is at the top of the list,
+        # and also remove this first list element.
+        assert tested == service_middlewares.pop(0)
+
+    # # Just check that the SessionMiddleware is somewhere after
+    # if not use_auth_middleware:
+    #     assert SessionMiddleware in service_middlewares
+
+
+# pylint: disable=too-many-branches, too-many-statements, cell-var-from-loop, too-many-locals
+def test_handle_exceptions_middleware(client, mocker, rfc7807: bool = True):
+    """
+    Test that HandleExceptionsMiddleware handles and logs errors as expected.
+
+    Args:
+        rfc7807 (bool): If true, the returned content is compliant with RFC 7807. This is used by pygeoapi/ogc services.
+        False by default = compliant to Stac specifications.
+    """
+
+    app = client.app
+
+    # Spy calls to logger.error(...)
+    spy_log_error = mocker.spy(middlewares.logger, "error")
+
+    def test_case(
+        mocked_endpoint: Callable,
+        expected_status: int,
+        expected_content: StacErrorResponse | Rfc7807ErrorResponse,
+        raise_from_func: bool,
+        raise_from_dependency: bool,
+    ):
+        """
+        Test cases.
+
+        Args:
+            mocked_endpoint: mocked endpoint implementation. It should return an error or raise an exception.
+            expected_status: expected http response status code
+            expected_content: expected http response content
+            raise_from_func: will the endpoint raise an exception ?
+            raise_from_dependency: will the endpoint dependency raise an exception ?
+        """
+
+        # Implement a new endpoint that will call our mock
+        endpoint_path = "/test_endpoint"
+
+        # Raise exception from the endpoint dependency
+        if raise_from_dependency:
+
+            @app.get(endpoint_path)
+            def test_endpoint_func(_param=Depends(mocked_endpoint)):
+                return "ok"
+
+        # Other cases
+        else:
+
+            @app.get(endpoint_path)
+            def test_endpoint_func():
+                return mocked_endpoint()
+
+        # Call the endpoint
+        response = client.get(endpoint_path)
+
+        # Check the expected http response
+        assert response.status_code == expected_status  # int status
+        # {"code": "xxx", "description": yyy"} or {"type": "xxx", status: yyy, "detail": "zzz"}
+        assert response.json() == expected_content
+
+        # Check that logger.error was called once
+        spy_log_error.assert_called_once()
+        logged_message = spy_log_error.call_args[0][0]
+
+        if raise_from_func or raise_from_dependency:
+            # If an exception was raised, then the log was called with the stack trace (exc_info=True arg)
+            assert spy_log_error.call_args[1]["exc_info"] is True
+
+            # The logged stack trace should contain either
+            # HTTPException(status_code=<expected_status>, detail=<expected_content>)
+            # or <ErrorType>(<expected_content>)
+            if rfc7807:
+                assert expected_content["detail"] in str(logged_message)
+            else:
+                assert expected_content["description"] in str(logged_message)
+
+        # If no exception, we should have logged the str: '<status>: <message>'
+        else:
+            assert str(expected_status) in logged_message
+            assert json.dumps(expected_content) in logged_message
+
+        # Reset the spy
+        spy_log_error.reset_mock()
+
+        # Remove the mocked endpoint
+        app.router.routes = list(filter(lambda route: getattr(route, "path", "") != endpoint_path, app.router.routes))
+
+    ###############
+    # Test case 1 #
+    ###############
+
+    content = "message from return_error_1"
+    if rfc7807:
+        error_response = rfc7807_response(status.HTTP_418_IM_A_TEAPOT, detail=content)
+    else:
+        error_response = StacErrorResponse(code="I'MATeapot", description=content)
+
+    def return_error_1():
+        """Test case when the endpoint returns a JSONResponse with a dict content == the expected ErrorResponse"""
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=error_response)
+
+    test_case(
+        mocked_endpoint=return_error_1,
+        expected_status=status.HTTP_418_IM_A_TEAPOT,
+        expected_content=error_response,
+        raise_from_func=False,
+        raise_from_dependency=False,
+    )
+
+    ###############
+    # Test case 2 #
+    ###############
+
+    dict_content = {"custom field": "message from return_error_2"}
+    if rfc7807:
+        expected_content = rfc7807_response(status.HTTP_418_IM_A_TEAPOT, detail=json.dumps(dict_content))
+    else:
+        expected_content = StacErrorResponse(code="I'MATeapot", description=json.dumps(dict_content))
+
+    def return_error_2():
+        """Test case when the endpoint returns a JSONResponse with a dict content != StacErrorResponse"""
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=dict_content)
+
+    test_case(
+        mocked_endpoint=return_error_2,
+        expected_status=status.HTTP_418_IM_A_TEAPOT,
+        # The returned error content is formated by HandleExceptionsMiddleware
+        expected_content=expected_content,
+        raise_from_func=False,
+        raise_from_dependency=False,
+    )
+
+    ###############
+    # Test case 3 #
+    ###############
+
+    content = "message from return_error_3"
+    if rfc7807:
+        expected_content = rfc7807_response(status.HTTP_418_IM_A_TEAPOT, detail=content)
+    else:
+        expected_content = StacErrorResponse(code="I'MATeapot", description=content)
+
+    def return_error_3():
+        """Test case when the endpoint returns a JSONResponse with a string content"""
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=content)
+
+    test_case(
+        mocked_endpoint=return_error_3,
+        expected_status=status.HTTP_418_IM_A_TEAPOT,
+        # The returned error content is formated by HandleExceptionsMiddleware
+        expected_content=expected_content,
+        raise_from_func=False,
+        raise_from_dependency=False,
+    )
+
+    ###############
+    # Test case 4 #
+    ###############
+
+    content = "message from raise_http"
+    if rfc7807:
+        expected_content = rfc7807_response(status.HTTP_418_IM_A_TEAPOT, detail=content)
+    else:
+        expected_content = StacErrorResponse(code="I'MATeapot", description=content)
+
+    for exception_type in HTTPException, StarletteHTTPException:
+
+        def raise_http():
+            """Test case when the endpoint or dependency raises an HTTPException or StarletteHTTPException"""
+            raise exception_type(status.HTTP_418_IM_A_TEAPOT, content)
+
+        for raise_case in True, False:  # raise from either endpoint or dependency
+            test_case(
+                mocked_endpoint=raise_http,
+                expected_status=status.HTTP_418_IM_A_TEAPOT,
+                expected_content=expected_content,
+                raise_from_func=raise_case,
+                raise_from_dependency=not raise_case,
+            )
+
+    ###############
+    # Test case 5 #
+    ###############
+
+    content = "message from raise_value_error"
+    if rfc7807:
+        expected_content = rfc7807_response(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=content)
+    else:
+        expected_content = StacErrorResponse(code="ValueError", description=content)
+
+    def raise_value_error():
+        """Test case when the endpoint or dependency raises any Exception different than HTTPException"""
+        raise ValueError(content)
+
+    for raise_case in True, False:  # raise from either endpoint or dependency
+        test_case(
+            mocked_endpoint=raise_value_error,
+            expected_status=status.HTTP_500_INTERNAL_SERVER_ERROR,  # a generic 500 server-side error is logged
+            expected_content=expected_content,
+            raise_from_func=raise_case,
+            raise_from_dependency=not raise_case,
+        )
+
+    # The server can override the HandleExceptionsMiddleware.is_bad_request function
+    # that determines if a generic 400 client-side error is logged instead of 500
+    old_bad_request = HandleExceptionsMiddleware.is_bad_request
+    try:
+        HandleExceptionsMiddleware.is_bad_request = lambda *_, **__: True  # always log 400
+
+        if rfc7807:
+            expected_content = rfc7807_response(status.HTTP_400_BAD_REQUEST, detail=content)
+
+        for raise_case in True, False:  # raise from either endpoint or dependency
+            test_case(
+                mocked_endpoint=raise_value_error,
+                expected_status=status.HTTP_400_BAD_REQUEST,
+                expected_content=expected_content,
+                raise_from_func=raise_case,
+                raise_from_dependency=not raise_case,
+            )
+
+    # Restore old function
+    finally:
+        HandleExceptionsMiddleware.is_bad_request = old_bad_request
+
+
+def test_handle_exceptions_middleware_success_response_not_logged(client, mocker):
+    """Test that successful responses are returned unchanged and not logged."""
+    app = client.app
+    spy_log_error = mocker.spy(middlewares.logger, "error")
+    endpoint_path = "/test_ok_endpoint"
+
+    @app.get(endpoint_path)
+    def test_ok_endpoint():
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "ok"})
+
+    response = client.get(endpoint_path)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"message": "ok"}
+    spy_log_error.assert_not_called()
+
+    app.router.routes = list(filter(lambda route: getattr(route, "path", "") != endpoint_path, app.router.routes))
+
+
+def test_handle_exceptions_middleware_returns_original_response_if_stream_read_fails(client, mocker):
+    """Test that the middleware returns the original response when the stream cannot be read."""
+    app = client.app
+    spy_log_error = mocker.spy(middlewares.logger, "error")
+    endpoint_path = "/test_stream_read_failure"
+    dict_content = {"custom field": "message from stream read failure"}
+
+    @app.get(endpoint_path)
+    def test_stream_read_failure():
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=dict_content)
+
+    with mocker.patch(
+        "rs_dpr_service.utils.middlewares.read_streaming_response",
+        side_effect=RuntimeError("stream read failed"),
+    ):
+        response = client.get(endpoint_path)
+
+    assert response.status_code == status.HTTP_418_IM_A_TEAPOT
+    assert response.json() == dict_content
+    spy_log_error.assert_called_once()
+    assert "stream read failed" in str(spy_log_error.call_args[0][0])
+
+    app.router.routes = list(filter(lambda route: getattr(route, "path", "") != endpoint_path, app.router.routes))
+
+
+def test_handle_exceptions_middleware_reformats_almost_valid_rfc7807_payload(client, mocker):
+    """Test that the middleware reformats payloads that look like RFC7807 but are not exactly valid."""
+    app = client.app
+    spy_log_error = mocker.spy(middlewares.logger, "error")
+    endpoint_path = "/test_almost_valid_rfc7807"
+    response_content = {
+        "type": "https://developer.mozilla.org/en/docs/Web/HTTP/Reference/Status/418",
+        "status": "418",
+        "detail": "message from almost valid rfc7807",
+    }
+    expected_content = rfc7807_response(status.HTTP_418_IM_A_TEAPOT, detail=json.dumps(response_content))
+
+    @app.get(endpoint_path)
+    def test_almost_valid_rfc7807():
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=response_content)
+
+    response = client.get(endpoint_path)
+
+    assert response.status_code == status.HTTP_418_IM_A_TEAPOT
+    assert response.json() == expected_content
+    spy_log_error.assert_called_once()
+
+    app.router.routes = list(filter(lambda route: getattr(route, "path", "") != endpoint_path, app.router.routes))
+
+
+def test_handle_exceptions_middleware_stac_mode_handles_errors_and_exceptions(mocker):
+    """Test additional HandleExceptionsMiddleware branches when RFC7807 formatting is disabled."""
+    app = FastAPI()
+    app.add_middleware(HandleExceptionsMiddleware, rfc7807=False)
+    HandleExceptionsMiddleware.disable_default_exception_handler(app)
+    spy_log_error = mocker.spy(middlewares.logger, "error")
+
+    valid_stac_error = StacErrorResponse(code="I'MATeapot", description="message from valid stac error")
+    custom_content = {"custom field": "message from custom stac content"}
+
+    @app.get("/test_valid_stac_error")
+    def test_valid_stac_error():
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=valid_stac_error)
+
+    @app.get("/test_custom_stac_error")
+    def test_custom_stac_error():
+        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content=custom_content)
+
+    @app.get("/test_raised_stac_exception")
+    def test_raised_stac_exception():
+        raise ValueError("message from raised stac exception")
+
+    with TestClient(app) as test_client:
+        response = test_client.get("/test_valid_stac_error")
+        assert response.status_code == status.HTTP_418_IM_A_TEAPOT
+        assert response.json() == valid_stac_error
+
+        response = test_client.get("/test_custom_stac_error")
+        assert response.status_code == status.HTTP_418_IM_A_TEAPOT
+        assert response.json() == StacErrorResponse(
+            code="I'MATeapot",
+            description=json.dumps(custom_content),
+        )
+
+        response = test_client.get("/test_raised_stac_exception")
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.json() == StacErrorResponse(
+            code="ValueError",
+            description="message from raised stac exception",
+        )
+
+    assert spy_log_error.call_count == 3
+
+
+def test_health_middleware_shortcuts_probe_endpoints():
+    """Test that health and ping probe endpoints return immediately."""
+    app = FastAPI()
+    app.add_middleware(HealthMiddleware)
+
+    @app.get("/regular")
+    def regular_endpoint():
+        return {"message": "regular"}
+
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == status.HTTP_200_OK
+        assert client.get("/health").json() == {"healthy": True}
+        assert client.get("/ping").status_code == status.HTTP_200_OK
+        assert client.get("/ping").json() == {"message": "PONG"}
+        assert client.get("/regular").status_code == status.HTTP_200_OK
+        assert client.get("/regular").json() == {"message": "regular"}

@@ -1,0 +1,28 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+boto3>=1.43.75
+dask==2026.8.0
+dask-gateway==2026.3.0
+distributed==2026.8.0
+eopf==3.0.0
+ipywidgets==8.1.9
+jupyterhub==5.5.2
+jupyterlab==4.6.4
+pytest==9.1.1
+pytest-cov==7.1.0
+s3cmd==2.4.0
+s3fs==2026.9.0
+uv>=0.12.18
+xarray==2026.7.0

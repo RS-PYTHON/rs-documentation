@@ -1,0 +1,601 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+stations:
+  cadip:
+    endpoint:
+      url: http://127.0.0.1:8000
+      secret:
+        username: test
+        password: test
+collections:
+  - id: cadip_session_by_id_list
+    station: cadip
+    query:
+      SessionId: S1A_20170501121534062343,S1A_20240328185208053186
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_id_list_big
+    station: cadip
+    query:
+      SessionId: S1A_20200105072204051312,S1A_20200105072204051313,S1A_20200105072204051314,S1A_20200105072204051315,S1A_20200105072204051316,S1A_20200105072204051317,S1A_20200105072204051318,S1A_20200105072204051319,S1A_20200105072204051310,S1A_20200105072204051311
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_id
+    station: cadip
+    query:
+      SessionId: S1A_20200105072204051312
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_id_platform
+    station: cadip
+    query:
+      SessionId: S1A_20240328185208053186
+      Satellite: S1A
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_lists_id_platform
+    station: cadip
+    query:
+      SessionId: S1A_20240328185208053186,S1A_20240328185208053186
+      Satellite: S1A,S2B
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_platform_list
+    station: cadip
+    query:
+      Satellite: S1A, S2B
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_start_stop_platform
+    station: cadip
+    query:
+      PublicationDate: "2020-02-16T12:00:00Z/2023-02-16T12:00:00Z"
+      Satellite: S1A
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_interval
+    station: cadip
+    query:
+      PublicationDate: "2014-02-16T12:00:00Z/2024-02-16T12:00:00Z"
+      top: 2
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_by_satellite
+    station: cadip
+    query:
+      Satellite: S1A
+      limit: 2
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_s2b
+    station: cadip
+    query:
+      Satellite: S2B
+      top: 20
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incorrect
+    station: cadip
+    query:
+      Satellite: incorrect_platform
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incomplete
+    station: cadip
+    query:
+      top: 1
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incomplete_no_stop
+    station: cadip
+    query:
+      PublicationDate: "2020-02-16T12:00:00Z/invalid_stop"
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incomplete_no_start
+    station: cadip
+    query:
+      PublicationDate: "invalid_start/2020-02-16T12:00:00Z"
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incomplete_platf_no_start
+    station: cadip
+    query:
+      Satellite: S1A
+      PublicationDate: "invalid_stop/2020-02-16T12:00:00Z"
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: cadip_session_incorrect_station
+    station: incorrect
+    query:
+      Satellite: S1A
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: apik_valid_auth
+    station: cadip
+    query:
+      top: 1
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+
+  - id: test_collection
+    station: authTest
+    query:
+      Satellite: S1A
+      top: 1
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[-180, -82.85, 180, 82.82]]
+      temporal:
+        interval: [['2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z']]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+  ###
+  - id: cadip
+    station: cadip
+    query: null
+    stac_extensions: []
+    title: 'Test collection'
+    description: 'Sentinel-1 test CADIP sessions'
+    license: other
+    extent:
+      spatial:
+        bbox: [[ -180, -82.85, 180, 82.82 ]]
+      temporal:
+        interval: [[ '2024-06-12T02:57:21.459000Z', '2024-08-22T11:30:12.767000Z' ]]
+    links:
+      - rel: license
+        href: 'https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice'
+        title: 'Legal notice on the use of Copernicus Sentinel Data and Service Information'
+    providers:
+      - name: 'European Union/ESA/Copernicus'
+        roles:
+          - producer
+          - licensor
+        url: 'https://sentiwiki.copernicus.eu/web/sentinel-1'
+      - name: 'Reference System'
+        roles:
+          - host
+        url: 'https://home.rs-python.eu/'
+
+  - id: ins
+    station: ins
+    query:
+      limit: 100
+  - id: mps
+    station: mps
+    query:
+      limit: 100
+  - id: mti
+    station: mti
+    query:
+      limit: 100
+  - id: nsg
+    station: nsg
+    query:
+      limit: 100
+  - id: sgs
+    station: sgs
+    query:
+      limit: 100

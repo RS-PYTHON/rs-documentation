@@ -1,0 +1,11 @@
+{
+    "id": "Name",
+    "cadip:retransfer": "Retransfer",
+    "cadip:final_block": "FinalBlock",
+    "cadip:block_number": "BlockNumber",
+    "cadip:channel": "Channel",
+    "created": "PublicationDate",
+    "eviction_datetime": "EvictionDate",
+    "file:size": "Size",
+    "href": "href"
+}

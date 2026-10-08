@@ -1,0 +1,42 @@
+# Copyright 2023-2026 Airbus, CS Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-service-config
+  namespace: {{ .Values.namespace }}
+data:
+  {{ .Values.app.eodagConfigFile }}: |
+    {{- range $k, $v := .Values.app.station }}
+    {{ tpl ($.Files.Get (printf "config/%s" $v.configFile)) $ | nindent 4 }}
+    {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-search-service-config
+  namespace: {{ .Values.namespace }}
+data:
+  {{ .Values.app.pripSearchConfigFile }}: |
+    {{ .Files.Get (printf "config/%s" .Values.app.pripSearchConfigFile) | nindent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ptype-service-config
+  namespace: {{ .Values.namespace }}
+data:
+  {{ .Values.app.ptypeMappingFile }}: |
+    {{ .Files.Get (printf "config/%s" .Values.app.ptypeMappingFile) | nindent 4 }}
