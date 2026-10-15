@@ -1,0 +1,70 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-actors
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "RS user" as user
+actor "End user" as enduser
+actor "Operator" as operator
+actor "Administrator" as admin
+actor "Security officer" as security
+enduser -|> user
+operator -|> user
+admin -|> user
+security -|> user
+note right of user
+  All the actors are RS users,
+  with specific access rights.
+end note
+
+cloud "External data sources" as eds {
+  rectangle "CADIP stations\n(raw data sessions)" as cadip
+  rectangle "AUXIP stations\n(auxiliary data)" as auxip
+  rectangle "PRIP stations\n(products)" as prip
+  rectangle "LTA\n(long term archive)" as lta
+  rectangle "CDSE, EarthDataHub" as cdse
+}
+rectangle "External systems" {
+  rectangle "Container registry\n(Docker images)" as registry
+  rectangle "Python package registry" as pypi
+  rectangle "GitHub\n(source code)" as github
+  rectangle "Key and secret manager" as vault
+  rectangle "DPR processors\nand Dask cluster settings\n(EOPF project)" as dpr
+}
+rectangle "Deployment targets" {
+  rectangle "Local machine\n(local mode)" as local
+  rectangle "Kubernetes cluster\n(cluster mode)" as cluster
+}
+@enduml

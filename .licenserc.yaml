@@ -34,6 +34,7 @@ header:
     - 'NOTICE'
     - '**/*.svg'
     - 'spellchecker_ignore.txt'
+    - '.github/scripts/repositories.txt'
     - 'mkdocs.yml.tpl'
 
   comment: on-failure
