@@ -31,9 +31,22 @@ RS_CLIENT_LIBRARIES_MKDOCS="${PROJECT_ROOT_DIR}/docs/rs-client-libraries/docs/mk
 RS_DPR_SERVICE_MKDOCS="${PROJECT_ROOT_DIR}/docs/rs-dpr-service/docs/mkdocs.txt"
 
 # Template variables
-RS_SERVER_PYDOC=$(<${RS_SERVER_MKDOCS})
-RS_CLIENT_LIBRARIES_PYDOCS=$(<${RS_CLIENT_LIBRARIES_MKDOCS})
-RS_DPR_SERVICE_PYDOCS=$(<${RS_DPR_SERVICE_MKDOCS})
+export RS_SERVER_PYDOC=$(<${RS_SERVER_MKDOCS})
+export RS_CLIENT_LIBRARIES_PYDOCS=$(<${RS_CLIENT_LIBRARIES_MKDOCS})
+export RS_DPR_SERVICE_PYDOCS=$(<${RS_DPR_SERVICE_MKDOCS})
 
-# Apply template to create mkdocs.yml
-echo "$(eval "echo \"$(cat $TEMPLATEFILE)\"")" > $OUTPUTFILE
+# Apply template to create mkdocs.yml.
+# Only the variables above are substituted, so the template can safely contain quotes or '$' characters.
+python3 - "$TEMPLATEFILE" "$OUTPUTFILE" <<'PYTHON'
+import os
+import sys
+
+template, output = sys.argv[1], sys.argv[2]
+content = open(template, encoding="utf-8").read()
+for var in ("RS_SERVER_PYDOC", "RS_CLIENT_LIBRARIES_PYDOCS", "RS_DPR_SERVICE_PYDOCS"):
+    content = content.replace(f"${var}", os.environ[var])
+with open(output, "w", encoding="utf-8") as f:
+    f.write(content)
+PYTHON
+
+echo "✓ Generated ${OUTPUTFILE}"

@@ -1,10 +1,18 @@
 /mkdocs.yml
 /site
-/docs/rs-server
+# RS-PYTHON repositories cloned or symlinked under docs/ (see .github/scripts/repositories.txt)
+/docs/actions
 /docs/rs-client-libraries
 /docs/rs-demo
 /docs/rs-dpr-service
+/docs/rs-helm
 /docs/rs-infra-core
 /docs/rs-infra-monitoring
+/docs/rs-server
+/docs/rs-server-deployment
+/docs/rs-testmeans
+/docs/rs-workflow-deployment
 /docs/rs-workflow-env
-/docs/rs-helm
+
+# Python cache of the MkDocs hooks
+__pycache__/

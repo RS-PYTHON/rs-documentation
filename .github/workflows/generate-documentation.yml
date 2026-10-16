@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: 3.13.12
+  PYTHON_VERSION: 3.13.16
 
 jobs:
   generate-documentation:
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/install-python
 
-      - name: Clone RS-Server/RS-Client/RS-Demo/RS-Infra/RS-Helm
+      - name: Clone the RS-PYTHON repositories
         run: |
           set -x
           pwd
@@ -45,8 +45,8 @@ jobs:
           # cloned repositories as the current branch name
           branch_name=${{ github.ref_name }}
 
-          # Clone rspy repositories
-          for repo in rs-server rs-client-libraries rs-demo rs-dpr-service rs-infra-core rs-infra-monitoring rs-workflow-env rs-helm ; do
+          # Clone rspy repositories (keep this list in sync with .gitignore and the documentation)
+          for repo in $(cat ../.github/scripts/repositories.txt) ; do
             git clone https://github.com/RS-PYTHON/${repo}.git
             (cd ${repo}; git checkout $branch_name || git checkout develop)
           done
@@ -64,12 +64,15 @@ jobs:
         working-directory: .
         shell: bash
 
-      - name: Deploy the Markdown HTML documentation to GitHub Pages
-        run: |
-          set -x
-          pwd
-          ls -all
-          sleep 2
-          poetry run mkdocs gh-deploy --force
+      - name: Build the HTML documentation
+        run: poetry run mkdocs build
+        working-directory: .
+        shell: bash
+
+      # Only the default branch is published, so that the online documentation is not overwritten
+      # by the work in progress of other branches.
+      - name: Deploy the HTML documentation to GitHub Pages
+        if: github.ref == 'refs/heads/develop'
+        run: poetry run mkdocs gh-deploy --force
         working-directory: .
         shell: bash

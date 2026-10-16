@@ -152,8 +152,8 @@ create_mkdocs_for_folder() {
     folder_level=$3
     previous_folders=$4
 
-    # Compute indentation: 4 spaces as a base, then add two spaces for each folder level
-    mkdocs_indent="    "
+    # Compute indentation: PYDOC_NAV_INDENT (6 spaces by default) as a base, then add two spaces for each folder level
+    mkdocs_indent="${PYDOC_NAV_INDENT:-      }"
     for i in $(seq 1 $folder_level); do
         mkdocs_indent="${mkdocs_indent}  "
     done
