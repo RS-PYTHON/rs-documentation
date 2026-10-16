@@ -22,6 +22,7 @@ for the other branches the website is built to check that it is valid.
 | `mkdocs.yml.tpl` | Template of the MkDocs configuration: theme, extensions, navigation menu... |
 | `.github/scripts/generate_mkdocs.sh` | Generates the Python API documentation pages (with `build_pydoc.sh`) and the `mkdocs.yml` file from the template. |
 | `hooks/rspy_links.py` | [MkDocs hook](https://www.mkdocs.org/user-guide/configuration/#hooks) that turns the absolute GitHub links to the Markdown pages of the RS-PYTHON repositories into links inside the website, see [Writing guidelines](#writing-guidelines). |
+| `hooks/rspy_boilerplate.py` | MkDocs hook that removes the boilerplate repeated in all the repositories: the "Contributing" and "Licensing" sections of the README of each repository, and the license header at the start of the code examples. |
 | `includes/abbreviations.md` | Definitions of the acronyms, displayed as tooltips on every page. |
 | `.github/scripts/render_diagrams.sh` | Renders the PlantUML diagrams, see [Diagrams](#diagrams). |
 
@@ -101,6 +102,9 @@ Check the warnings displayed by MkDocs: they report the broken links and anchors
 
     This project is funded by the EU and ESA.
     ```
+
+    These "Contributing" and "Licensing" sections are displayed on GitHub, but the `rspy_boilerplate` hook removes them
+    from this website, so they are not repeated on every page.
 
 - **Links inside a repository** are relative, e.g. `[Catalog](users/catalog.md#search)`, so they work both on
   GitHub and in this website.

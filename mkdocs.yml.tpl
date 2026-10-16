@@ -60,6 +60,8 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  # Turn the bare URLs into links, as GitHub does
+  - pymdownx.magiclink
   - pymdownx.snippets:
       # Tooltips for the acronyms, on every page
       auto_append:
@@ -77,6 +79,9 @@ extra_css: [_templates/style.css]
 hooks:
   # Turn absolute GitHub links between RS-PYTHON repositories into site-internal links
   - hooks/rspy_links.py
+  # Remove the boilerplate repeated in all the repositories: Contributing and Licensing sections of the READMEs,
+  # license headers of the code examples
+  - hooks/rspy_boilerplate.py
 
 plugins:
   - search
