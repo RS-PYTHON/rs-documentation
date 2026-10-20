@@ -17,12 +17,14 @@ authorisation (see [User rights and API keys](user-rights.md)) and documented in
 - **External data sources**: [STAC API](https://github.com/radiantearth/stac-api-spec) services to search the
   Copernicus ground segment in read-only mode:
   [CADIP](../rs-server/docs/doc/users/external-data-sources.md#cadip-stations) acquisition stations (raw data
-  sessions), [AUXIP](../rs-server/docs/doc/users/external-data-sources.md#auxip-adgs-stations) stations (auxiliary
-  data) and [PRIP](../rs-server/docs/doc/users/external-data-sources.md#prip-stations) production services
+  sessions), [AUXIP](../rs-server/docs/doc/users/external-data-sources.md#auxip-adgs-instances) instances (auxiliary
+  data) and [PRIP](../rs-server/docs/doc/users/external-data-sources.md#prip-instances) production services
   (Level-0, Level-1 and Level-2 products).
 - **Catalog**: a [STAC API](https://github.com/radiantearth/stac-api-spec) service to search, read and update
   the RS-Python [catalog](../rs-server/docs/doc/users/catalog.md), stored in a [PostgreSQL](https://www.postgresql.org/)
-  database. Each user owns their collections.
+  database. Each user owns their collections. The catalog products are also exposed with the
+  [OData PRIP interface](../rs-server/docs/doc/users/odata-mapping.md) of the ESA Production Interface Delivery
+  Points.
 - **Staging**: an [OGC API - Processes](https://ogcapi.ogc.org/processes/) service that
   [copies products](../rs-server/docs/doc/users/staging.md) from the external data sources into the RS-Python
   object storage and catalog.

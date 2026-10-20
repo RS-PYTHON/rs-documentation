@@ -110,14 +110,15 @@ For example, `rs_catalog_copernicus:*_read` allows to read all the collections o
 
 ### External data sources
 
-Access is given per station. `<station>` is the station identifier configured on the platform, e.g. `ins`, `mps`,
-`mti`, `nsg`, `sgs` for the CADIP stations, `adgs` for the AUXIP station, `s1a`, `s2b`... for the PRIP stations.
+Access is given per station or instance. `<station>` is the station or instance identifier configured on the
+platform, e.g. `ins`, `mps`, `mti`, `nsg`, `sgs` for the CADIP stations, `adgs` for the AUXIP instance, `s1a`,
+`s2b`... for the PRIP instances.
 
 | Keycloak role | Access |
 |---|---|
 | `rs_cadip_<station>_read` | Search the sessions of the CADIP station `<station>`. |
-| `rs_auxip_<station>_read` | Search the auxiliary data of the AUXIP station `<station>`. |
-| `rs_prip_<station>_read` | Search the products of the PRIP station `<station>`. |
+| `rs_auxip_<station>_read` | Search the auxiliary data of the AUXIP instance `<station>`. |
+| `rs_prip_<station>_read` | Search the products of the PRIP instance `<station>`. |
 | `rs_cadip_landing_page`, `rs_auxip_landing_page`, `rs_prip_landing_page` | Read the landing page, conformance and list of collections of the CADIP, AUXIP or PRIP service, e.g. from the STAC browsers. |
 
 Administrators usually define [composite roles](https://www.keycloak.org/docs/latest/server_admin/index.html#con-composite-roles_server_administration_guide)
