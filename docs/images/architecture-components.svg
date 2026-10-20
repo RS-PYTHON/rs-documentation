@@ -173,10 +173,10 @@ limitations under the License.
 <use href="#ansible" x="1050" y="730" width="34" height="34" fill="#EE0000"/>
 <text x="1092" y="754.92" font-size="22" font-weight="bold" fill="#222222">Ansible</text>
 <rect x="1256" y="10" width="78" height="432" fill="#70AD47"/>
-<text transform="translate(1307.24 226.0) rotate(90)" text-anchor="middle" font-size="34" fill="#FFFFFF" letter-spacing="1">RS-PYTHON</text>
+<text transform="translate(1282.76 226.0) rotate(90)" text-anchor="middle" font-size="34" fill="#FFFFFF" letter-spacing="1">RS-PYTHON</text>
 <rect x="1256" y="466" width="78" height="228" fill="#70AD47"/>
-<text transform="translate(1302.92 580.0) rotate(90)" text-anchor="middle" font-size="22" fill="#FFFFFF" letter-spacing="1">INFRASTRUCTURE</text>
+<text transform="translate(1287.08 580.0) rotate(90)" text-anchor="middle" font-size="22" fill="#FFFFFF" letter-spacing="1">INFRASTRUCTURE</text>
 <rect x="1256" y="706" width="78" height="84" fill="#4472C4"/>
-<text transform="translate(1307.18 748.0) rotate(90)" text-anchor="middle" font-size="13" fill="#FFFFFF" letter-spacing="1">Physical</text>
-<text transform="translate(1292.18 748.0) rotate(90)" text-anchor="middle" font-size="13" fill="#FFFFFF" letter-spacing="1">hardware</text>
+<text transform="translate(1297.82 748.0) rotate(90)" text-anchor="middle" font-size="13" fill="#FFFFFF" letter-spacing="1">Physical</text>
+<text transform="translate(1282.82 748.0) rotate(90)" text-anchor="middle" font-size="13" fill="#FFFFFF" letter-spacing="1">hardware</text>
 </svg>
