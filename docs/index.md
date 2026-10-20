@@ -24,7 +24,7 @@ From a functional point of view, RS-Python is made of:
 
 | Component | What it does for you |
 |---|---|
-| [**rs-server**](rs-server/docs/doc/index.md) | Web services with fine access control: browse the external data sources (CADIP, AUXIP, PRIP stations) and the RS-Python catalog with a [STAC API](https://github.com/radiantearth/stac-api-spec), stage products into the catalog, get your object storage credentials. |
+| [**rs-server**](rs-server/docs/doc/index.md) | Web services with fine access control: browse the external data sources (CADIP stations, AUXIP and PRIP instances) and the RS-Python catalog with a [STAC API](https://github.com/radiantearth/stac-api-spec), stage products into the catalog, get your object storage credentials. |
 | [**DPR processors**](rs-dpr-service/docs/doc/index.md) | The Sentinel-1, Sentinel-2 and Sentinel-3 processors, delivered as Docker images and run on Dask clusters, triggered through an [OGC API - Processes](https://ogcapi.ogc.org/processes/) web service. |
 | [**Prefect flows**](rs-client-libraries/docs/doc/flows/index.md) | Ready-to-use workflows to search, stage and process Sentinel products, from Level-0 to Level-2. |
 | [**rs-client-libraries**](rs-client-libraries/docs/doc/index.md) | The Python library used by the flows to call the services. Use it to write your own flows. |

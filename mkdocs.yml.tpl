@@ -163,6 +163,7 @@ nav:
     - STAC mapping of external data: rs-server/docs/doc/users/stac-mapping.md
     - Catalog: rs-server/docs/doc/users/catalog.md
     - Catalog data model and lifecycle: rs-server/docs/doc/users/data-model.md
+    - OData PRIP interface of the catalog: rs-server/docs/doc/users/odata-mapping.md
     - Staging: rs-server/docs/doc/users/staging.md
     - OSAM (Object Storage Access Manager): rs-server/docs/doc/users/osam.md
     - Frontend: rs-server/docs/doc/users/frontend.md

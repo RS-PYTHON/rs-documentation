@@ -51,8 +51,8 @@ end note
 
 cloud "External data sources" as eds {
   rectangle "CADIP stations\n(raw data sessions)" as cadip
-  rectangle "AUXIP stations\n(auxiliary data)" as auxip
-  rectangle "PRIP stations\n(products)" as prip
+  rectangle "AUXIP instances\n(auxiliary data)" as auxip
+  rectangle "PRIP instances\n(products)" as prip
   rectangle "LTA\n(long term archive)" as lta
   rectangle "CDSE, EarthDataHub" as cdse
 }

@@ -33,8 +33,8 @@ deployed for each service:
 |---|---|
 | Catalog | <https://stac-browser-catalog.ops.rs-python.eu/> |
 | CADIP stations | <https://stac-browser-cadip.ops.rs-python.eu/> |
-| AUXIP stations | <https://stac-browser-auxip.ops.rs-python.eu/> |
-| PRIP stations | <https://stac-browser-prip.ops.rs-python.eu/> |
+| AUXIP instances | <https://stac-browser-auxip.ops.rs-python.eu/> |
+| PRIP instances | <https://stac-browser-prip.ops.rs-python.eu/> |
 
 You are authenticated with your Keycloak account (OAuth2). Navigate between the collections and the items by
 clicking on the links, and use the *Search* button to filter the items by date, footprint or with the

@@ -11,9 +11,9 @@ Replace `ops.rs-python.eu` by the domain name of your own platform. The endpoint
 
 | Section | Endpoints | Description |
 |---|---|---|
-| [ADGS stations](https://rspy.ops.rs-python.eu/docs#/ADGS%20stations) | `/auxip/...` | Search the auxiliary data of the AUXIP stations ([documentation](../rs-server/docs/doc/users/external-data-sources.md#auxip-adgs-stations)). |
+| [ADGS stations](https://rspy.ops.rs-python.eu/docs#/ADGS%20stations) | `/auxip/...` | Search the auxiliary data of the AUXIP instances ([documentation](../rs-server/docs/doc/users/external-data-sources.md#auxip-adgs-instances)). |
 | [CADIP stations](https://rspy.ops.rs-python.eu/docs#/CADIP%20stations) | `/cadip/...` | Search the sessions of the CADIP stations ([documentation](../rs-server/docs/doc/users/external-data-sources.md#cadip-stations)). |
-| [PRIP stations](https://rspy.ops.rs-python.eu/docs#/PRIP%20stations) | `/prip/...` | Search the products of the PRIP stations ([documentation](../rs-server/docs/doc/users/external-data-sources.md#prip-stations)). |
+| [PRIP stations](https://rspy.ops.rs-python.eu/docs#/PRIP%20stations) | `/prip/...` | Search the products of the PRIP instances ([documentation](../rs-server/docs/doc/users/external-data-sources.md#prip-instances)). |
 | [Catalog](https://rspy.ops.rs-python.eu/docs#/Catalog) | `/catalog/...` | Read and update the catalog ([documentation](../rs-server/docs/doc/users/catalog.md)). |
 | [Staging service](https://rspy.ops.rs-python.eu/docs#/Staging%20service) | `/processes`, `/jobs` | Stage products into the catalog and follow the staging jobs ([documentation](../rs-server/docs/doc/users/staging.md)). |
 | [Processing service](https://rspy.ops.rs-python.eu/docs#/Processing%20service) | `/dpr/processes`, `/dpr/jobs` | Read the processors task tables and follow or cancel the DPR jobs ([documentation](../rs-dpr-service/docs/doc/index.md)). |
