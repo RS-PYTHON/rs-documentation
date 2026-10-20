@@ -141,4 +141,8 @@ Diagrams are written as text, so they can be reviewed and updated easily:
 The PlantUML source is embedded in each SVG image, so a diagram can also be reopened from its image, e.g. with the
 [PlantUML online server](https://www.plantuml.com/plantuml/).
 
+The illustrations that need logos and a free layout, such as the main components of the
+[System architecture](architecture.md#main-components), are written directly as SVG images in `docs/images`, without
+PlantUML source. Their logos come from [Simple Icons](https://simpleicons.org/) (CC0 license).
+
 Screenshots are saved as PNG images.
