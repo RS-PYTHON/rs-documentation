@@ -1,0 +1,68 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml deployment-node-pools
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodesep 30
+skinparam ranksep 40
+skinparam node {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam component {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam frame {
+  BorderColor #5E35B1
+}
+
+frame "Kubernetes cluster" {
+  node "infra" as infra {
+    component "Core components\n(Envoy Gateway, Keycloak,\nCloudNativePG, Velero...)" as core
+    component "Monitoring\n(Grafana, Prometheus,\nLoki, Tempo, Alloy)" as mon
+    component "Security\n(Wazuh, NeuVector)" as sec
+  }
+  node "rs_server" as rsserver {
+    component "rs-server services\n(frontend, catalog, cadip,\nauxip, prip, staging, osam)" as server
+    component "rs-dpr-service" as dprs
+    component "STAC browsers" as browsers
+  }
+  node "access_csc" as csc {
+    component "Staging Dask cluster" as staging
+  }
+  node "rs_env" as env {
+    component "JupyterHub" as jupyter
+    component "Prefect server\nand workers" as prefect
+    component "Dask Gateway" as gateway
+    component "API Key Manager" as apikey
+  }
+  node "prefect_flow" as flows {
+    component "Prefect flow runs" as runs
+  }
+  node "dask_scheduler" as sched {
+    component "DPR Dask schedulers" as dsched
+  }
+  node "dask_worker_on_demand\nbig_dask_worker_on_demand" as workers {
+    component "DPR Dask workers" as dworkers
+  }
+}
+infra -[hidden]right-> rsserver
+rsserver -[hidden]right-> csc
+infra -[hidden]down-> env
+env -[hidden]right-> flows
+env -[hidden]down-> sched
+sched -[hidden]right-> workers
+@enduml

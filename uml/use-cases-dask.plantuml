@@ -1,0 +1,64 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-dask
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "Administrator" as admin
+actor "RS user" as user
+rectangle "Dask cluster" as dask
+rectangle "IAM" {
+  usecase "Access control" as access
+}
+rectangle "Dask cluster management (Dask Gateway)" {
+  usecase "Manage clusters" as manage
+  usecase "Create and delete" as create
+  usecase "Configure" as configure
+  usecase "Scale" as scale
+}
+rectangle "Processing" {
+  usecase "Start and stop flows" as flows
+  usecase "Find the cluster\nby its label" as find
+}
+admin -- manage
+user -- manage
+manage ..> access : <<include>>
+create ..> manage : <<extend>>
+configure ..> manage : <<extend>>
+scale ..> manage : <<extend>>
+manage -- dask
+user -- flows
+flows ..> find : <<include>>
+find -- dask
+@enduml
