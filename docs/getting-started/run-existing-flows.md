@@ -26,10 +26,14 @@ Note the session identifier, e.g. `S3A_20260807020505053186`.
 3. Fill in the parameters:
 
     - `session`: the session identifier found above.
-    - `flow_params`: leave it empty to use the default settings of the platform (the processor, the Dask cluster,
-      the target collections... see [Level-0 flows](../rs-client-libraries/docs/doc/flows/level0-flows.md)), or
-      override some of them, e.g. set `owner_identifier` to your login to write the products in your own
+    - `env_args`: set `owner_id` to your login, to run the flow on your behalf and write the products in your own
       collections.
+    - `force_systematic`: leave it unchecked to only generate the Level-0 products. When checked, the next
+      processings of the chain (e.g. the OLCI Level-1 and Level-2) are started automatically from the generated
+      products, see [Systematic processing](../rs-client-libraries/docs/doc/advanced/systematic-processing.md).
+
+    The other parameters (the processor, the Dask cluster, the target collections...) are the default settings of
+    the platform, see [Level-0 flows](../rs-client-libraries/docs/doc/flows/level0-flows.md).
 
 4. Click *Submit*. A new flow run is created. See the
    [Prefect documentation](https://docs.prefect.io/v3/how-to-guides/deployments/run-deployments) for more ways to
@@ -44,9 +48,10 @@ Note the session identifier, e.g. `S3A_20260807020505053186`.
 The flow run page shows:
 
 - the **logs** of the flow and of its tasks. The Level-0 flow first looks for the session in the catalog, stages
-  it from the CADIP station if needed, then calls the generic processing flow (`process-generic`). The logs of the
-  processing contain the link to the [Dask dashboard](../services/virtual-environment/dask.md) of the processor
-  run, and the command to [cancel the run](../rs-dpr-service/docs/doc/cancel-dpr-run.md) if needed.
+  it from the CADIP station if needed, then runs the Level-0 flow of the mission (`process-s3-l0`) as a sub-flow,
+  which calls the generic processing flow (`process-generic`). The logs of the processing contain the link to the
+  [Dask dashboard](../services/virtual-environment/dask.md) of the processor run, and the command to
+  [cancel the run](../rs-dpr-service/docs/doc/cancel-dpr-run.md) if needed.
 - the **sub-flow runs** and **task runs** with their status,
 - the **artifacts**, e.g. `dpr-task-table` and `dpr-payload` that show the processor
   [task table and payload file](../rs-client-libraries/docs/doc/flows/tasktable-payload.md).
