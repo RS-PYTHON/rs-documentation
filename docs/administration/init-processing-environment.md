@@ -34,7 +34,7 @@ The [Prefect variables](https://docs.prefect.io/v3/concepts/variables) contain t
 | Variable | Content | Documentation |
 |---|---|---|
 | `processing-storage-configuration` | Where the processors read and write their inputs, outputs and auxiliary files (S3 buckets, shared disks...). Initialise it with the [`notebooks/init-prefect/processing-storage-configuration.ipynb`](https://github.com/RS-PYTHON/rs-demo/blob/develop/notebooks/init-prefect/processing-storage-configuration.ipynb) notebook, from the [template](https://github.com/RS-PYTHON/rs-client-libraries/blob/develop/config/storage_configuration.json) delivered with rs-client-libraries. | [Storage configuration](../rs-client-libraries/docs/doc/advanced/customise-dpr-flow.md#storage-configuration) |
-| `s<mission>-processing-default-setting` | Default parameters of the processing flows of a mission: processor, pipeline, Dask cluster, target collections... | [Customise the DPR processing](../rs-client-libraries/docs/doc/advanced/customise-dpr-flow.md#default-settings-of-the-processing-flows) |
+| `<processing_id>-default-setting` | Default parameters of the processing flows of a processing (`s1l0`, `s1ard`, `s3l0`, `s3l1olci`, `s3l2olci`): processor, pipeline, Dask cluster, input and target collections... They are checked against the [ProcessorDefaultSettings.schema.json](https://github.com/RS-PYTHON/rs-client-libraries/blob/develop/config/ProcessorDefaultSettings.schema.json) JSON schema. | [Customise the DPR processing](../rs-client-libraries/docs/doc/advanced/customise-dpr-flow.md#default-settings-of-the-processing-flows) |
 
 ## 3. Dask clusters
 
