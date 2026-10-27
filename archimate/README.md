@@ -7,7 +7,7 @@ folder: it is not part of the HTML documentation.
 |---|---|
 | `rs-python-architecture.xml` | The whole model (elements, relationships, views) in **The Open Group ArchiMate Model Exchange File Format** (schema 3.1). |
 | `functional-packages.md` | Table of the functional packages (description, functions, supported services, allocated components). |
-| `previews/*.svg`, `previews/*.png` | Previews of the views, for review only: the reference rendering is the one of the modelling tool. |
+| `previews/*.svg`, `previews/*.png` | Previews of the views (white background for the SVG, transparent for the PNG), for review only: the reference rendering is the one of the modelling tool. |
 | `src/` | Python generator of all the files above. |
 
 Views:
@@ -72,4 +72,7 @@ Workarounds of pyArchimate 2.0.0 issues:
   protocols...).
 - The SVG view box starts at a negative margin while the white background starts at the origin.
 - The SVG previews merge the lines of the texts (e.g. the lists of the notes).
+- The SVG export always paints a white background: it is left out of the PNG previews, which are transparent. To keep
+  them readable on light and dark backgrounds, the groupings drawn on the canvas get a white background, and the
+  relationships and arrowheads a white halo.
 - The line colours of the nodes are written with a wrong green component: no line colour is set.

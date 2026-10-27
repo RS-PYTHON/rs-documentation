@@ -24,6 +24,7 @@ from pathlib import Path
 
 import pyArchimate as pa  # pylint: disable=import-error
 from lxml import etree  # pylint: disable=import-error
+from pyArchimate.view import View  # pylint: disable=import-error
 from pyArchimate.view.layout import export  # pylint: disable=import-error
 from rs_python_elements import FUNCTIONAL_PACKAGES
 from rs_python_model import build
@@ -74,6 +75,39 @@ class FixedSVGExport(export.SVGExportService):  # pylint: disable=too-few-public
         return bounds
 
 
+class TransparentSVGExport(FixedSVGExport):  # pylint: disable=too-few-public-methods
+    """SVG export of the PNG previews: transparent, and readable on light and dark backgrounds.
+
+    - no white background, that pyArchimate always paints,
+    - white background in the groupings drawn on the canvas, whose borders and names are black,
+    - white halo around the relationship lines and the filled (black) arrowheads, which can be on the canvas.
+    """
+
+    def _add_background(self, *args) -> None:
+        # No background rectangle: the PNG canvas stays transparent
+        pass
+
+    def _add_defs(self, svg) -> None:
+        super()._add_defs(svg)
+        for marker in svg.find("defs"):
+            marker.set("overflow", "visible")
+            for shape in marker:
+                if shape.get("fill") == "black":
+                    shape.set("stroke", "white")
+
+    def _render_grouping(self, g, *args) -> None:
+        super()._render_grouping(g, *args)
+        if isinstance(args[-1].parent, View):
+            g.find("path").set("fill", "white")
+
+    def _render_relationship(self, svg, *args) -> None:
+        start = len(svg)
+        super()._render_relationship(svg, *args)
+        for line in [e for e in svg[start:] if e.tag == "polyline"]:
+            halo = {"points": line.get("points"), "fill": "none", "stroke": "white", "stroke-width": "3"}
+            svg.insert(list(svg).index(line), line.makeelement("polyline", halo))
+
+
 def check(model):
     """Check the model with pyArchimate: relationships allowed by ArchiMate, valid nodes and connections."""
     errors = {
@@ -101,7 +135,7 @@ def write_xml(model, xml_path: Path, xsd_dir: Path):
 
 
 def previews(model, out: Path):
-    """SVG previews of the views, and PNG ones if resvg_py is installed."""
+    """SVG previews of the views, and PNG ones (with a transparent background) if resvg_py is installed."""
     out.mkdir(exist_ok=True)
     try:
         resvg = importlib.import_module("resvg_py")
@@ -111,7 +145,8 @@ def previews(model, out: Path):
         svg = out / f"{view.name.split(' ', 1)[0].rstrip('.')}-{view.uuid.removeprefix('id-view-')}.svg"
         svg.write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n{FixedSVGExport().to_svg(view)}\n', encoding="utf-8")
         if resvg:
-            png = resvg.svg_to_bytes(svg_path=str(svg), sans_serif_family="DejaVu Sans")
+            svg_string = TransparentSVGExport().to_svg(view)
+            png = resvg.svg_to_bytes(svg_string=svg_string, sans_serif_family="DejaVu Sans")
             svg.with_suffix(".png").write_bytes(bytes(png))
         print(f"preview: {svg.name}")
 
