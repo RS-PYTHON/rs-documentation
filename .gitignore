@@ -16,3 +16,6 @@
 
 # Python cache of the MkDocs hooks
 __pycache__/
+
+# Open Group XSD files used by the ArchiMate diagram generator
+/archimate/xsd/
