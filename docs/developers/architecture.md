@@ -37,7 +37,8 @@ annexes.
 - The [external data sources](../rs-server/docs/doc/users/external-data-sources.md) services translate the STAC
   requests into OData requests to the Copernicus stations.
 - The [staging](../rs-server/docs/doc/users/staging.md) and the [processing](../rs-dpr-service/docs/doc/index.md)
-  services run their tasks on Dask clusters, and write the products in the object storage.
+  services run their tasks on Dask clusters, and write the products in the object storage. See
+  [Running a processor on Dask](dask-processing.md) for the details and a review of this design.
 - The [catalog](../rs-server/docs/doc/users/catalog.md) stores the metadata of the products in a PostgreSQL
   database ([pgstac](https://github.com/stac-utils/pgstac)).
 

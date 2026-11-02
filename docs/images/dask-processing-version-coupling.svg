@@ -1,0 +1,82 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="1000" height="500" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C62828"/>
+    </marker>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .head { font-size: 14px; font-weight: bold; fill: #263238; text-anchor: middle; }
+      .box { stroke-width: 2; rx: 8; }
+      .txt { fill: #263238; text-anchor: middle; }
+      .small { font-size: 12px; fill: #455A64; text-anchor: middle; }
+      .eq { stroke: #C62828; stroke-width: 3; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .eqtxt { fill: #C62828; font-weight: bold; font-size: 18px; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <text x="500" y="30" text-anchor="middle" class="title">Why there is one rs-dpr-service per Python/Dask version (example versions)</text>
+
+  <text x="170" y="75" class="head">Client that submits tasks</text>
+  <text x="500" y="75" class="head">rs-dpr-service instance (client)</text>
+  <text x="830" y="75" class="head">Dask cluster image (scheduler + workers)</text>
+
+  <!-- Row 1 -->
+  <rect x="40" y="95" width="260" height="80" class="box" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="170" y="125" class="txt" font-weight="bold">Notebook kernel (venv)</text>
+  <text x="170" y="145" class="small">Python 3.11.7 / Dask 2024.5.2</text>
+  <rect x="370" y="95" width="260" height="80" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="500" y="125" class="txt" font-weight="bold">rs-dpr-service</text>
+  <text x="500" y="145" class="small">py-3-11-7-dask-2024-5-2</text>
+  <rect x="700" y="95" width="260" height="80" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="830" y="125" class="txt" font-weight="bold">Image of the cluster</text>
+  <text x="830" y="145" class="small">Python 3.11.7 / Dask 2024.5.2</text>
+  <line x1="302" y1="135" x2="368" y2="135" class="eq"/>
+  <line x1="632" y1="135" x2="698" y2="135" class="eq"/>
+
+  <!-- Row 2 -->
+  <rect x="40" y="200" width="260" height="80" class="box" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="170" y="230" class="txt" font-weight="bold">Notebook kernel (venv)</text>
+  <text x="170" y="250" class="small">Python 3.11.7 / Dask 2026.1.2</text>
+  <rect x="370" y="200" width="260" height="80" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="500" y="230" class="txt" font-weight="bold">rs-dpr-service</text>
+  <text x="500" y="250" class="small">py-3-11-7-dask-2026-1-2</text>
+  <rect x="700" y="200" width="260" height="80" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="830" y="230" class="txt" font-weight="bold">Image of the cluster</text>
+  <text x="830" y="250" class="small">Python 3.11.7 / Dask 2026.1.2</text>
+  <line x1="302" y1="240" x2="368" y2="240" class="eq"/>
+  <line x1="632" y1="240" x2="698" y2="240" class="eq"/>
+
+  <!-- Row 3 -->
+  <rect x="40" y="305" width="260" height="80" class="box" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="170" y="335" class="txt" font-weight="bold">Notebook kernel (venv)</text>
+  <text x="170" y="355" class="small">Python 3.13.16 / Dask 2026.3.0</text>
+  <rect x="370" y="305" width="260" height="80" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="500" y="335" class="txt" font-weight="bold">rs-dpr-service</text>
+  <text x="500" y="355" class="small">py-3-13-16-dask-2026-3-0</text>
+  <rect x="700" y="305" width="260" height="80" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="830" y="335" class="txt" font-weight="bold">Image of the cluster</text>
+  <text x="830" y="355" class="small">Python 3.13.16 / Dask 2026.3.0</text>
+  <line x1="302" y1="345" x2="368" y2="345" class="eq"/>
+  <line x1="632" y1="345" x2="698" y2="345" class="eq"/>
+
+  <!-- Explanation -->
+  <rect x="40" y="410" width="920" height="70" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="55" y="432" fill="#263238" font-weight="bold">The three "=" must hold, because the client sends Python code to the cluster:</text>
+  <text x="55" y="452" fill="#263238" font-size="12">client.submit(run_processor) sends serialized Python objects (cloudpickle) and speaks the Dask protocol: Dask requires compatible</text>
+  <text x="55" y="468" fill="#263238" font-size="12">Python and Dask versions on both sides. Three versions = three Deployments, three Helm values, three routes and CI builds.</text>
+</svg>
