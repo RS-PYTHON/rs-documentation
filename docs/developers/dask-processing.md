@@ -4,17 +4,17 @@ This page explains how a DPR processor is run on a [Dask](https://www.dask.org/)
 weaknesses of the current design, and proposes a better one, with its impact on the infrastructure. It is written
 for the developers and the infrastructure operators of RS-Python, and the first sections are meant for beginners.
 
-!!! info "Status"
-
-    Sections 1 to 4 describe the system **as implemented today**, checked against the source code of
-    [rs-dpr-service](https://github.com/RS-PYTHON/rs-dpr-service),
-    [rs-demo](https://github.com/RS-PYTHON/rs-demo) and [EOPF-CPM](https://cpm.pages.eopf.copernicus.eu/eopf-cpm/main/index.html).
-    Sections 5 to 8 are an **architecture proposal**, not yet implemented. The points that could not be verified from
-    the code are listed in [Assumptions to verify](#assumptions-to-verify).
-
-    A key constraint drives the whole analysis: the pod of rs-dpr-service is small (see
-    [The resource constraint](#the-resource-constraint-where-can-the-eopf-cpm-driver-run)), so the EOPF-CPM driver
-    **cannot** run there. Any proposal must give the driver enough RAM and CPU.
+> **Status**
+>
+> Sections 1 to 4 describe the system **as implemented today**, checked against the source code of
+> [rs-dpr-service](https://github.com/RS-PYTHON/rs-dpr-service),
+> [rs-demo](https://github.com/RS-PYTHON/rs-demo) and [EOPF-CPM](https://cpm.pages.eopf.copernicus.eu/eopf-cpm/main/index.html).
+> Sections 5 to 8 are an **architecture proposal**, not yet implemented. The points that could not be verified from
+> the code are listed in [Assumptions to verify](#9-assumptions-to-verify).
+>
+> A key constraint drives the whole analysis: the pod of rs-dpr-service is small (see
+> [The resource constraint](#the-resource-constraint-where-can-the-eopf-cpm-driver-run)), so the EOPF-CPM driver
+> **cannot** run there. Any proposal must give the driver enough RAM and CPU.
 
 ## 1. Vocabulary for beginners
 
@@ -236,7 +236,7 @@ critical parameter of this design.
 | **Initial values** | To be measured (see [Measure the driver footprint](#measure-the-driver-footprint)). Until then, start from the measured peak plus a margin, and keep a generous default for the biggest processors. |
 | **Concurrent runs** | A `ResourceQuota` on the namespace of the Jobs caps the total RAM and CPU of the drivers. Beyond it, the Job stays `Pending`: rs-dpr-service reports the run as *queued* and applies a start timeout (`activeDeadlineSeconds` does not cover the pending phase, so the service watches it). |
 | **Under-sizing** | If the driver pod ends with `OOMKilled`, rs-dpr-service reports a clear error ("driver out of memory, limit = X") instead of a generic failure, so that the size can be corrected. |
-| **Placement** | A small dedicated **driver node pool** (preferred), or the scheduler node pool as a fallback (see the sizing note in [Impact on the infrastructure](#impact-on-the-infrastructure)). Not the worker pool, to keep the drivers from taking capacity from the computation. |
+| **Placement** | A small dedicated **driver node pool** (preferred), or the scheduler node pool as a fallback (see the sizing note in [Impact on the infrastructure](#7-impact-on-the-infrastructure)). Not the worker pool, to keep the drivers from taking capacity from the computation. |
 | **Per-user fairness** | One Job per run, labelled with the user and the cluster, so the quotas and the dashboards can be split by user. |
 
 If the Kubernetes API cannot be used (e.g. a restricted environment), a degraded alternative is option B2 with a
