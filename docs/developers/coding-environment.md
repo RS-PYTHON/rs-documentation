@@ -20,8 +20,8 @@ and [PyCharm](https://www.jetbrains.com/pycharm/) are both used by the team.
 
 ```shell
 # Install the Python version used by the project (see the "python" constraint of each pyproject.toml)
-pyenv install 3.13.16
-pyenv global 3.13.16
+pyenv install 3.13.18
+pyenv global 3.13.18
 
 # Install Poetry (use the version of the CI, see the RS-PYTHON/actions repository)
 pipx install poetry
