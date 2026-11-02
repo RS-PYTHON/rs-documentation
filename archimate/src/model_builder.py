@@ -70,10 +70,9 @@ class ViewBuilder:
     def __init__(self, builder: Builder, key: str, name: str, viewpoint: str, doc: str):
         self.builder = builder
         self.key = key
-        # Viewpoint of the Open Group standard, in the documentation: pyArchimate only knows its own viewpoint slugs,
-        # and does not write the definitions of the view properties
-        desc = f"{doc} ArchiMate viewpoint: {viewpoint}."
-        self.view = builder.model.add(concept_type=pa.ArchiType.View, name=name, uuid=f"id-view-{key}", desc=desc)
+        self.view = builder.model.add(concept_type=pa.ArchiType.View, name=name, uuid=f"id-view-{key}", desc=doc)
+        # Viewpoint of the Open Group standard, in a property: pyArchimate only knows its own viewpoint slugs
+        self.view.prop("Viewpoint", viewpoint)
         self.by_element: dict = {}
         self.notes = 0
 
