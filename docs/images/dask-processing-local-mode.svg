@@ -1,0 +1,122 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 660" width="1100" height="660" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#37474F"/>
+    </marker>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .lane { stroke-width: 2; rx: 10; }
+      .lanehead { font-size: 15px; font-weight: bold; fill: #263238; }
+      .colhead { font-size: 12px; font-weight: bold; fill: #78909C; text-anchor: middle; }
+      .box { stroke-width: 2; rx: 8; }
+      .txt { fill: #263238; text-anchor: middle; }
+      .bold { font-weight: bold; }
+      .small { font-size: 11px; fill: #455A64; text-anchor: middle; }
+      .link { stroke: #37474F; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .runner { fill: #FFE082; stroke: #F9A825; stroke-width: 2; rx: 6; }
+    </style>
+  </defs>
+
+  <text x="550" y="30" text-anchor="middle" class="title">One runner, three launchers: cluster, local and debug modes</text>
+
+  <text x="125" y="60" class="colhead">rs-dpr-service</text>
+  <text x="385" y="60" class="colhead">launcher (how the driver is started)</text>
+  <text x="640" y="60" class="colhead">driver = runner + EOPF-CPM</text>
+  <text x="920" y="60" class="colhead">Dask cluster</text>
+
+  <!-- Lane 1: cluster mode -->
+  <rect x="10" y="70" width="1080" height="170" class="lane" fill="#F9FDF9" stroke="#2E7D32"/>
+  <text x="25" y="92" class="lanehead">Cluster mode (Kubernetes)</text>
+  <rect x="25" y="110" width="200" height="110" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="125" y="140" class="txt bold">rs-dpr-service</text>
+  <text x="125" y="158" class="small">one generic Deployment</text>
+  <text x="125" y="174" class="small">no EOPF-CPM needed</text>
+  <rect x="285" y="110" width="200" height="110" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="385" y="140" class="txt bold">KubernetesJobLauncher</text>
+  <text x="385" y="158" class="small">Kubernetes API: Job, Secret,</text>
+  <text x="385" y="174" class="small">pod logs, delete</text>
+  <text x="385" y="190" class="small">requests = limits</text>
+  <rect x="545" y="110" width="190" height="110" class="box" fill="#E8F5E9" stroke="#2E7D32"/>
+  <text x="640" y="132" class="txt bold">Job pod</text>
+  <rect x="560" y="142" width="160" height="62" class="runner"/>
+  <text x="640" y="168" class="txt bold">runner</text>
+  <text x="640" y="186" class="small">image of the cluster</text>
+  <rect x="795" y="110" width="270" height="110" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="930" y="136" class="txt bold">Dask cluster (pods)</text>
+  <text x="930" y="156" class="small">Dask Gateway, JupyterHub auth</text>
+  <text x="930" y="172" class="small">scheduler pod + worker pods</text>
+  <text x="930" y="188" class="small">image from the cluster options</text>
+  <path class="link" d="M 225 165 L 285 165"/>
+  <path class="link" d="M 485 165 L 545 165"/>
+  <path class="link" d="M 735 165 L 795 165"/>
+
+  <!-- Lane 2: local mode -->
+  <rect x="10" y="255" width="1080" height="190" class="lane" fill="#F5FAFF" stroke="#1565C0"/>
+  <text x="25" y="277" class="lanehead">Local mode (docker compose): recommended design</text>
+  <rect x="25" y="295" width="200" height="130" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="125" y="325" class="txt bold">rs-dpr-service</text>
+  <text x="125" y="343" class="small">one container, same image</text>
+  <text x="125" y="359" class="small">as in cluster mode</text>
+  <rect x="285" y="295" width="200" height="130" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="385" y="325" class="txt bold">DockerLauncher</text>
+  <text x="385" y="343" class="small">Docker API through a</text>
+  <text x="385" y="359" class="small">restricted socket proxy:</text>
+  <text x="385" y="375" class="small">create, logs, stop, remove</text>
+  <text x="385" y="391" class="small">mem_limit, cpus, network</text>
+  <rect x="545" y="295" width="190" height="130" class="box" fill="#E8F5E9" stroke="#2E7D32"/>
+  <text x="640" y="317" class="txt bold">driver container</text>
+  <rect x="560" y="327" width="160" height="62" class="runner"/>
+  <text x="640" y="353" class="txt bold">runner</text>
+  <text x="640" y="371" class="small">image dask-*/local</text>
+  <text x="640" y="410" class="small">on rspy-network</text>
+  <rect x="795" y="295" width="270" height="130" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="930" y="321" class="txt bold">dask-cpm3 container</text>
+  <text x="930" y="341" class="small">own Dask Gateway (local backend)</text>
+  <text x="930" y="357" class="small">basic auth, no Kubernetes</text>
+  <text x="930" y="373" class="small">scheduler + workers = processes</text>
+  <text x="930" y="389" class="small">(no image option: label to image map)</text>
+  <path class="link" d="M 225 360 L 285 360"/>
+  <path class="link" d="M 485 360 L 545 360"/>
+  <path class="link" d="M 735 360 L 795 360"/>
+
+  <!-- Lane 3: debug mode -->
+  <rect x="10" y="460" width="1080" height="190" class="lane" fill="#FFFBF0" stroke="#F9A825"/>
+  <text x="25" y="482" class="lanehead">Debug mode (breakpoints in EOPF and the processor)</text>
+  <rect x="25" y="500" width="200" height="130" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="125" y="530" class="txt bold">rs-dpr-service</text>
+  <text x="125" y="548" class="small">"localcluster" image variant</text>
+  <text x="125" y="564" class="small">with EOPF-CPM installed</text>
+  <rect x="285" y="500" width="200" height="130" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="385" y="530" class="txt bold">SubprocessLauncher</text>
+  <text x="385" y="548" class="small">runs the runner in the</text>
+  <text x="385" y="564" class="small">service container, or in</text>
+  <text x="385" y="580" class="small">the process (IDE debugger)</text>
+  <rect x="545" y="500" width="190" height="130" class="box" fill="#FFF8E1" stroke="#F9A825"/>
+  <text x="640" y="522" class="txt bold">process in the service</text>
+  <rect x="560" y="532" width="160" height="62" class="runner"/>
+  <text x="640" y="558" class="txt bold">runner</text>
+  <text x="640" y="576" class="small">the same code</text>
+  <rect x="795" y="500" width="270" height="130" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="930" y="526" class="txt bold">Dask LocalCluster</text>
+  <text x="930" y="546" class="small">created by EOPF-CPM itself,</text>
+  <text x="930" y="562" class="small">no gateway (experimental</text>
+  <text x="930" y="578" class="small">local_cluster setting)</text>
+  <path class="link" d="M 225 565 L 285 565"/>
+  <path class="link" d="M 485 565 L 545 565"/>
+  <path class="link" d="M 735 565 L 795 565"/>
+</svg>

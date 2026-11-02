@@ -236,6 +236,7 @@ nav:
   - Local mode: rs-demo/docs/local-mode.md
   - Demo notebooks: rs-demo/README.md
   - System architecture: developers/architecture.md
+  - Running a processor on Dask: developers/dask-processing.md
   - Repositories and CI/CD: developers/ci-cd.md
   - Reusable GitHub actions: actions/README.md
   - Dask images: rs-workflow-env/docs/dask_images.md
