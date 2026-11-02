@@ -42,7 +42,7 @@ it is not distributed with RS-Python), which also checks the relationships again
 the exchange format and renders the SVG previews. The output is validated against the Open Group XSD files.
 
 ```shell
-pip install pyArchimate==2.0.0 lxml resvg-py  # resvg-py is optional: without it, only the SVG previews are generated
+pip install pyArchimate==2.0.2 lxml resvg-py  # resvg-py is optional: without it, only the SVG previews are generated
 
 # Open Group XSD files, in the archimate/xsd folder (ignored by git)
 mkdir -p archimate/xsd && cd archimate/xsd
@@ -62,17 +62,12 @@ python archimate/src/generate.py
 | `src/rs_python_views.py` | Content and layout of the six views. |
 | `src/rs_python_model.py` | Assembly of the model. |
 | `src/model_builder.py` | Thin layer on top of pyArchimate: short keys and stable identifiers, so that a regenerated model can be re-imported into EA without duplicating it. |
-| `src/generate.py` | Checks, export, previews, and the workarounds of the pyArchimate issues listed below. |
+| `src/generate.py` | Checks, export, previews (see the rendering choices below). |
 
-Workarounds of pyArchimate 2.0.0 issues:
+Rendering choices of the previews, on top of the pyArchimate SVG export:
 
-- The view properties are written without their property definitions (invalid XML): the viewpoint of each view is
-  written in its documentation instead.
-- The SVG previews label the relationships with their types: they are labelled with their names (data of the flows,
-  protocols...).
-- The SVG view box starts at a negative margin while the white background starts at the origin.
-- The SVG previews merge the lines of the texts (e.g. the lists of the notes).
-- The SVG export always paints a white background: it is left out of the PNG previews, which are transparent. To keep
-  them readable on light and dark backgrounds, the groupings drawn on the canvas get a white background, and the
-  relationships and arrowheads a white halo.
-- The line colours of the nodes are written with a wrong green component: no line colour is set.
+- The relationships are only labelled with their names (data of the flows, protocols...): pyArchimate labels the
+  unnamed ones with their types, which are already given by the notation.
+- The PNG previews are transparent: the white background of the SVG export is left out. To keep them readable on
+  light and dark backgrounds, the groupings drawn on the canvas get a white background, and the relationships and
+  arrowheads a white halo.

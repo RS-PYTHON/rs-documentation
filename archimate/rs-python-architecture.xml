@@ -1758,12 +1758,20 @@
     <propertyDefinition identifier="propid-7" type="string">
       <name>components</name>
     </propertyDefinition>
+    <propertyDefinition identifier="propid-8" type="string">
+      <name>Viewpoint</name>
+    </propertyDefinition>
   </propertyDefinitions>
   <views>
     <diagrams>
       <view identifier="id-view-context" xsi:type="Diagram">
         <name>1. System in Context</name>
-        <documentation>RS-Python as a black box: the services it provides, the user roles that consume them, the external systems that interact with it and the providers it relies on. ArchiMate viewpoint: Layered.</documentation>
+        <documentation>RS-Python as a black box: the services it provides, the user roles that consume them, the external systems that interact with it and the providers it relies on.</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Layered</value>
+          </property>
+        </properties>
         <node identifier="id-context-r_user" elementRef="id-r_user" xsi:type="Element" x="740" y="30" w="160" h="60">
           <style>
             <font name="Segoe UI" size="9">
@@ -2166,7 +2174,12 @@
       </view>
       <view identifier="id-view-functional" xsi:type="Diagram">
         <name>2. Functional Top-Level Decomposition</name>
-        <documentation>Functional packages of RS-Python (application functions) and their functions (nested: composition). Each package realizes the RS-Python services it supports. The components assigned to each package are listed in the documentation of the package. ArchiMate viewpoint: Service Realization.</documentation>
+        <documentation>Functional packages of RS-Python (application functions) and their functions (nested: composition). Each package realizes the RS-Python services it supports. The components assigned to each package are listed in the documentation of the package.</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Service Realization</value>
+          </property>
+        </properties>
         <node identifier="id-functional-fp_ext" elementRef="id-fp_ext" xsi:type="Element" x="20" y="170" w="200" h="374">
           <style>
             <fillColor r="221" g="251" b="251" a="100"/>
@@ -2685,7 +2698,12 @@
       </view>
       <view identifier="id-view-hl-application" xsi:type="Diagram">
         <name>3. High Level Application View</name>
-        <documentation>Application components of RS-Python and their information flows, between themselves, with the user roles (through the external interfaces, in orange) and with the external systems (in grey). ArchiMate viewpoint: Layered.</documentation>
+        <documentation>Application components of RS-Python and their information flows, between themselves, with the user roles (through the external interfaces, in orange) and with the external systems (in grey).</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Layered</value>
+          </property>
+        </properties>
         <node identifier="id-hl-application-c_soi" elementRef="id-c_soi" xsi:type="Element" x="260" y="150" w="1760" h="730">
           <style>
             <fillColor r="221" g="251" b="251" a="100"/>
@@ -3275,7 +3293,12 @@ All the components send their logs, metrics and OpenTelemetry traces to the moni
       </view>
       <view identifier="id-view-detailed-application" xsi:type="Diagram">
         <name>4. Detailed Application View</name>
-        <documentation>Detailed application components of RS-Python (micro-services, virtual environment, IAM, monitoring), their interfaces (external ones in orange), their data and their information flows. ArchiMate viewpoint: Layered.</documentation>
+        <documentation>Detailed application components of RS-Python (micro-services, virtual environment, IAM, monitoring), their interfaces (external ones in orange), their data and their information flows.</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Layered</value>
+          </property>
+        </properties>
         <node identifier="id-detailed-application-c_stacb" elementRef="id-c_stacb" xsi:type="Element" x="390" y="20" w="270" h="120">
           <style>
             <font name="Segoe UI" size="9">
@@ -4087,7 +4110,12 @@ All the components send their logs, metrics and OpenTelemetry traces to the moni
       </view>
       <view identifier="id-view-infrastructure" xsi:type="Diagram">
         <name>5. Infrastructure Logical View</name>
-        <documentation>Infrastructure instances of RS-Python on OVHcloud with their software, the deployment of the application components on the node pools, and the technical flows. ArchiMate viewpoint: Implementation and Deployment.</documentation>
+        <documentation>Infrastructure instances of RS-Python on OVHcloud with their software, the deployment of the application components on the node pools, and the technical flows.</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Implementation and Deployment</value>
+          </property>
+        </properties>
         <node identifier="id-infrastructure-g_admin" elementRef="id-g_admin" xsi:type="Element" x="20" y="170" w="230" h="230">
           <style>
             <font name="Segoe UI" size="9">
@@ -4759,7 +4787,12 @@ All the components send their logs, metrics and OpenTelemetry traces to the moni
       </view>
       <view identifier="id-view-network" xsi:type="Diagram">
         <name>6. Network View</name>
-        <documentation>Network zones (groupings), networks, nodes and network flows (protocols, ports, filtering) of the RS-Python platform on OVHcloud. ArchiMate viewpoint: Technology.</documentation>
+        <documentation>Network zones (groupings), networks, nodes and network flows (protocols, ports, filtering) of the RS-Python platform on OVHcloud.</documentation>
+        <properties>
+          <property propertyDefinitionRef="propid-8">
+            <value>Technology</value>
+          </property>
+        </properties>
         <node identifier="id-network-g_inet" elementRef="id-g_inet" xsi:type="Element" x="10" y="10" w="1970" h="330">
           <style>
             <font name="Segoe UI" size="9">

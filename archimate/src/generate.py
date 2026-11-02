@@ -53,29 +53,15 @@ XSD_DIR = ARCHIMATE_DIR / "xsd"
 PARSER = etree.XMLParser(resolve_entities=False, no_network=True, remove_blank_text=True)
 
 
-class FixedSVGExport(export.SVGExportService):  # pylint: disable=too-few-public-methods
-    """pyArchimate SVG export, with workarounds:
-
-    - label the relationships with their names (e.g. the data of the flows) instead of their types, which are
-      already given by the notation,
-    - start the view box at the origin: pyArchimate draws the white background from the origin, while its view box
-      starts at a negative margin, which leaves a transparent band at the top and on the left,
-    - keep the line breaks of the texts (e.g. the lists in the notes), that pyArchimate merges into a single paragraph.
-    """
+class PreviewSVGExport(export.SVGExportService):  # pylint: disable=too-few-public-methods
+    """pyArchimate SVG export, whose relationships are only labelled with their names (e.g. the data of the flows):
+    pyArchimate labels the unnamed ones with their types, which are already given by the notation."""
 
     def _build_relationship_label(self, rel_type: str, conn) -> str:  # pylint: disable=unused-argument
         return conn.name or ""
 
-    def _word_wrap_text(self, text: str, max_width: float) -> list[str]:
-        return [line for paragraph in text.split("\n") for line in super()._word_wrap_text(paragraph, max_width)]
 
-    def _calculate_bounds(self, view) -> dict[str, float]:
-        bounds = super()._calculate_bounds(view)
-        bounds["min_x"] = bounds["min_y"] = 0.0
-        return bounds
-
-
-class TransparentSVGExport(FixedSVGExport):  # pylint: disable=too-few-public-methods
+class TransparentSVGExport(PreviewSVGExport):  # pylint: disable=too-few-public-methods
     """SVG export of the PNG previews: transparent, and readable on light and dark backgrounds.
 
     - no white background, that pyArchimate always paints,
@@ -123,9 +109,7 @@ def check(model):
 
 def write_xml(model, xml_path: Path, xsd_dir: Path):
     """Write the model in the Open Group exchange format, with the license header, and validate it."""
-    root = etree.fromstring(model.write(writer=pa.Writers.archimate).encode(), PARSER)
-    etree.indent(root, space="  ")
-    body = etree.tostring(root, encoding="unicode")
+    body = model.write(writer=pa.Writers.archimate).strip()
     xml_path.write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<!--{LICENSE_HEADER}-->\n{body}\n', encoding="utf-8")
     schema = etree.XMLSchema(etree.parse(str(xsd_dir / "archimate3_Diagram.xsd"), PARSER))
     if not schema.validate(etree.parse(str(xml_path), PARSER)):
@@ -143,7 +127,7 @@ def previews(model, out: Path):
         resvg = None
     for view in model.views:
         svg = out / f"{view.name.split(' ', 1)[0].rstrip('.')}-{view.uuid.removeprefix('id-view-')}.svg"
-        svg.write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n{FixedSVGExport().to_svg(view)}\n', encoding="utf-8")
+        svg.write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n{PreviewSVGExport().to_svg(view)}\n', encoding="utf-8")
         if resvg:
             svg_string = TransparentSVGExport().to_svg(view)
             png = resvg.svg_to_bytes(svg_string=svg_string, sans_serif_family="DejaVu Sans")
