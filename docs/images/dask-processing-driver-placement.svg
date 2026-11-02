@@ -1,0 +1,120 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560" width="1100" height="560" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .head { font-size: 14px; font-weight: bold; fill: #263238; text-anchor: middle; }
+      .txt { fill: #263238; text-anchor: middle; }
+      .small { font-size: 12px; fill: #455A64; text-anchor: middle; }
+      .col { stroke-width: 2; rx: 10; }
+      .pod { fill: #fff; stroke-width: 2; rx: 6; }
+      .driver { fill: #FFE082; stroke: #F9A825; stroke-width: 2; rx: 5; }
+      .task { fill: #BBDEFB; stroke: #1565C0; stroke-width: 1.5; rx: 5; }
+      .sched { fill: #E1BEE7; stroke: #6A1B9A; stroke-width: 1.5; rx: 5; }
+      .bad { fill: #FFEBEE; stroke: #C62828; }
+      .mid { fill: #FFF8E1; stroke: #F9A825; }
+      .good { fill: #E8F5E9; stroke: #2E7D32; }
+      .verdict-bad { font-weight: bold; fill: #C62828; text-anchor: middle; font-size: 14px; }
+      .verdict-mid { font-weight: bold; fill: #E65100; text-anchor: middle; font-size: 14px; }
+      .verdict-good { font-weight: bold; fill: #2E7D32; text-anchor: middle; font-size: 14px; }
+    </style>
+  </defs>
+
+  <text x="550" y="30" text-anchor="middle" class="title">Where can the EOPF-CPM driver run? RAM and CPU available to it</text>
+
+  <!-- Column 1: rs-dpr-service pod -->
+  <rect x="15" y="50" width="255" height="420" class="col bad"/>
+  <text x="142" y="75" class="head">A. In the rs-dpr-service pod</text>
+  <text x="142" y="93" class="small">(option C)</text>
+  <rect x="35" y="110" width="215" height="150" class="pod" stroke="#C62828"/>
+  <text x="142" y="130" class="small">pod rs-dpr-service</text>
+  <rect x="50" y="140" width="185" height="26" class="sched" style="fill:#BBDEFB;stroke:#1565C0"/>
+  <text x="142" y="158" class="small">REST API + job logs</text>
+  <rect x="50" y="176" width="185" height="70" class="driver"/>
+  <text x="142" y="200" class="txt" font-weight="bold">driver</text>
+  <text x="142" y="218" class="small">one more per concurrent run</text>
+  <text x="142" y="234" class="small">(logs parsed, graph built)</text>
+  <text x="142" y="290" class="txt" font-weight="bold">Request: 256 Mi, 100m CPU</text>
+  <text x="142" y="308" class="txt" font-weight="bold">Limit: 1000 Mi, 500m CPU</text>
+  <text x="142" y="326" class="small">(rs-helm chart default)</text>
+  <text x="142" y="360" class="txt">Shared by the API and by</text>
+  <text x="142" y="377" class="txt">every concurrent driver.</text>
+  <text x="142" y="395" class="small">Raising it means bigger always-on pods,</text>
+  <text x="142" y="411" class="small">times the number of instances.</text>
+  <text x="142" y="450" class="verdict-bad">Too small today</text>
+
+  <!-- Column 2: Dask worker -->
+  <rect x="285" y="50" width="255" height="420" class="col mid"/>
+  <text x="412" y="75" class="head">B. In a Dask worker (today)</text>
+  <text x="412" y="93" class="small">(task #1)</text>
+  <rect x="305" y="110" width="215" height="150" class="pod" stroke="#F9A825"/>
+  <text x="412" y="130" class="small">worker pod: 3 CPU, 12 GB</text>
+  <rect x="320" y="140" width="185" height="34" class="driver"/>
+  <text x="412" y="162" class="txt" font-weight="bold">driver (task #1)</text>
+  <rect x="320" y="182" width="88" height="64" class="task"/>
+  <text x="364" y="212" class="small">task #2</text>
+  <text x="364" y="228" class="small">thread</text>
+  <rect x="417" y="182" width="88" height="64" class="task"/>
+  <text x="461" y="212" class="small">task #2</text>
+  <text x="461" y="228" class="small">thread</text>
+  <text x="412" y="290" class="txt" font-weight="bold">Up to 3 CPU, 12 GB</text>
+  <text x="412" y="308" class="txt" font-weight="bold">but nothing is reserved</text>
+  <text x="412" y="326" class="small">(the driver takes what it needs)</text>
+  <text x="412" y="360" class="txt">Enough in practice, but shared</text>
+  <text x="412" y="377" class="txt">with the computation: an OOM kill</text>
+  <text x="412" y="395" class="txt">ends both. Wastes a thread.</text>
+  <text x="412" y="450" class="verdict-mid">Works, not isolated</text>
+
+  <!-- Column 3: Job -->
+  <rect x="555" y="50" width="255" height="420" class="col good"/>
+  <text x="682" y="75" class="head">C. In a driver Job (proposed)</text>
+  <text x="682" y="93" class="small">(option D)</text>
+  <rect x="575" y="110" width="215" height="150" class="pod" stroke="#2E7D32"/>
+  <text x="682" y="130" class="small">one Kubernetes Job pod per run</text>
+  <rect x="590" y="140" width="185" height="106" class="driver"/>
+  <text x="682" y="185" class="txt" font-weight="bold">driver</text>
+  <text x="682" y="205" class="small">alone in its pod</text>
+  <text x="682" y="221" class="small">cluster image</text>
+  <text x="682" y="290" class="txt" font-weight="bold">Request = limit, sized</text>
+  <text x="682" y="308" class="txt" font-weight="bold">for the driver (to measure)</text>
+  <text x="682" y="326" class="small">per processor, in a setting</text>
+  <text x="682" y="360" class="txt">Guaranteed, isolated, freed at the</text>
+  <text x="682" y="377" class="txt">end of the run. Needs a place to</text>
+  <text x="682" y="395" class="txt">run (node pool, quota).</text>
+  <text x="682" y="450" class="verdict-good">Recommended</text>
+
+  <!-- Column 4: scheduler node -->
+  <rect x="825" y="50" width="260" height="420" class="col mid"/>
+  <text x="955" y="75" class="head">D. Next to the scheduler</text>
+  <text x="955" y="93" class="small">(Job on the scheduler node pool)</text>
+  <rect x="845" y="110" width="220" height="150" class="pod" stroke="#6A1B9A"/>
+  <text x="955" y="130" class="small">scheduler node: 7 CPU, 58 GB max</text>
+  <rect x="860" y="140" width="190" height="40" class="sched"/>
+  <text x="955" y="165" class="small">scheduler pod</text>
+  <rect x="860" y="190" width="190" height="56" class="driver"/>
+  <text x="955" y="214" class="txt" font-weight="bold">driver Job pod</text>
+  <text x="955" y="232" class="small">own request/limit</text>
+  <text x="955" y="290" class="txt" font-weight="bold">Large node, mostly idle</text>
+  <text x="955" y="308" class="small">(scheduler CPU use is usually low)</text>
+  <text x="955" y="360" class="txt">Cheap, image already on the node.</text>
+  <text x="955" y="377" class="txt">But 1 node only: drivers of all</text>
+  <text x="955" y="395" class="txt">runs compete with the scheduler.</text>
+  <text x="955" y="450" class="verdict-mid">Good fallback, limited</text>
+
+  <text x="550" y="505" text-anchor="middle" class="small">Node figures come from the init-dask-clusters notebooks (dask_venv.py); the rs-dpr-service figures from the rs-helm chart values.</text>
+  <text x="550" y="525" text-anchor="middle" class="small">The real RAM and CPU of the driver still have to be measured (see "Measure the driver footprint").</text>
+</svg>

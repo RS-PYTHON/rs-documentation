@@ -12,6 +12,10 @@ for the developers and the infrastructure operators of RS-Python, and the first 
     Sections 5 to 8 are an **architecture proposal**, not yet implemented. The points that could not be verified from
     the code are listed in [Assumptions to verify](#assumptions-to-verify).
 
+    A key constraint drives the whole analysis: the pod of rs-dpr-service is small (see
+    [The resource constraint](#the-resource-constraint-where-can-the-eopf-cpm-driver-run)), so the EOPF-CPM driver
+    **cannot** run there. Any proposal must give the driver enough RAM and CPU.
+
 ## 1. Vocabulary for beginners
 
 | Term | Meaning |
@@ -83,6 +87,7 @@ submits task #2 (the computation) to the same workers.
 
 | Pro | Explanation |
 |---|---|
+| **The driver gets enough RAM and CPU** | This is the main reason for the design. The pod of rs-dpr-service is small (request 256 Mi and 100m CPU, limit 1000 Mi and 500m CPU in the [rs-helm chart](https://github.com/RS-PYTHON/rs-helm/blob/develop/charts/rs-dpr-service/values.yaml)). Running `eopf trigger` inside a worker pod gives it access to the resources of a worker (up to 3 CPU and 12 GB RAM on the `dask_worker_on_demand` pool). The resources are *available*, not *reserved*: see the matching con below. |
 | **No new component** | Everything goes through Dask Gateway and the existing clusters. rs-dpr-service needs no Kubernetes permission. |
 | **Right environment by construction for EOPF-CPM** | The EOPF-CPM driver runs inside a pod created from the cluster image, so its Python, Dask and processor versions are exactly those of the cluster. |
 | **Driver close to the data and the scheduler** | The EOPF-CPM driver talks to the scheduler from inside the Kubernetes network, with a low latency and no long-lived connection through the gateway. |
@@ -96,7 +101,7 @@ submits task #2 (the computation) to the same workers.
 |---|---|---|
 | **Thread starvation, possible deadlock** | Task #1 only waits for task #2 but occupies a worker thread during the whole run. If *N* runs share a cluster with at most *N* threads (e.g. 3 concurrent runs on one worker of 3 cores), no thread is left for any task #2: the runs hang without failing. See the diagram below. | High |
 | **Wasted capacity** | Every run permanently wastes one thread of a worker, and workers are billed on-demand nodes. | Medium |
-| **The driver competes with the computation** | The EOPF-CPM subprocess (graph construction, logging, S3 transfers of the configuration) shares the CPU and the RAM limit of a worker pod with the tasks. An out-of-memory kill of the pod kills the driver and the computation together. | High |
+| **The driver resources are shared, not reserved** | The EOPF-CPM subprocess (graph construction, in-process orchestration, S3 transfers, logging) takes RAM and CPU from the worker pod that also runs the tasks. Nothing guarantees it a minimum, and Dask's memory manager does not see the subprocess memory. An out-of-memory kill of the pod kills the driver and the computation together. This is the other side of the first pro. | High |
 | **A worker failure can replay the whole run** | Dask reschedules the tasks of a lost worker (`distributed.scheduler.allowed-failures`, 3 by default). Task #1 is the whole processor run, so it may be started again with its side effects (outputs written twice). | Medium |
 | **Version coupling** | rs-dpr-service must match the Python and Dask versions of each processor, hence one Deployment, Helm values, route and CI build per version. Adding a processor with a new Python or Dask version means deploying a new instance. | High |
 | **Secrets travel through Dask** | The JupyterHub API token and the S3 credentials are put in the serialized task, so they pass through the scheduler. | Medium |
@@ -105,24 +110,72 @@ submits task #2 (the computation) to the same workers.
 
 ![Thread starvation](../images/dask-processing-thread-starvation.svg)
 
-**Conclusion.** The idea is not wrong: running the driver next to the scheduler, from the cluster image, is sound.
-The weakness is *where* the driver runs. Putting it in a Dask task makes it consume the resources it is supposed to
-orchestrate, and keeps rs-dpr-service tied to the Dask version. The nested task is what turns a performance
-inefficiency into a risk of deadlock.
+**Conclusion.** The idea is not wrong: running the driver next to the scheduler, from the cluster image, with
+more RAM and CPU than the service pod, is sound and it is a real requirement. The weakness is *how* the driver
+gets its resources. Putting it in a Dask task makes it consume, without any reservation, the resources of the
+workers it is supposed to orchestrate, and keeps rs-dpr-service tied to the Dask version. The nested task is what
+turns a performance inefficiency into a risk of deadlock.
+
+### The resource constraint: where can the EOPF-CPM driver run?
+
+The driver is the process that runs `eopf trigger`: it loads the payload, builds the workflow, connects to the
+Dask cluster as a client, submits the tasks, follows their progress and finalises the products (`EORunner.run` in
+[EOPF-CPM](https://cpm.pages.eopf.copernicus.eu/eopf-cpm/main/index.html)). Its RAM and
+CPU needs depend on the processor and on the size of the products, and we do not have measurements yet (see
+[Measure the driver footprint](#measure-the-driver-footprint)). What is known:
+
+- the service pod is far too small for it: limit of 1000 Mi and 500m CPU, shared with the REST API and with all the
+  runs of this instance;
+- several runs can be in progress at the same time, each with its own driver;
+- the EOPF-CPM release notes already mention memory issues in the staging and S3 upload code (e.g. "High memory
+  usage when uploading staged products to S3", #1251).
+
+![Driver placement](../images/dask-processing-driver-placement.svg)
+
+| Placement | RAM and CPU for the driver | Isolated from the computation | Removes nested tasks | Removes version coupling | Verdict |
+|---|---|---|---|---|---|
+| **A. In the rs-dpr-service pod** | Too small today. Raising the limits means bigger always-on pods, multiplied by the number of instances (one per Python/Dask version), sized for the worst case of concurrent runs. | No: shared with the API and the other drivers | Yes | No | Rejected |
+| **B. In a Dask worker** (today) | Up to the worker size (3 CPU, 12 GB), but not reserved | No | No | No | Works, fragile |
+| **C. In a Kubernetes Job** | Requested and limited for the driver alone, set per processor | Yes | Yes | Yes | **Recommended** |
+| **D. In a Job on the scheduler node pool** | Large node (up to 7 CPU, 58 GB), mostly used by the scheduler memory request | Yes (own pod) | Yes | Yes | Fallback, a single node |
+
+Scaling rs-dpr-service horizontally does not fix placement A: a run is long, its state and logs live in the
+instance that started it, so the load cannot be rebalanced, and a pod sized for the largest driver is idle most of
+the time.
+
+### Measure the driver footprint
+
+Before fixing the size of the driver, measure it, for the heaviest processors and for several concurrent runs:
+
+| What | How |
+|---|---|
+| Peak RAM and CPU of the driver | Run the proof of concept with a Job without limits and read `kubectl top pod` and the Prometheus metrics `container_memory_working_set_bytes` and `container_cpu_usage_seconds_total` of the driver pod (Grafana, [rs-infra-monitoring](https://github.com/RS-PYTHON/rs-infra-monitoring)). |
+| Same figure in the current design | Compare the memory of the worker *pod* (cgroup metrics) with the memory reported by Dask for the worker process in the dashboard: the difference is the driver subprocess (and the other processes of the pod). |
+| Memory timeline of the computation | EOPF-CPM has a Dask memory sampler and a performance report, enabled by the Dask context settings of the payload (see the `DaskContext` class). |
+| Effect of the products size | Repeat with the smallest and the biggest products of each processor. |
+
+Keep the maximum measured, add a margin (e.g. 25 %), and use it as the request and limit of the driver.
 
 ## 5. Options
 
-| Option | Description | Removes nested tasks | Removes version coupling | Infrastructure change | Effort |
-|---|---|---|---|---|---|
-| **A. Keep as is** | Reference. | No | No | None | None |
-| **B. Mitigate in place** | Keep the design. Call [`secede()`](https://distributed.dask.org/en/stable/task-launch.html) at the start of task #1 so it releases its thread while it waits, and/or start the workers with more threads than cores, and/or use one cluster per run. | Partly (no more deadlock, still two levels) | No | None | Small |
-| **C. Driver in rs-dpr-service** | rs-dpr-service runs `eopf trigger` itself (subprocess in its own pod); EOPF-CPM connects to the cluster. No task #1. | Yes | No (EOPF-CPM must be installed in each instance, with the right versions) | Bigger pods | Medium |
-| **D. One Kubernetes Job per run (recommended)** | rs-dpr-service creates a short-lived Kubernetes Job from the **cluster image**. The Job runs `eopf trigger`, which connects to the existing cluster. | Yes | **Yes**: a single generic rs-dpr-service | New RBAC, driver pods | Medium |
-| **E. Prefect-native** | The Prefect flow itself starts the Kubernetes Job (Prefect Kubernetes work pool), and rs-dpr-service disappears or only keeps the catalogue of processors. | Yes | Yes | Prefect work pool | Large (changes the public API) |
+| Option | Description | Removes nested tasks | Removes version coupling | Enough RAM/CPU for the driver | Infrastructure change | Effort |
+|---|---|---|---|---|---|---|
+| **A. Keep as is** | Reference. | No | No | Yes, but not reserved | None | None |
+| **B. Mitigate in place** | Keep the design. Call [`secede()`](https://distributed.dask.org/en/stable/task-launch.html) at the start of task #1 so it releases its thread while it waits, and/or start the workers with more threads than cores, and/or use one cluster per run. | Partly (no more deadlock, still two levels) | No | Same as A | None | Small |
+| **B2. Reserve the driver in Dask** | Keep the design, but tag task #1 with a [Dask worker resource](https://distributed.dask.org/en/stable/resources.html) (e.g. `DRIVER=1`) and size the workers so that a driver always has its share: at most one driver per worker, and a worker size that includes the driver. Combined with `secede()`. | Partly | No | Better: bounded number of drivers per worker, but still no memory reservation | Cluster options (worker `--resources`), to be verified with Dask Gateway | Small to medium |
+| **C. Driver in rs-dpr-service** | rs-dpr-service runs `eopf trigger` itself (subprocess in its own pod); EOPF-CPM connects to the cluster. No task #1. | Yes | No (EOPF-CPM must be installed in each instance, with the right versions) | **No**: pod of 1000 Mi / 500m CPU, to be multiplied and kept always on | Much bigger pods | Medium |
+| **D. One Kubernetes Job per run (recommended)** | rs-dpr-service creates a short-lived Kubernetes Job from the **cluster image**, with its own requests and limits. The Job runs `eopf trigger`, which connects to the existing cluster. | Yes | **Yes**: a single generic rs-dpr-service | **Yes, reserved and sized per processor** | New RBAC, driver pods, quotas, node pool | Medium |
+| **E. Prefect-native** | The Prefect flow itself starts the Kubernetes Job (Prefect Kubernetes work pool), and rs-dpr-service disappears or only keeps the catalogue of processors. | Yes | Yes | Yes (work pool job template) | Prefect work pool | Large (changes the public API) |
 
-**Why not C.** It removes the nested task but concentrates the drivers of all runs in the service pods (memory,
-concurrency, cancellation by signals, no isolation between users' runs), and it keeps EOPF-CPM, Python and Dask in
-each rs-dpr-service image: the version coupling remains.
+**Why not C.** It removes the nested task, but the service pod has 1000 Mi and 500m CPU, far less than a driver
+may need. Making it big enough means big always-on pods, one set per Python/Dask version, that must absorb the
+drivers of all the concurrent runs, without isolation between the runs of different users, and with no way to
+spread the load. It also keeps EOPF-CPM, Python and Dask in each rs-dpr-service image: the version coupling
+remains. This option is only suitable for the local mode (debugging).
+
+**Why B2 is not enough.** Dask resources only limit how many tasks run at the same time on a worker; they do not
+reserve memory or CPU. The driver subprocess is outside Dask's accounting. B2 is a cheap improvement to deploy
+while D is being built.
 
 **Why not E now.** It is the cleanest long-term target, but it removes the OGC API - Processes interface and
 changes all the clients. Option D can be done first, and is a step toward E.
@@ -138,7 +191,7 @@ cluster**. Dask then only runs the computation.
 |---|---|
 | 1 to 3 | Unchanged: cluster creation, payload file, REST call. |
 | 4 | rs-dpr-service completes the payload as before (`reuse_cluster`) and reads the **image of the cluster** from Dask Gateway (`options["image"]` of the cluster report, which the init notebooks already use to find clusters). The processor name is no longer needed to choose an image. |
-| 5 | rs-dpr-service creates a Kubernetes `Job` (one pod, `restartPolicy: Never`, `backoffLimit: 0`) with that image. The payload location, the S3 settings and the OpenTelemetry trace context are passed as environment variables, the JupyterHub token in a per-run `Secret` owned by the Job. |
+| 5 | rs-dpr-service creates a Kubernetes `Job` (one pod, `restartPolicy: Never`, `backoffLimit: 0`) with that image and with **its own `requests` and `limits` for RAM and CPU**, sized for the driver of this processor (see [Sizing and placing the driver pod](#sizing-and-placing-the-driver-pod)). The payload location, the S3 settings and the OpenTelemetry trace context are passed as environment variables, the JupyterHub token in a per-run `Secret` owned by the Job. |
 | 6 | The driver pod downloads the configuration and runs `eopf_otel trigger local payload.yaml`: it is the code of `ProcessorCaller.init`/`trigger` of today, packaged as a small runner that works with Python 3.11 to 3.13. |
 | 7 | EOPF-CPM connects to the existing cluster (`reuse_cluster`) and submits its tasks. These are the **only** Dask tasks. |
 | Logs and status | rs-dpr-service reads the pod logs and the Job status with the Kubernetes API (the logs are also collected by Alloy and Loki), and exposes them as today to the Prefect flow. |
@@ -147,8 +200,9 @@ cluster**. Dask then only runs the computation.
 ### What is gained
 
 - **No nested tasks**: all the threads of the workers compute. No thread starvation and no deadlock.
-- **The driver is isolated**: its memory is accounted and limited by its own pod, it does not compete with the
-  computation, and its crash does not kill a worker.
+- **The driver is isolated and has the RAM and CPU it needs**: its memory and CPU are *requested* (so reserved by
+  the Kubernetes scheduler) and *limited* in its own pod. The small rs-dpr-service pod is not involved, the driver
+  does not compete with the computation, and its crash does not kill a worker.
 - **One generic rs-dpr-service**: it no longer submits Python code to the cluster, so it no longer depends on the
   Python and Dask versions of the processors. The Python and Dask versions are chosen by the cluster image, which is
   used for both the driver and the workers. Adding a processor requires **no new service instance**.
@@ -167,6 +221,27 @@ cluster**. Dask then only runs the computation.
   the driver pod, either baked in the Dask images built by
   [rs-workflow-env](https://github.com/RS-PYTHON/rs-workflow-env) or copied by an init container.
 - **A change in the status handling**: the state of a run comes from the Kubernetes Job instead of the Dask future.
+- **A sizing responsibility**: the driver size is now an explicit setting, and a wrong value shows up as an
+  `OOMKilled` driver (too small) or as unused reserved capacity (too big).
+
+### Sizing and placing the driver pod
+
+The fact that the service pod is small is the reason why the driver moves to a Job, so the size of the Job is the
+critical parameter of this design.
+
+| Topic | Proposal |
+|---|---|
+| **Where the size is defined** | A `driver_resources` setting (`cpu`, `memory`) with a default value in the Helm values of rs-dpr-service, overridable per processor, next to the existing `resources_min` of the [task table](../rs-client-libraries/docs/doc/flows/tasktable-payload.md) (which today describes the Dask workers). The processor owner knows best. |
+| **Request and limit** | Equal (Kubernetes QoS class *Guaranteed*): the memory is reserved, the pod is not evicted before the others, and the CPU is not throttled by neighbours. |
+| **Initial values** | To be measured (see [Measure the driver footprint](#measure-the-driver-footprint)). Until then, start from the measured peak plus a margin, and keep a generous default for the biggest processors. |
+| **Concurrent runs** | A `ResourceQuota` on the namespace of the Jobs caps the total RAM and CPU of the drivers. Beyond it, the Job stays `Pending`: rs-dpr-service reports the run as *queued* and applies a start timeout (`activeDeadlineSeconds` does not cover the pending phase, so the service watches it). |
+| **Under-sizing** | If the driver pod ends with `OOMKilled`, rs-dpr-service reports a clear error ("driver out of memory, limit = X") instead of a generic failure, so that the size can be corrected. |
+| **Placement** | A small dedicated **driver node pool** (preferred), or the scheduler node pool as a fallback (see the sizing note in [Impact on the infrastructure](#impact-on-the-infrastructure)). Not the worker pool, to keep the drivers from taking capacity from the computation. |
+| **Per-user fairness** | One Job per run, labelled with the user and the cluster, so the quotas and the dashboards can be split by user. |
+
+If the Kubernetes API cannot be used (e.g. a restricted environment), a degraded alternative is option B2 with a
+dedicated driver capacity in the Dask cluster: it bounds the number of drivers per worker, but it does not reserve
+memory.
 
 ## 7. Impact on the infrastructure
 
@@ -178,8 +253,9 @@ cluster**. Dask then only runs the computation.
 | **Routing (Envoy Gateway)** | One route per processor to the right instance | A single route | Simplify the routes and the Helm values. |
 | **CI/CD and images** | One rs-dpr-service image per Python/Dask version | One image, plus the runner packaged in the Dask images | Update the [publish workflow](ci-cd.md) and the [Dask images](../rs-workflow-env/docs/dask_images.md) build. |
 | **RBAC** | None | `ServiceAccount` and `Role` in the namespace of the Jobs: `create`, `get`, `list`, `watch`, `delete` on `jobs`; `create` on `secrets` (no `get` or `list`); `get`, `list` on `pods` and `pods/log`. | Add to the [rs-helm](https://github.com/RS-PYTHON/rs-helm) chart. Restrict to the namespace and to the Jobs labelled by the service. |
-| **Node pools** | Drivers run in the `dask_worker_on_demand` pool, inside the workers | Driver pods need a place to run | See the sizing note below. |
-| **Quotas** | Cluster options limit the workers | The driver pods must also be bounded | `ResourceQuota` and `LimitRange` on the namespace in which the Jobs run; `requests` and `limits` set on each Job. |
+| **Node pools** | Drivers run in the `dask_worker_on_demand` pool, inside the workers | Driver pods need a place to run, with a reserved RAM and CPU | A small dedicated driver pool, see the sizing note below. |
+| **Quotas** | Cluster options limit the workers; the driver is not accounted | The driver pods are bounded and accounted | `ResourceQuota` and `LimitRange` on the namespace in which the Jobs run; `requests` equal to `limits` set on each Job from the `driver_resources` setting. |
+| **rs-dpr-service pod** | Small (256 Mi / 100m request, 1000 Mi / 500m limit) | **Unchanged: it can stay small**, as it no longer runs a driver or a Dask client with the processor environment | Keep the current Helm resources; optionally reduce them. |
 | **Network policies** | rs-dpr-service reaches Dask Gateway | The driver pod also reaches Dask Gateway (and the scheduler through it), S3 and the OpenTelemetry endpoint | Add the egress rules for the driver pods label. |
 | **Secrets** | The JupyterHub token travels in the Dask task | One short-lived `Secret` per run, owned by the Job (deleted with it) | Mount the secret as an environment variable of the driver pod. |
 | **Observability** | Logs of the service and of the workers | Logs of the driver pod, Job metrics | Add the Job dashboards in [rs-infra-monitoring](https://github.com/RS-PYTHON/rs-infra-monitoring); keep the trace context propagation (`TRACEPARENT`) which already works with a subprocess. |
@@ -187,23 +263,25 @@ cluster**. Dask then only runs the computation.
 | **Cost** | Constant | A few short-lived small pods, fewer always-on service pods | Neutral to slightly positive. |
 
 **Sizing note.** The init notebooks report that a worker node offers at most 3 CPU and 12 GB RAM, and that the
-scheduler node offers at most 7 CPU and 58 GB RAM with the scheduler taking most of it by default. A driver pod needs
-a modest request (to be measured: start with 1 CPU and 2 to 4 GB) and the image of the cluster, which is large. Two
-possibilities:
+scheduler node offers at most 7 CPU and 58 GB RAM, most of it requested by the scheduler by default
+(`scheduler_memory_limit`). The driver size is to be measured (see
+[Measure the driver footprint](#measure-the-driver-footprint)); it must fit in a node of the pool where it runs,
+and the image of the cluster, which is large, should already be on the node. Two possibilities:
 
-1. Add a small **driver node pool** (a few nodes, scale to zero or to one) and pre-pull the Dask images with a
-   DaemonSet or an image cache, to keep the start-up delay low.
+1. Add a small **driver node pool** (a few nodes, scale to zero or to one) sized from the measured driver size
+   times the number of concurrent runs, and pre-pull the Dask images with a DaemonSet or an image cache, to keep
+   the start-up delay low.
 2. Schedule the drivers on the scheduler node pool, which already has the image, provided the scheduler memory
-   request is reduced to leave room.
+   request is reduced to leave room. There is a single node, so the drivers of all the runs share it.
 
-Option 1 is preferred because it isolates the drivers from the scheduler.
+Option 1 is preferred because it isolates the drivers from the scheduler and scales with the number of runs.
 
 ## 8. Migration plan
 
 | Phase | Content | Exit criterion |
 |---|---|---|
-| **0. Measure and secure** | Check the number of threads per worker, reproduce the starvation with *N* concurrent runs on a small cluster, apply option B (`secede()`, or document one run per cluster) as a safety net. | The deadlock is reproduced and then no longer occurs. |
-| **1. Proof of concept** | Package the runner, create the Job by hand with the `cpm3` image, run an existing payload. Measure the driver memory and start-up delay. | A full run succeeds with the driver outside the cluster; sizing values are known. |
+| **0. Measure and secure** | Measure the driver RAM and CPU in the current design (worker pod memory minus Dask worker memory), check the number of threads per worker, reproduce the starvation with *N* concurrent runs on a small cluster, apply options B and B2 (`secede()`, driver resource, or one run per cluster) as a safety net. | The driver footprint is known, the deadlock is reproduced and then no longer occurs. |
+| **1. Proof of concept** | Package the runner, create the Job by hand with the `cpm3` image, first without limits then with the measured size, run an existing payload. Measure the driver memory and start-up delay. | A full run succeeds with the driver outside the cluster; `driver_resources` values are known. |
 | **2. Service integration** | Add an `execution_mode` setting (`dask_task` or `k8s_job`) in rs-dpr-service. Implement Job creation, logs, status, cancellation, cleanup, RBAC. Keep the current mode as default. | The existing tests and the [rs-demo](https://github.com/RS-PYTHON/rs-demo) notebooks pass in both modes. |
 | **3. Roll out** | Deploy the generic instance, enable `k8s_job` processor by processor, compare the run times and failures. | No regression for a release cycle. |
 | **4. Cleanup** | Remove the version-specific instances, routes and CI builds, and the Dask event based cancellation. | A single rs-dpr-service Deployment. |
@@ -219,20 +297,27 @@ subprocess in the service container, as the `LOCAL_MODE` branch of rs-dpr-servic
 | A cluster can be shared by several runs, from the same or different users (systematic processing). | Check the usage of `dask_cluster_instance` in the flows; the starvation risk only exists for concurrent runs. |
 | `distributed.scheduler.allowed-failures` is the default (3) on the Gateway clusters. | `dask.config.get("distributed.scheduler.allowed-failures")` in a worker. |
 | Memory of the EOPF-CPM subprocess is counted in the pod limit but not by the Dask worker memory manager. | Dask dashboard and `kubectl top pod` during a run. |
+| The RAM and CPU needs of the driver (the EOPF-CPM process that runs `eopf trigger`) are well above the limits of the rs-dpr-service pod (1000 Mi, 500m CPU). | [Measure the driver footprint](#measure-the-driver-footprint), on the heaviest processors. This is what the design depends on. |
+| The driver RAM needs depend on the product size and the processor, not only on the processor. | Same measurements with the smallest and biggest products; if confirmed, `driver_resources` may need to be overridable per run. |
+| Worker resources (`--resources`) can be set through the Dask Gateway cluster options (needed by option B2 only). | Check the cluster options (`gateway.cluster_options()`) and the Dask Gateway configuration in [rs-workflow-env](https://github.com/RS-PYTHON/rs-workflow-env). |
 | Dask Gateway exposes the image of an existing cluster in its options. | `gateway.list_clusters()[i].options["image"]`, as used by [`dask_venv.py`](https://github.com/RS-PYTHON/rs-demo/blob/develop/notebooks/resources/dask_clusters/dask_venv.py). |
 | The runner code works with Python 3.11 to 3.13 without extra dependencies. | It is already uploaded to the workers of the three Python versions today. |
 
 ## 10. Summary of the answers
 
-- **Pros of the current method**: no new component, right environment for the driver, driver close to the
-  scheduler, existing cancellation and log streaming, quotas enforced by the cluster.
-- **Cons**: nested tasks that waste a thread per run and can deadlock a cluster, a driver that competes with the
-  computation for the pod resources, a replay risk when a worker is lost, and a rs-dpr-service instance per Python
-  and Dask version.
-- **Better way**: run the EOPF-CPM driver in a short-lived Kubernetes Job built from the cluster image, and keep the
-  Dask tasks for the computation only.
-- **Infrastructure impact**: one generic rs-dpr-service instead of several, a small RBAC, driver pods with quotas
-  and network policies, a possible driver node pool with pre-pulled images, and no change to the Dask clusters.
+- **Pros of the current method**: the EOPF-CPM driver gets far more RAM and CPU than the small rs-dpr-service pod
+  could give it (the main reason for the design), no new component, right environment for the driver, driver close
+  to the scheduler, existing cancellation and log streaming, quotas enforced by the cluster.
+- **Cons**: nested tasks that waste a thread per run and can deadlock a cluster, a driver whose resources are
+  shared with the computation and not reserved, a replay risk when a worker is lost, and a rs-dpr-service instance
+  per Python and Dask version.
+- **Better way**: run the EOPF-CPM driver in a short-lived Kubernetes Job built from the cluster image, with its own
+  reserved and per-processor RAM and CPU, and keep the Dask tasks for the computation only. Running the driver in
+  the rs-dpr-service pod is rejected, as it is too small. A cheaper stopgap is `secede()` plus Dask worker resources
+  (options B and B2).
+- **Infrastructure impact**: one generic rs-dpr-service instead of several, which can stay small, a small RBAC,
+  driver pods with reserved resources, quotas and network policies, a dedicated driver node pool with pre-pulled
+  images (or the scheduler node pool as a fallback), and no change to the Dask clusters.
 
 ## Related pages
 
