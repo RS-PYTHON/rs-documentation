@@ -171,7 +171,8 @@ Keep the maximum measured, add a margin (e.g. 25 %), and use it as the request a
 may need. Making it big enough means big always-on pods, one set per Python/Dask version, that must absorb the
 drivers of all the concurrent runs, without isolation between the runs of different users, and with no way to
 spread the load. It also keeps EOPF-CPM, Python and Dask in each rs-dpr-service image: the version coupling
-remains. This option is only suitable for the local mode (debugging).
+remains. This option is not kept, even for the local mode, which also runs the driver in a Job (see
+[Impact on the local mode](#8-impact-on-the-local-mode)).
 
 **Why B2 is not enough.** Dask resources only limit how many tasks run at the same time on a worker; they do not
 reserve memory or CPU. The driver subprocess is outside Dask's accounting. B2 is a cheap improvement to deploy
@@ -236,7 +237,7 @@ critical parameter of this design.
 | **Initial values** | To be measured (see [Measure the driver footprint](#measure-the-driver-footprint)). Until then, start from the measured peak plus a margin, and keep a generous default for the biggest processors. |
 | **Concurrent runs** | A `ResourceQuota` on the namespace of the Jobs caps the total RAM and CPU of the drivers. Beyond it, the Job stays `Pending`: rs-dpr-service reports the run as *queued* and applies a start timeout (`activeDeadlineSeconds` does not cover the pending phase, so the service watches it). |
 | **Under-sizing** | If the driver pod ends with `OOMKilled`, rs-dpr-service reports a clear error ("driver out of memory, limit = X") instead of a generic failure, so that the size can be corrected. |
-| **Placement** | A small dedicated **driver node pool** (preferred), or the scheduler node pool as a fallback (see the sizing note in [Impact on the infrastructure](#7-impact-on-the-infrastructure)). Not the worker pool, to keep the drivers from taking capacity from the computation. |
+| **Placement** | A small dedicated **driver node pool** (preferred), or the scheduler node pool as a fallback (see the sizing note in [Impact on the infrastructure](#7-impact-on-the-infrastructure)). Not the worker pool, to keep the drivers from taking capacity from the computation. The node selector and the tolerations are set by a `driver_pod_overrides` setting, a patch merged into the pod template of the Job, which the local mode also uses (see [Network of the driver pod](#network-of-the-driver-pod)). |
 | **Per-user fairness** | One Job per run, labelled with the user and the cluster, so the quotas and the dashboards can be split by user. |
 
 If the Kubernetes API cannot be used (e.g. a restricted environment), a degraded alternative is option B2 with a
@@ -252,7 +253,7 @@ memory.
 | **rs-dpr-service Deployments** | One per Python/Dask version (3 today) | One generic Deployment (replicas for availability, not for versions) | Merge the `rs-dpr-service-py-*` applications of [rs-server-deployment](https://github.com/RS-PYTHON/rs-server-deployment), keep the old ones during the migration. |
 | **Routing (Envoy Gateway)** | One route per processor to the right instance | A single route | Simplify the routes and the Helm values. |
 | **CI/CD and images** | One rs-dpr-service image per Python/Dask version | One image, plus the runner packaged in the Dask images | Update the [publish workflow](ci-cd.md) and the [Dask images](../rs-workflow-env/docs/dask_images.md) build. |
-| **RBAC** | None | `ServiceAccount` and `Role` in the namespace of the Jobs: `create`, `get`, `list`, `watch`, `delete` on `jobs`; `create` on `secrets` (no `get` or `list`); `get`, `list` on `pods` and `pods/log`. | Add to the [rs-helm](https://github.com/RS-PYTHON/rs-helm) chart. Restrict to the namespace and to the Jobs labelled by the service. |
+| **RBAC** | None | `ServiceAccount` and `Role` in the namespace of the Jobs: `create`, `get`, `list`, `watch`, `delete` on `jobs`; `create` on `secrets` (no `get` or `list`); `get`, `list` on `pods` and `pods/log`. | Add to the [rs-helm](https://github.com/RS-PYTHON/rs-helm) chart. Restrict to the namespace and to the Jobs labelled by the service. The local mode applies the same manifests in k3s. |
 | **Node pools** | Drivers run in the `dask_worker_on_demand` pool, inside the workers | Driver pods need a place to run, with a reserved RAM and CPU | A small dedicated driver pool, see the sizing note below. |
 | **Quotas** | Cluster options limit the workers; the driver is not accounted | The driver pods are bounded and accounted | `ResourceQuota` and `LimitRange` on the namespace in which the Jobs run; `requests` equal to `limits` set on each Job from the `driver_resources` setting. |
 | **rs-dpr-service pod** | Small (256 Mi / 100m request, 1000 Mi / 500m limit) | **Unchanged: it can stay small**, as it no longer runs a driver or a Dask client with the processor environment | Keep the current Helm resources; optionally reduce them. |
@@ -280,8 +281,9 @@ Option 1 is preferred because it isolates the drivers from the scheduler and sca
 
 The [local mode](../rs-demo/docs/local-mode.md) runs the whole system with a docker compose file
 ([rs-demo/local-mode](https://github.com/RS-PYTHON/rs-demo/tree/develop/local-mode)), for the development and for the
-CI, which runs the demo notebooks on it. It has no Kubernetes, so **a Kubernetes Job cannot be used there**. The
-local mode must keep working, and ideally keep testing the same code as the cluster mode.
+CI, which runs the demo notebooks on it. It has no Kubernetes today. The goal is to run, in the local mode, **the
+same code as in the cluster mode** to start and follow the driver, with the smallest change to the local mode and the
+smallest RAM and disk footprint.
 
 ### How it works today
 
@@ -297,62 +299,167 @@ local mode must keep working, and ideally keep testing the same code as the clus
 Note that the `LOCAL_MODE` branch of rs-dpr-service that runs EOPF-CPM in the service container (`trigger`) is only
 used by the debug setting, not by the nominal local mode.
 
-### Principle: one runner, several launchers
+### Principle: a minimal Kubernetes for the drivers only
 
-The cluster-mode design is split in two parts, so that only the second one depends on the platform:
+The local mode gets a minimal Kubernetes, [k3s](https://k3s.io/), as **one more container of the compose file**.
+It only runs the driver Jobs. The Dask clusters, S3, Prefect and rs-dpr-service stay in docker compose, as today.
 
-1. **The runner**: the code that downloads the configuration, runs `eopf trigger`, streams the logs and returns an
-   exit code. It is the same in all the modes, and it is installed in the images of the Dask clusters (both the
-   Kubernetes images and the `local` images, built by [rs-workflow-env](https://github.com/RS-PYTHON/rs-workflow-env)).
-2. **The launcher**: the component of rs-dpr-service that starts the runner with the requested resources, follows
-   its logs and status, and stops it. It is selected by a setting, for example `RSPY_DRIVER_MODE`.
+- **One launcher.** rs-dpr-service has a single way to start a driver, the `KubernetesJobLauncher`, in both modes.
+  There is no Docker launcher and no access to the Docker socket in the service.
+- **The same connection to Kubernetes.** In both modes, the service uses the *in-cluster* configuration of the
+  Kubernetes client: the `KUBERNETES_SERVICE_HOST` and `KUBERNETES_SERVICE_PORT` variables, and the token, CA
+  certificate and namespace files of its service account in `/var/run/secrets/kubernetes.io/serviceaccount`. In the
+  local mode, these files are written by a one-shot container from k3s (see [The k3s service](#the-k3s-service)).
+- **The same runner and the same Job.** The driver runs the runner from the image of the cluster, with the same
+  Job, the same `driver_resources`, the same Secret and the same cancellation as in the cluster mode. The few local
+  specifics are **settings** of the Job, not code (see [Network of the driver pod](#network-of-the-driver-pod)).
+- **The same RBAC and quotas.** The `Role`, `RoleBinding`, `ResourceQuota` and `LimitRange` of the rs-helm chart are
+  applied in k3s. The local mode therefore tests the permissions of the service and the *queued* state of a run.
 
-![Launchers](../images/dask-processing-local-mode.svg)
+![Local mode with k3s](../images/dask-processing-local-mode.svg)
 
-| Mode | Launcher | Where the driver runs |
-|---|---|---|
-| Cluster | `KubernetesJobLauncher` | A Kubernetes Job (see [Recommended design](#6-recommended-design-a-driver-job-per-run)) |
-| Local (nominal) | `DockerLauncher` | A short-lived container started from the image of the `dask-*` container |
-| Debug | `SubprocessLauncher` | A subprocess, or the process itself, in the service container |
+### What is shared and what differs
 
-In code terms, the launcher is a small interface (`start`, `logs`, `status`, `cancel`, `cleanup`), so the rest of
-rs-dpr-service (job table, log forwarding, cancellation endpoint) no longer knows how the driver is started. It
-also allows unit tests with a fake launcher.
+| Aspect | Cluster mode | Local mode | Shared |
+|---|---|---|---|
+| Launcher code | `KubernetesJobLauncher` | Same | Yes |
+| Kubernetes client configuration | In-cluster, service account of the pod | In-cluster, service account token written by `k3s-init` | Yes |
+| Driver image | `options["image"]` of the cluster in Dask Gateway | Same: the local gateway exposes an `image` option | Yes |
+| Job, Secret, requests and limits | From the `driver_resources` setting | Same, with small local defaults | Yes |
+| `OOMKilled`, `activeDeadlineSeconds`, TTL, cancellation | Kubernetes | Kubernetes (k3s) | Yes |
+| RBAC, `ResourceQuota`, `LimitRange` | rs-helm chart | Same manifests, applied by k3s at start-up | Yes |
+| Logs and status of the run | Kubernetes API (also collected by Loki) | Kubernetes API | Yes |
+| Pod template overrides (`driver_pod_overrides`) | Node selector and tolerations of the driver node pool | `hostNetwork`, `dnsPolicy`, `imagePullPolicy` | Same setting, other values |
+| Network of the driver pod | Pod network, network policies | Network of the k3s container, on `rspy-network` | No |
+| Scheduling, node pools, image pre-pull | Driver node pool | A single node | No |
+| Dask Gateway, scheduler and workers | Central gateway, pods, JupyterHub authentication | One gateway per `dask-*` container, processes, basic authentication | No (unchanged) |
 
-### Options for the local launcher
+The differences are covered by the "Test deployment" workflows, which deploy on a test Kubernetes cluster
+(see [Repositories and CI/CD](ci-cd.md#workflows)).
 
-| Option | Description | Pros | Cons | Verdict |
-|---|---|---|---|---|
-| **L1. Docker API (recommended)** | rs-dpr-service starts one container per run with the Docker API, using the Python Docker SDK. Requests are limited with `mem_limit` and `nano_cpus`, the container joins `rspy-network`, and it is removed at the end. | Same semantics as a Job: one isolated driver per run, resource limits, `OOMKilled` detection, stop with a grace period (SIGTERM then SIGKILL), labels for the cleanup. Tests the launcher code path in the CI demos. | Needs access to the Docker socket. | **Recommended** |
-| **L2. Runner sidecar** | A small HTTP service started in each `dask-*` container (or next to it) that starts and stops the runner processes. | No Docker socket. Works with Podman and Windows without changes. | A new service to write and maintain (start, logs, status, cancel): it re-implements a job controller. Limits apply to the sidecar, not to each run. | If the Docker socket is forbidden |
-| **L3. In the `dask-*` container** | `docker exec` of the runner in the existing `dask-*` container. | No new image. | Needs the Docker socket as well, and the driver shares the container with the scheduler and the workers: the problem of the current design remains. | Rejected |
-| **L4. In the service container** | The runner runs as a subprocess of rs-dpr-service. | No privilege. | EOPF-CPM and the processors must be installed in the service image, which is what the generic service avoids, and the driver is again in the small service container. | Debug only |
+### The k3s service
 
-### What changes, for option L1
+k3s is a certified Kubernetes distribution packaged as a single binary. It runs from the `rancher/k3s` image, with
+the components that the drivers do not need disabled, to keep it light:
+
+```yaml
+  k3s:
+    image: rancher/k3s:<pinned version>  # same Kubernetes minor version as the cluster
+    privileged: true
+    command: >
+      server
+      --tls-san=k3s
+      --disable=traefik,servicelb,metrics-server,local-storage,coredns
+      --disable-helm-controller --disable-network-policy --disable-cloud-controller --disable-kube-proxy
+      --kubelet-arg=eviction-hard=memory.available<100Mi,nodefs.available<1%,imagefs.available<1%
+      --kubelet-arg=image-gc-high-threshold=100 --kubelet-arg=image-gc-low-threshold=99
+    tmpfs: [/run, /var/run]
+    volumes:
+      - k3s-data:/var/lib/rancher/k3s      # image store, kept between two runs of the compose
+      - k3s-config:/etc/rancher/k3s        # admin kubeconfig, read by k3s-init only
+      - ./k3s/manifests:/var/lib/rancher/k3s/server/manifests/rs-python:ro
+
+  k3s-init:                                # one-shot, same image: nothing more to download
+    image: rancher/k3s:<pinned version>
+    # waits for the API, then writes the token, ca.crt and namespace files of the
+    # rs-dpr-service service account in the k3s-sa volume
+    volumes: [k3s-config:/etc/rancher/k3s:ro, k3s-sa:/out]
+    depends_on: [k3s]
+
+  rs-dpr-service:
+    environment:
+      KUBERNETES_SERVICE_HOST: k3s
+      KUBERNETES_SERVICE_PORT: "6443"
+    volumes:
+      - k3s-sa:/var/run/secrets/kubernetes.io/serviceaccount:ro
+    depends_on:
+      k3s-init: {condition: service_completed_successfully}
+```
+
+| Flag or file | Why |
+|---|---|
+| `--tls-san=k3s` | The certificate of the API server is valid for the `k3s` name used by rs-dpr-service on `rspy-network`. |
+| `--disable=...`, `--disable-*` | The drivers need no ingress, load balancer, metrics, volumes, cluster DNS, Helm controller, network policies, cloud controller or Services. Less RAM and fewer images to pull. |
+| `--kubelet-arg=eviction-hard=...`, `image-gc-*` | The kubelet sees the disk of the developer machine, which is often almost full. Without these values, it would evict the drivers and delete the images (several GB to pull again) as soon as the disk is used at 85 %. |
+| `privileged: true`, `tmpfs` | Required to run k3s, its containerd and its cgroups inside a container. |
+| `k3s/manifests` | Auto-deployed by k3s at start-up: the namespace of the Jobs, the `ServiceAccount`, `Role` and `RoleBinding` of rs-dpr-service, its token `Secret`, the `ResourceQuota` and the `LimitRange`. They are rendered from the [rs-helm](https://github.com/RS-PYTHON/rs-helm) chart (`helm template --show-only`), so that both modes apply the same permissions and quotas. Only the token `Secret` is specific to the local mode. |
+
+### Network of the driver pod
+
+The pods of k3s have their own network and cannot resolve the names of the compose services: the Docker DNS
+(`127.0.0.11`) only answers inside each container. The local mode therefore sets, in the pod template of the Job:
+
+- `hostNetwork: true`: the driver shares the network of the k3s container, which is on `rspy-network`;
+- `dnsPolicy: Default`: the driver uses the DNS of the k3s container, which is the Docker DNS.
+
+The driver then reaches the gateway of the `dask-*` containers, S3 (`seaweedfs-s3`) and, when it is configured, the
+OpenTelemetry endpoint, exactly as rs-dpr-service does. The driver opens no port, so several drivers can share
+this network. This is why CoreDNS and kube-proxy can be disabled.
+
+These fields come from the `driver_pod_overrides` setting of rs-dpr-service, a patch merged into the pod template of
+the Job. The cluster mode uses the same setting for the node selector and the tolerations of the driver node pool:
+there is no branch in the code for the local mode.
+
+### Images and disk
+
+The driver image is the image of the `dask-*` container (e.g. `ghcr.io/rs-python/dask/mockup/local`). k3s has its own
+image store (containerd), separate from the one of Docker: an image used by a driver is stored twice on the
+machine. This is the main cost of the design, and it is limited as follows:
+
+- **Only the images that run are pulled**, on the first run of a processor (`imagePullPolicy: IfNotPresent` in the
+  `driver_pod_overrides` of the local mode). The CI demos only run the mockup processor, so only its image is
+  pulled.
+- **The store is kept** in the `k3s-data` volume between two runs of the compose file; `docker compose down -v` frees
+  it.
+- **Images built on the machine** (temporary tags tested by `test-docker-tag.sh`) are imported without a registry:
+  `docker save <image> | docker compose exec -T k3s ctr images import -`.
+- **Private images**, if any, are pulled with the credentials of a `registries.yaml` file mounted in
+  `/etc/rancher/k3s`.
+
+### RAM and CPU
+
+| Item | Footprint |
+|---|---|
+| k3s server, with the components above disabled | About 500 MB of RAM when idle, to be measured; almost no CPU between two runs. |
+| `k3s-init` | Exits after a few seconds. |
+| Driver pods | Bounded by `driver_resources`, with small defaults for the local mode in the `.env` file. The `ResourceQuota` of the namespace caps the total: beyond it, the Job stays `Pending` and the run is reported as *queued*, as in the cluster mode. The heavy processors are documented as "need a big machine". |
+| Start-up | About 20 to 30 seconds for k3s at `docker compose up`, in parallel with the other services. |
+
+### What changes in the local mode
 
 | Where | Change |
 |---|---|
-| **rs-dpr-service** | Add the launcher interface and the three launchers. Keep a single service image for the local mode as in cluster mode. Map the `driver_resources` setting to Docker limits. Remove the driver containers left over by a crashed service at start-up (containers with a `rs-python.run-id` label). |
-| **Cluster image in local mode** | The local Dask Gateway does not give the image of a cluster. Read it from a setting, a map from the cluster label to the image, e.g. `RSPY_DRIVER_IMAGES='{"dask-cpm3": "ghcr.io/rs-python/dask/cpm3/local:latest"}'`, defined in the `.env` file of the demo. The compose files that test the temporary image tags (`docker-compose-test-tag.yml`) must set the same map with the tested tag. |
-| **docker-compose.yml** | Give the service access to the Docker API through a restricted proxy (a [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) container that only allows the container endpoints) instead of mounting `/var/run/docker.sock` directly. Merge the `rs-dpr-service_py<python>-<dask>` services into one, and update the upstream of `nginx.conf` accordingly. |
-| **Environment of the driver** | The driver container receives the same variables as the service: S3 settings, OpenTelemetry, `LOCAL_DASK_USERNAME` and `LOCAL_DASK_PASSWORD`, and the gateway address (`DASK_GATEWAY_<CLUSTER>_ADDRESS`, resolved on `rspy-network`). Nothing new: they are already copied to the worker today (`copy_caller_env`). |
-| **Resources** | On a laptop, the defaults must be small. `DASK_MEMORY_EOPF` is 32G today for the local workers: the `driver_resources` defaults for the local mode should be set in the `.env` file, with the heavy processors documented as "need a big machine". |
-| **rs-workflow-env** | Install the runner in the `local` images of the Dask clusters, like in the Kubernetes images, so that both start the same code. |
-| **Debug** | Keep the `local_cluster` setting and the `localcluster` image variants of rs-dpr-service, which contain EOPF-CPM. The `SubprocessLauncher` replaces today's `LOCAL_MODE` branch. |
+| **docker-compose.yml** | Add the `k3s` and `k3s-init` services and the `k3s-data`, `k3s-config` and `k3s-sa` volumes. Give the rs-dpr-service container the `KUBERNETES_SERVICE_*` variables, the `k3s-sa` volume and the dependency on `k3s-init`. Rename the `rs-dpr-service_py<python>-<dask>` service into a generic `rs-dpr-service`, and update the upstream of `nginx.conf` accordingly. |
+| **rs-demo/local-mode/k3s/manifests** | New: the manifests applied by k3s at start-up (see [The k3s service](#the-k3s-service)). |
+| **Local Dask Gateway** | Add an `image` option to the local gateway configuration (`dask_gateway_config.py`), with the image of the container as default value: `String("image", default=os.environ["DASK_IMAGE"], label="Image")`. Each `dask-*` service sets `DASK_IMAGE` to its own image, and `docker-compose-test-tag.yml` to the tested tag. rs-dpr-service reads `options["image"]` in both modes. |
+| **.env** | Local values of `driver_resources` and of `driver_pod_overrides` (`hostNetwork`, `dnsPolicy`, `imagePullPolicy`). |
+| **Environment of the driver** | As in the cluster mode: the launcher sets the S3 settings, the OpenTelemetry settings and the gateway address (`DASK_GATEWAY_<CLUSTER>_ADDRESS`) as variables of the Job, and the credentials (`LOCAL_DASK_USERNAME`, `LOCAL_DASK_PASSWORD`, S3 keys) in the per-run `Secret`. |
+| **rs-workflow-env** | Install the runner in the `local` images of the Dask clusters, like in the Kubernetes images. |
+| **rs-dpr-service** | Nothing specific to the local mode. The `LOCAL_MODE` branch that runs EOPF-CPM in the service container and the `localcluster` image variants are removed. |
+| **Debug** | The developer starts the runner by hand, from an IDE, with a payload file: it is the code of the Job pod, without rs-dpr-service. The payload connects either to the gateway of a `dask-*` container (published port) or to a `LocalCluster`. |
+| **CI** | The workflows that run the demo notebooks start the same compose file. The GitHub-hosted runners accept privileged containers. |
 | **Documentation** | Update [Local mode](../rs-demo/docs/local-mode.md) (services table, environment variables, debug section). |
 
 ### Points of attention
 
-- **Security**: access to the Docker socket is equivalent to root access on the host. Use the socket proxy, enable it
-  only in the local mode, and never in the cluster mode, where the Kubernetes RBAC applies. This is acceptable for a
-  developer machine or a CI runner, not for a shared server.
-- **Network**: the driver container must reach the gateway of the `dask-*` container, S3 and the OpenTelemetry
-  endpoint: it must join `rspy-network` (a fixed name, defined in the compose files).
-- **Fidelity**: the local mode does not test the Kubernetes specifics (RBAC, quotas, scheduling of the Job). They are
-  covered by the "Test deployment" workflows, which deploy on a test Kubernetes cluster
-  (see [Repositories and CI/CD](ci-cd.md#workflows)).
-- **Migration**: the local mode can be migrated first, as a way to validate the runner and the launcher interface
-  with the CI demos, before any change in the Kubernetes deployment.
+- **Security**: a privileged container has root access on the host, like an access to the Docker socket. This is
+  acceptable on a developer machine or a CI runner, not on a shared server. It only concerns the local mode: the
+  cluster mode relies on the Kubernetes RBAC.
+- **Platforms**: k3s in a container runs on Linux and with Docker Desktop (macOS, Windows). Rootless Podman is to be
+  checked.
+- **Version**: pin the k3s image to the Kubernetes minor version of the cluster, and update both together.
+- **Migration**: the local mode can be migrated first, as a way to validate the runner, the Job and the RBAC with the
+  CI demos, before any change in the Kubernetes deployment.
+
+### Alternatives considered
+
+| Alternative | Why not |
+|---|---|
+| **Docker launcher** | rs-dpr-service would start the driver as a container through the Docker API (and a socket proxy). It is a second launcher, never run in the cluster mode, so the CI demos do not test the code of the cluster mode, and the service needs the Docker socket. |
+| **Kubernetes simulator** ([KWOK](https://kwok.sigs.k8s.io/), fake API server) | KWOK simulates the lifecycle of the pods without running any container, and the driver must really run `eopf trigger`. A fake API server that starts containers does not exist off the shelf: it would be a partial copy of Kubernetes to write and maintain. |
+| **kind, minikube** | Heavier than k3s (complete node image installed with kubeadm). minikube would replace the compose file. |
+| **k3s with the Docker runtime** (`--docker`) | It would share the images with Docker (no double storage), but the pods would be containers of the host Docker, outside `rspy-network`, and k3s would need the Docker socket. |
+| **Dask clusters in k3s too** | It would give the local mode the same Dask Gateway backend as the cluster mode and a single image store, but it rewrites the whole local Dask setup and needs much more RAM in k3s. It is not needed to test the driver. |
 
 ## 9. Migration plan
 
@@ -360,9 +467,9 @@ also allows unit tests with a fake launcher.
 |---|---|---|
 | **0. Measure and secure** | Measure the driver RAM and CPU in the current design (worker pod memory minus Dask worker memory), check the number of threads per worker, reproduce the starvation with *N* concurrent runs on a small cluster, apply options B and B2 (`secede()`, driver resource, or one run per cluster) as a safety net. | The driver footprint is known, the deadlock is reproduced and then no longer occurs. |
 | **1. Proof of concept** | Package the runner, create the Job by hand with the `cpm3` image, first without limits then with the measured size, run an existing payload. Measure the driver memory and start-up delay. | A full run succeeds with the driver outside the cluster; `driver_resources` values are known. |
-| **2. Service integration** | Introduce the runner and the launcher interface in rs-dpr-service, with a setting `RSPY_DRIVER_MODE` (`dask_task` for the current behaviour, `docker`, `k8s_job`, `subprocess`). Start with the `docker` launcher in the local mode, then implement the `k8s_job` launcher: Job creation, logs, status, cancellation, cleanup, RBAC. Keep the current mode as default. | The existing tests and the [rs-demo](https://github.com/RS-PYTHON/rs-demo) notebooks pass in the local mode with `docker` and in the cluster mode with `k8s_job`. |
+| **2. Service integration** | Introduce the runner and the `KubernetesJobLauncher` in rs-dpr-service, with a setting `RSPY_DRIVER_MODE` (`dask_task` for the current behaviour, `k8s_job`): Job creation, logs, status, cancellation, cleanup, RBAC. Add k3s to the local mode and validate the `k8s_job` mode with the CI demos first, then in a test Kubernetes cluster. Keep the current mode as default. | The existing tests and the [rs-demo](https://github.com/RS-PYTHON/rs-demo) notebooks pass with `k8s_job` in the local mode (k3s) and in the cluster mode. |
 | **3. Roll out** | Deploy the generic instance, enable `k8s_job` processor by processor, compare the run times and failures. | No regression for a release cycle. |
-| **4. Cleanup** | Remove the version-specific instances, routes and CI builds, the `dask_task` mode and the Dask event based cancellation. | A single rs-dpr-service Deployment, a single service in the local compose file. |
+| **4. Cleanup** | Remove the version-specific instances, routes and CI builds, the `dask_task` mode, the Dask event based cancellation, the `LOCAL_MODE` branch of rs-dpr-service and its `localcluster` image variants. | A single rs-dpr-service Deployment, a single service in the local compose file. |
 
 ## 10. Assumptions to verify
 
@@ -375,8 +482,13 @@ also allows unit tests with a fake launcher.
 | The RAM and CPU needs of the driver (the EOPF-CPM process that runs `eopf trigger`) are well above the limits of the rs-dpr-service pod (1000 Mi, 500m CPU). | [Measure the driver footprint](#measure-the-driver-footprint), on the heaviest processors. This is what the design depends on. |
 | The driver RAM needs depend on the product size and the processor, not only on the processor. | Same measurements with the smallest and biggest products; if confirmed, `driver_resources` may need to be overridable per run. |
 | Worker resources (`--resources`) can be set through the Dask Gateway cluster options (needed by option B2 only). | Check the cluster options (`gateway.cluster_options()`) and the Dask Gateway configuration in [rs-workflow-env](https://github.com/RS-PYTHON/rs-workflow-env). |
-| A driver container on `rspy-network` can reach the local Dask Gateway and the scheduler of a `dask-*` container with the basic authentication (the scheduler address returned by the local gateway must be reachable from outside the container). | Start a container on the network and run the `eopf trigger` of the mockup processor with `reuse_cluster`; rs-dpr-service already does the equivalent from its own container. |
-| The Docker socket can be exposed (through a proxy) to the service in the developer machines and in the CI runners. | Check the CI workflows and the platforms supported for the local mode (Linux, macOS, Windows, Podman). Fall back to the runner sidecar (L2) otherwise. |
+| A k3s container runs in the compose file on the developer machines and on the CI runners (privileged container). | Start it on Linux, Docker Desktop (macOS, Windows) and a GitHub-hosted runner; check rootless Podman. |
+| k3s runs the driver Jobs with CoreDNS, kube-proxy and the other components listed in [The k3s service](#the-k3s-service) disabled. | Run a Job with `hostNetwork: true` and `dnsPolicy: Default` on this k3s. |
+| A driver pod with `hostNetwork: true` and `dnsPolicy: Default` resolves the compose services and reaches the local Dask Gateway, the scheduler of a `dask-*` container (with the basic authentication) and S3. | Run the `eopf trigger` of the mockup processor with `reuse_cluster` in such a Job; rs-dpr-service already does the equivalent from its own container. |
+| rs-dpr-service connects to k3s with the in-cluster configuration, from the files written by `k3s-init`. | `kubernetes.config.load_incluster_config()` in the rs-dpr-service container, then create a Job with the rights of the `Role` only. |
+| The `rancher/k3s` image has the tools needed by `k3s-init` (a shell and `kubectl`). | Run the script of `k3s-init` with this image; otherwise use a small `kubectl` image. |
+| k3s uses about 500 MB of RAM when idle with these components disabled, and the double storage of the driver images is acceptable on a developer machine. | `docker stats` and `docker system df -v` after a demo run. |
+| The local Dask Gateway accepts an `image` option that is not used by its backend. | `gateway.list_clusters()[i].options["image"]` on a `dask-*` container. |
 | The `local` images of the Dask clusters can embed the runner like the Kubernetes images. | Check the build of the images in [rs-workflow-env](https://github.com/RS-PYTHON/rs-workflow-env). |
 | Dask Gateway exposes the image of an existing cluster in its options. | `gateway.list_clusters()[i].options["image"]`, as used by [`dask_venv.py`](https://github.com/RS-PYTHON/rs-demo/blob/develop/notebooks/resources/dask_clusters/dask_venv.py). |
 | The runner code works with Python 3.11 to 3.13 without extra dependencies. | It is already uploaded to the workers of the three Python versions today. |
@@ -396,9 +508,11 @@ also allows unit tests with a fake launcher.
 - **Infrastructure impact**: one generic rs-dpr-service instead of several, which can stay small, a small RBAC,
   driver pods with reserved resources, quotas and network policies, a dedicated driver node pool with pre-pulled
   images (or the scheduler node pool as a fallback), and no change to the Dask clusters.
-- **Local mode**: a Job does not exist in docker compose, so the driver start becomes a launcher selected by a
-  setting. Same runner everywhere; a Docker launcher (through a restricted socket proxy) in the local mode, which
-  also exercises the launcher code in the CI demos; a subprocess launcher kept for debugging.
+- **Local mode**: a minimal Kubernetes, k3s, is added as one container of the compose file and only runs the driver
+  Jobs. rs-dpr-service uses the same Kubernetes launcher, client configuration, RBAC and quotas in both modes, so the
+  CI demos test the code of the cluster mode. The local specifics are settings (`hostNetwork`, `dnsPolicy`, small
+  `driver_resources`), and the main cost is the driver images stored a second time in k3s. The debugging is done by
+  starting the runner by hand.
 
 ## Related pages
 
