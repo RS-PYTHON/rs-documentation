@@ -30,9 +30,13 @@ runs:
   using: "composite"
   steps:
     - uses: ./.github/actions/install-python
-    - uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a
-      with:
-        version: 2.3.2
+    # Install poetry with pip, like the RS-PYTHON/actions setup-poetry action. snok/install-poetry downloads its
+    # installer with the Python-urllib user agent, that install.python-poetry.org rejects with HTTP 403.
+    - name: Install poetry
+      run: |
+        set -x
+        pip install --only-binary=:all: poetry==2.5.1
+      shell: bash
 
     - env:
         INPUTS_OPTIONS: ${{ inputs.options }}
