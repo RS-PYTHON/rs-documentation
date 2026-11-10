@@ -36,6 +36,16 @@ The [Prefect variables](https://docs.prefect.io/v3/concepts/variables) contain t
 | `processing-storage-configuration` | Where the processors read and write their inputs, outputs and auxiliary files (S3 buckets, shared disks...). Initialise it with the [`notebooks/init-prefect/processing-storage-configuration.ipynb`](https://github.com/RS-PYTHON/rs-demo/blob/develop/notebooks/init-prefect/processing-storage-configuration.ipynb) notebook, from the [template](https://github.com/RS-PYTHON/rs-client-libraries/blob/develop/config/storage_configuration.json) delivered with rs-client-libraries. | [Storage configuration](../rs-client-libraries/docs/doc/advanced/customise-dpr-flow.md#storage-configuration) |
 | `<processing_id>-default-setting` | Default parameters of the processing flows of a processing (`s1l0`, `s1ard`, `s3l0`, `s3l1olci`, `s3l2olci`): processor, pipeline, Dask cluster, input and target collections... They are checked against the [ProcessorDefaultSettings.schema.json](https://github.com/RS-PYTHON/rs-client-libraries/blob/develop/config/ProcessorDefaultSettings.schema.json) JSON schema. | [Customise the DPR processing](../rs-client-libraries/docs/doc/advanced/customise-dpr-flow.md#default-settings-of-the-processing-flows) |
 
+The flows don't create the catalog collections where they publish their products: create them, on behalf of the
+technical owner of the processing flows, before running the flows (with `POST /catalog/collections`, see
+[Endpoints](../annexes/endpoints.md)). For each processing, these are the collections of the
+`generated_product_to_collection_identifier` of its `<processing_id>-default-setting` variable: the `collection_name`,
+or the product type in lowercase if it is not given (e.g. `s03sral0c` for the `S03SRAL0C` product type), as the
+collection names are in lowercase by convention and the STAC collection identifiers are case sensitive. The
+processing flows check that they exist at their very beginning, and fail with the list of the missing collections
+otherwise. The Level-0 processings also need the `s0<mission>-cadip-session` collections where the sessions are
+staged.
+
 ## 3. Dask clusters
 
 Start the Dask clusters needed by the flows, see [Add and delete Dask clusters](../rs-workflow-env/docs/dask-clusters.md).
