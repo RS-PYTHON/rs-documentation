@@ -48,8 +48,8 @@ user-friendly interface for the same purpose.
 ### Search the catalog
 
 Execute `GET /catalog/collections` to list the collections you can read. The first time, the list may be empty:
-your collections are created when you stage or process products. See [Browse products](browse-products.md) for the
-search parameters.
+the collections where the processing flows publish their products are created by the RS operators or administrators,
+not by the flows. See [Browse products](browse-products.md) for the search parameters.
 
 ### Get your S3 credentials
 
