@@ -29,7 +29,7 @@ limitations under the License.
     </style>
   </defs>
 
-  <text x="550" y="30" text-anchor="middle" class="title">Inside a Dask worker: how task #1 starves task #2</text>
+  <text x="550" y="30" text-anchor="middle" class="title">Inside a Dask worker: how task #1 starves task #2 without secede()</text>
 
   <!-- Left panel -->
   <rect x="20" y="55" width="510" height="420" rx="10" fill="#FBF7FC" stroke="#6A1B9A" stroke-width="2"/>
@@ -87,5 +87,5 @@ limitations under the License.
   <rect x="20" y="495" width="18" height="18" class="slot wait"/><text x="46" y="509" class="small">task #1: waits for EOPF-CPM</text>
   <rect x="260" y="495" width="18" height="18" class="slot work"/><text x="286" y="509" class="small">task #2: real computation</text>
   <rect x="480" y="495" width="18" height="18" class="slot queue"/><text x="506" y="509" class="small">waiting in the scheduler queue</text>
-  <text x="20" y="540" class="small">A mitigation exists inside Dask (secede(): a task releases its thread while it waits), see the options in the page.</text>
+  <text x="20" y="540" class="small">Task #1 avoids this by calling secede() at its start: it releases its thread while it waits for EOPF-CPM.</text>
 </svg>
