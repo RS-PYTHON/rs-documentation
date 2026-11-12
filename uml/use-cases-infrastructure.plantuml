@@ -1,0 +1,79 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-infrastructure
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "Operator" as operator
+actor "Administrator" as admin
+actor "Security officer" as security
+rectangle "Kubernetes cluster" as k8s
+rectangle "Dask clusters" as dask
+database "Object storage\n(S3)" as s3
+rectangle "Monitoring and control" {
+  usecase "Check the system health" as health
+  usecase "Check the Kubernetes\ncluster health" as k8shealth
+  usecase "Check the Dask\nclusters health" as daskhealth
+  usecase "Monitor and control\nthe production" as production
+  usecase "Check the production\ncompleteness and timeliness\n(performance indicators)" as pi
+  usecase "Restart or scale\nthe processing" as restart
+  usecase "Check the storage\nand its quotas" as storage
+  usecase "Backup and restore" as backup
+  usecase "Manage the product\nlifecycle" as lifecycle
+  usecase "Create and delete\nusers and groups" as users
+}
+rectangle "Security" {
+  usecase "Check the\nsystem security" as checksec
+  usecase "Upgrade the\nopen-source components" as upgrade
+}
+rectangle "Cost control" {
+  usecase "Monitor the\ncluster cost" as cost
+}
+operator -- health
+operator -- production
+admin -- users
+admin -- cost
+security -- checksec
+k8shealth ..> health : <<extend>>
+daskhealth ..> health : <<extend>>
+pi ..> production : <<extend>>
+restart ..> production : <<extend>>
+storage ..> production : <<extend>>
+backup ..> storage : <<extend>>
+lifecycle ..> storage : <<extend>>
+upgrade ..> checksec : <<extend>>
+k8shealth -- k8s
+daskhealth -- dask
+storage -- s3
+@enduml

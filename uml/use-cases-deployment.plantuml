@@ -1,0 +1,70 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-deployment
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "Developer" as dev
+actor "Administrator" as admin
+rectangle "Local machine" as local
+rectangle "Kubernetes cluster" as k8s
+rectangle "Local deployment (local mode)" {
+  usecase "Check the\nprerequisites" as prereq
+  usecase "Deploy RS-Python\nlocally" as deploylocal
+}
+rectangle "Cluster deployment (cluster mode)" {
+  usecase "Deploy the\ninfrastructure" as infra
+  usecase "Create the nodes" as nodes
+  usecase "Deploy the core\ncomponents" as core
+  usecase "Deploy the\nmonitoring" as monitoring
+  usecase "Deploy the\nsecurity" as security
+  usecase "Deploy RS-Python" as deploy
+  usecase "Deploy the virtual\nenvironment" as venv
+  usecase "Deploy rs-server" as server
+  usecase "Deploy the flows" as flows
+}
+dev -- prereq
+dev -- deploylocal
+deploylocal -- local
+admin -- infra
+admin -- deploy
+nodes ..> infra : <<extend>>
+core ..> infra : <<extend>>
+monitoring ..> infra : <<extend>>
+security ..> infra : <<extend>>
+venv ..> deploy : <<extend>>
+server ..> deploy : <<extend>>
+flows ..> deploy : <<extend>>
+infra -- k8s
+@enduml

@@ -1,0 +1,123 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 600" width="1100" height="600" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#37474F"/>
+    </marker>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .head { font-size: 15px; font-weight: bold; fill: #263238; text-anchor: middle; }
+      .box { stroke-width: 2; rx: 8; }
+      .txt { fill: #263238; text-anchor: middle; }
+      .bold { font-weight: bold; }
+      .small { font-size: 11px; fill: #455A64; text-anchor: middle; }
+      .lbl { font-size: 12px; font-weight: bold; fill: #455A64; }
+      .link { stroke: #37474F; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .new { stroke: #2E7D32; stroke-width: 2.5; stroke-dasharray: 6 4; }
+    </style>
+  </defs>
+
+  <text x="550" y="30" text-anchor="middle" class="title">Impact on the infrastructure: today and proposed</text>
+
+  <!-- ================= TODAY ================= -->
+  <rect x="20" y="50" width="520" height="520" rx="10" fill="#FAFAFA" stroke="#90A4AE" stroke-width="2"/>
+  <text x="280" y="76" class="head">Today</text>
+
+  <rect x="40" y="90" width="480" height="50" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="280" y="112" class="txt bold">Envoy Gateway</text>
+  <text x="280" y="129" class="small">one route per processor, to the instance with the right Python/Dask</text>
+
+  <rect x="40" y="160" width="480" height="150" rx="8" fill="#F5FAFF" stroke="#1565C0" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="52" y="178" class="lbl">namespace processing</text>
+  <rect x="55" y="190" width="145" height="100" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="127" y="214" class="txt bold">rs-dpr-service</text>
+  <text x="127" y="232" class="small">py 3.11 / dask 2024.5</text>
+  <text x="127" y="250" class="small">Deployment + Helm</text>
+  <text x="127" y="266" class="small">+ route + CI build</text>
+  <rect x="210" y="190" width="145" height="100" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="282" y="214" class="txt bold">rs-dpr-service</text>
+  <text x="282" y="232" class="small">py 3.11 / dask 2026.1</text>
+  <text x="282" y="250" class="small">Deployment + Helm</text>
+  <text x="282" y="266" class="small">+ route + CI build</text>
+  <rect x="365" y="190" width="145" height="100" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="437" y="214" class="txt bold">rs-dpr-service</text>
+  <text x="437" y="232" class="small">py 3.13 / dask 2026.3</text>
+  <text x="437" y="250" class="small">Deployment + Helm</text>
+  <text x="437" y="266" class="small">+ route + CI build</text>
+
+  <rect x="40" y="330" width="480" height="225" rx="8" fill="#FBF7FC" stroke="#6A1B9A" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="52" y="348" class="lbl">namespace dask-gateway (one cluster per image)</text>
+  <rect x="55" y="360" width="450" height="46" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="280" y="380" class="txt bold">Scheduler pod (node pool dask_scheduler)</text>
+  <text x="280" y="396" class="small">receives task #1 from rs-dpr-service, then task #2 from EOPF-CPM</text>
+  <rect x="55" y="418" width="450" height="125" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="280" y="438" class="txt bold">Worker pods (node pool dask_worker_on_demand)</text>
+  <rect x="70" y="450" width="420" height="80" rx="6" fill="#fff" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="280" y="470" class="small">3 CPU, 12 GB RAM shared by:</text>
+  <rect x="82" y="478" width="120" height="40" rx="5" fill="#FFCDD2" stroke="#C62828"/>
+  <text x="142" y="495" class="small">task #1</text><text x="142" y="509" class="small">(waits)</text>
+  <rect x="212" y="478" width="130" height="40" rx="5" fill="#FFF8E1" stroke="#F9A825"/>
+  <text x="277" y="495" class="small">EOPF-CPM</text><text x="277" y="509" class="small">driver subprocess</text>
+  <rect x="352" y="478" width="128" height="40" rx="5" fill="#BBDEFB" stroke="#1565C0"/>
+  <text x="416" y="495" class="small">task #2</text><text x="416" y="509" class="small">(computation)</text>
+
+  <path class="link" d="M 280 140 L 280 160"/>
+  <path class="link" d="M 280 310 L 280 330"/>
+
+  <!-- ================= PROPOSED ================= -->
+  <rect x="560" y="50" width="520" height="520" rx="10" fill="#F9FDF9" stroke="#2E7D32" stroke-width="2"/>
+  <text x="820" y="76" class="head">Proposed</text>
+
+  <rect x="580" y="90" width="480" height="50" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="820" y="112" class="txt bold">Envoy Gateway</text>
+  <text x="820" y="129" class="small">a single route to the single generic instance</text>
+
+  <rect x="580" y="160" width="480" height="150" rx="8" fill="#F5FAFF" stroke="#1565C0" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="592" y="178" class="lbl">namespace processing</text>
+  <rect x="595" y="190" width="150" height="100" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="670" y="214" class="txt bold">rs-dpr-service</text>
+  <text x="670" y="232" class="small">no Dask version tie</text>
+  <text x="670" y="250" class="small">1 Deployment (replicas</text>
+  <text x="670" y="266" class="small">for availability)</text>
+  <rect x="760" y="190" width="285" height="34" rx="6" fill="#C8E6C9" stroke="#2E7D32" stroke-width="2" class="new"/>
+  <text x="902" y="212" class="small" style="font-weight:bold;fill:#2E7D32">NEW: ServiceAccount + Role (jobs, pods/log)</text>
+  <rect x="760" y="234" width="135" height="56" rx="6" fill="#C8E6C9" stroke="#2E7D32" stroke-width="2" class="new"/>
+  <text x="827" y="254" class="small" style="font-weight:bold;fill:#2E7D32">NEW: Job pod</text>
+  <text x="827" y="268" class="small">driver, run A</text>
+  <text x="827" y="281" class="small">cluster image</text>
+  <rect x="910" y="234" width="135" height="56" rx="6" fill="#C8E6C9" stroke="#2E7D32" stroke-width="2" class="new"/>
+  <text x="977" y="254" class="small" style="font-weight:bold;fill:#2E7D32">NEW: Job pod</text>
+  <text x="977" y="268" class="small">driver, run B</text>
+  <text x="977" y="281" class="small">short-lived</text>
+
+  <rect x="580" y="330" width="480" height="225" rx="8" fill="#FBF7FC" stroke="#6A1B9A" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="592" y="348" class="lbl">namespace dask-gateway (unchanged)</text>
+  <rect x="595" y="360" width="450" height="46" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="820" y="380" class="txt bold">Scheduler pod (node pool dask_scheduler)</text>
+  <text x="820" y="396" class="small">receives only the computation tasks</text>
+  <rect x="595" y="418" width="450" height="125" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="820" y="438" class="txt bold">Worker pods (node pool dask_worker_on_demand)</text>
+  <rect x="610" y="450" width="420" height="80" rx="6" fill="#fff" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="820" y="470" class="small">3 CPU, 12 GB RAM, all for the computation:</text>
+  <rect x="622" y="478" width="196" height="40" rx="5" fill="#BBDEFB" stroke="#1565C0"/>
+  <text x="720" y="495" class="small">task (computation)</text><text x="720" y="509" class="small">3 threads available</text>
+  <rect x="828" y="478" width="190" height="40" rx="5" fill="#BBDEFB" stroke="#1565C0"/>
+  <text x="923" y="495" class="small">task (computation)</text><text x="923" y="509" class="small">no driver in the pod</text>
+
+  <path class="link" d="M 820 140 L 820 160"/>
+  <path class="link" d="M 900 310 L 900 330"/>
+</svg>

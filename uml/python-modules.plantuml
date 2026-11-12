@@ -1,0 +1,78 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml python-modules
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam component {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+skinparam node {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam package {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+left to right direction
+package "rs-client-libraries" {
+  component "rs_workflows\n(Prefect flows)" as workflows
+  component "rs_client\n(clients of the services)" as client
+  component "rs_common\n(logging, OpenTelemetry,\nPrefect and S3 utilities)" as common
+}
+package "rs-server" {
+  component "rs_server_frontend" as frontend
+  component "rs_server_adgs\nrs_server_cadip\nrs_server_prip" as stations
+  component "rs_server_catalog" as catalog
+  component "rs_server_staging" as staging
+  component "rs_server_osam" as osam
+  component "rs_server_common" as servercommon
+}
+package "rs-dpr-service" {
+  component "rs_dpr_service" as dpr
+}
+component "pystac-client" as pystac
+component "Prefect" as prefect
+component "EOPF CPM\n(DPR processors)" as eopf
+workflows --> client
+workflows --> common
+workflows --> prefect
+client --> common
+client --> pystac
+client ..> stations : HTTP (STAC API)
+client ..> catalog : HTTP (STAC API)
+client ..> staging : HTTP (OGC API - Processes)
+client ..> osam : HTTP
+client ..> dpr : HTTP (OGC API - Processes)
+stations --> servercommon
+catalog --> servercommon
+staging --> servercommon
+osam --> servercommon
+dpr --> eopf : on the Dask workers
+@enduml
