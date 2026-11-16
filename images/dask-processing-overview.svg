@@ -1,0 +1,121 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" font-family="Arial, Helvetica, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#37474F"/>
+    </marker>
+    <style>
+      .box { stroke-width: 2; rx: 8; }
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .label { fill: #263238; }
+      .small { font-size: 12px; fill: #455A64; }
+      .bold { font-weight: bold; }
+      .link { stroke: #37474F; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .num { fill: #fff; font-weight: bold; font-size: 14px; }
+      .badge { fill: #D84315; }
+    </style>
+  </defs>
+
+  <text x="500" y="30" text-anchor="middle" class="title">Running a processor on a Dask cluster: who is who</text>
+
+  <!-- User -->
+  <rect x="20" y="230" width="130" height="80" class="box" fill="#FFF3E0" stroke="#EF6C00"/>
+  <text x="85" y="265" text-anchor="middle" class="label bold">User</text>
+  <text x="85" y="285" text-anchor="middle" class="small">(operator or</text>
+  <text x="85" y="300" text-anchor="middle" class="small">scientist)</text>
+
+  <!-- Notebook -->
+  <rect x="210" y="70" width="230" height="90" class="box" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="325" y="100" text-anchor="middle" class="label bold">Jupyter notebook</text>
+  <text x="325" y="120" text-anchor="middle" class="small">rs-demo / init-dask-clusters</text>
+  <text x="325" y="140" text-anchor="middle" class="small">"create my Dask cluster"</text>
+
+  <!-- Prefect flow -->
+  <rect x="210" y="230" width="230" height="90" class="box" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="325" y="260" text-anchor="middle" class="label bold">Prefect flow</text>
+  <text x="325" y="280" text-anchor="middle" class="small">rs-client-libraries</text>
+  <text x="325" y="300" text-anchor="middle" class="small">writes the payload file</text>
+
+  <!-- rs-dpr-service -->
+  <rect x="470" y="170" width="200" height="270" rx="10" fill="#F5FAFF" stroke="#1565C0" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="570" y="195" text-anchor="middle" class="label bold">rs-dpr-service</text>
+  <text x="570" y="212" text-anchor="middle" class="small">one per Python/Dask version</text>
+  <rect x="485" y="228" width="170" height="56" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="570" y="252" text-anchor="middle" class="label">Python 3.11 / Dask 2024.5</text>
+  <text x="570" y="270" text-anchor="middle" class="small">processors A, B</text>
+  <rect x="485" y="296" width="170" height="56" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="570" y="320" text-anchor="middle" class="label">Python 3.11 / Dask 2026.1</text>
+  <text x="570" y="338" text-anchor="middle" class="small">processor C</text>
+  <rect x="485" y="364" width="170" height="56" class="box" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="570" y="388" text-anchor="middle" class="label">Python 3.13 / Dask 2026.3</text>
+  <text x="570" y="406" text-anchor="middle" class="small">processor D</text>
+
+  <!-- Kubernetes / Dask -->
+  <rect x="710" y="55" width="275" height="445" rx="10" fill="#FBF7FC" stroke="#6A1B9A" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="847" y="80" text-anchor="middle" class="label bold">Kubernetes cluster</text>
+  <rect x="730" y="95" width="235" height="50" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="847" y="116" text-anchor="middle" class="label bold">Dask Gateway</text>
+  <text x="847" y="134" text-anchor="middle" class="small">creates and finds clusters</text>
+
+  <rect x="730" y="165" width="235" height="320" rx="8" fill="#fff" stroke="#6A1B9A" stroke-width="2"/>
+  <text x="847" y="188" text-anchor="middle" class="label bold">Dask cluster</text>
+  <text x="847" y="205" text-anchor="middle" class="small">id: dask-gateway.17e1...  label: dask-cpm3</text>
+  <rect x="750" y="222" width="195" height="56" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="847" y="246" text-anchor="middle" class="label bold">Scheduler</text>
+  <text x="847" y="264" text-anchor="middle" class="small">distributes the tasks</text>
+  <rect x="750" y="300" width="195" height="56" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="847" y="324" text-anchor="middle" class="label bold">Worker 1</text>
+  <text x="847" y="342" text-anchor="middle" class="small">3 CPU, 12 GB RAM</text>
+  <rect x="750" y="372" width="195" height="56" class="box" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="847" y="396" text-anchor="middle" class="label bold">Worker 2 ...</text>
+  <text x="847" y="414" text-anchor="middle" class="small">EOPF-CPM + processor installed</text>
+  <text x="847" y="460" text-anchor="middle" class="small">All pods use the same Docker image</text>
+
+  <!-- S3 -->
+  <rect x="210" y="560" width="560" height="56" class="box" fill="#ECEFF1" stroke="#455A64"/>
+  <text x="490" y="585" text-anchor="middle" class="label bold">Object storage (S3)</text>
+  <text x="490" y="603" text-anchor="middle" class="small">payload file, task table, input products, output products, reports</text>
+
+  <!-- Arrows -->
+  <path class="link" d="M 150 250 L 180 250 L 180 115 L 210 115"/>
+  <path class="link" d="M 150 270 L 210 270"/>
+  <path class="link" d="M 440 115 L 730 115"/>
+  <path class="link" d="M 440 275 L 470 275"/>
+  <path class="link" d="M 670 330 L 700 330 L 700 250 L 750 250"/>
+  <path class="link" d="M 325 320 L 325 560"/>
+  <path class="link" d="M 847 485 L 847 530 L 770 530 L 770 560" stroke-dasharray="6 4"/>
+
+  <!-- Numbered badges -->
+  <circle cx="180" cy="190" r="13" class="badge"/><text x="180" y="195" text-anchor="middle" class="num">1</text>
+  <circle cx="580" cy="100" r="13" class="badge"/><text x="580" y="105" text-anchor="middle" class="num">1</text>
+  <circle cx="180" cy="290" r="13" class="badge"/><text x="180" y="295" text-anchor="middle" class="num">2</text>
+  <circle cx="345" cy="440" r="13" class="badge"/><text x="345" y="445" text-anchor="middle" class="num">2</text>
+  <circle cx="455" cy="262" r="13" class="badge"/><text x="455" y="267" text-anchor="middle" class="num">3</text>
+  <circle cx="700" cy="290" r="13" class="badge"/><text x="700" y="295" text-anchor="middle" class="num">4</text>
+  <circle cx="800" cy="530" r="13" class="badge"/><text x="800" y="535" text-anchor="middle" class="num">5</text>
+
+  <!-- Legend -->
+  <text x="20" y="360" class="label bold">Main interactions</text>
+  <text x="20" y="376" class="small">(detailed steps: next diagram)</text>
+  <text x="20" y="400" class="small">1  The user creates a cluster and</text>
+  <text x="20" y="416" class="small">    gets its id and label</text>
+  <text x="20" y="438" class="small">2  The user starts the flow, which</text>
+  <text x="20" y="454" class="small">    writes the payload file</text>
+  <text x="20" y="476" class="small">3  The flow calls the REST API</text>
+  <text x="20" y="498" class="small">4  The service runs a task on the cluster</text>
+  <text x="20" y="520" class="small">5  The processor reads and writes S3</text>
+</svg>

@@ -1,0 +1,136 @@
+<!--
+Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" width="1100" height="700" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#37474F"/>
+    </marker>
+    <marker id="arrowred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C62828"/>
+    </marker>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #263238; }
+      .part { stroke-width: 2; rx: 6; }
+      .ptxt { font-weight: bold; fill: #263238; text-anchor: middle; }
+      .psub { font-size: 11px; fill: #455A64; text-anchor: middle; }
+      .life { stroke: #90A4AE; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .msg { stroke: #37474F; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .ret { stroke: #37474F; stroke-width: 2; fill: none; marker-end: url(#arrow); stroke-dasharray: 6 4; }
+      .hot { stroke: #C62828; stroke-width: 2.5; fill: none; marker-end: url(#arrowred); }
+      .txt { fill: #263238; }
+      .hottxt { fill: #C62828; font-weight: bold; }
+      .badge { fill: #00796B; }
+      .badgehot { fill: #C62828; }
+      .num { fill: #fff; font-weight: bold; font-size: 12px; text-anchor: middle; }
+      .busy { fill: #FFCDD2; stroke: #C62828; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <text x="550" y="30" text-anchor="middle" class="title">Current workflow: two Dask tasks, one calling the other</text>
+
+  <!-- Participants -->
+  <rect x="10" y="50" width="120" height="46" class="part" fill="#FFF3E0" stroke="#EF6C00"/>
+  <text x="70" y="70" class="ptxt">User</text>
+  <rect x="160" y="50" width="130" height="46" class="part" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="225" y="70" class="ptxt">Notebook</text><text x="225" y="86" class="psub">init-dask-clusters</text>
+  <rect x="320" y="50" width="130" height="46" class="part" fill="#E0F2F1" stroke="#00796B"/>
+  <text x="385" y="70" class="ptxt">Prefect flow</text><text x="385" y="86" class="psub">rs-client-libraries</text>
+  <rect x="480" y="50" width="130" height="46" class="part" fill="#E3F2FD" stroke="#1565C0"/>
+  <text x="545" y="70" class="ptxt">rs-dpr-service</text><text x="545" y="86" class="psub">REST service</text>
+  <rect x="640" y="50" width="130" height="46" class="part" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="705" y="70" class="ptxt">Dask scheduler</text><text x="705" y="86" class="psub">Gateway + scheduler</text>
+  <rect x="800" y="50" width="130" height="46" class="part" fill="#F3E5F5" stroke="#6A1B9A"/>
+  <text x="865" y="70" class="ptxt">Dask worker</text><text x="865" y="86" class="psub">pod, 3 threads</text>
+  <rect x="960" y="50" width="130" height="46" class="part" fill="#FFF8E1" stroke="#F9A825"/>
+  <text x="1025" y="70" class="ptxt">EOPF-CPM</text><text x="1025" y="86" class="psub">subprocess in worker</text>
+
+  <!-- Lifelines -->
+  <line x1="70" y1="96" x2="70" y2="670" class="life"/>
+  <line x1="225" y1="96" x2="225" y2="670" class="life"/>
+  <line x1="385" y1="96" x2="385" y2="670" class="life"/>
+  <line x1="545" y1="96" x2="545" y2="670" class="life"/>
+  <line x1="705" y1="96" x2="705" y2="670" class="life"/>
+  <line x1="865" y1="96" x2="865" y2="670" class="life"/>
+  <line x1="1025" y1="96" x2="1025" y2="670" class="life"/>
+
+  <!-- Worker busy bars -->
+  <rect x="855" y="380" width="20" height="230" class="busy"/>
+  <rect x="1015" y="425" width="20" height="150" class="busy"/>
+
+  <!-- 1 -->
+  <path class="msg" d="M 225 135 L 705 135"/>
+  <circle cx="250" cy="123" r="11" class="badge"/><text x="250" y="127" class="num">1</text>
+  <text x="270" y="127" class="txt">create the cluster (through Dask Gateway)</text>
+  <path class="ret" d="M 225 165 L 70 165"/>
+  <text x="85" y="159" class="txt">cluster id + label</text>
+
+  <!-- 2 -->
+  <path class="msg" d="M 70 205 L 385 205"/>
+  <circle cx="95" cy="193" r="11" class="badge"/><text x="95" y="197" class="num">2</text>
+  <text x="115" y="197" class="txt">inputs + cluster id and label</text>
+  <path class="msg" d="M 385 232 L 425 232 L 425 250 L 385 250"/>
+  <text x="435" y="245" class="txt">write the payload file</text>
+
+  <!-- 3 -->
+  <path class="msg" d="M 385 290 L 545 290"/>
+  <circle cx="410" cy="278" r="11" class="badge"/><text x="410" y="282" class="num">3</text>
+  <text x="430" y="272" class="txt" font-size="12">REST call + payload</text>
+
+  <!-- 4 -->
+  <path class="msg" d="M 545 322 L 585 322 L 585 340 L 545 340"/>
+  <circle cx="605" cy="326" r="11" class="badge"/><text x="605" y="330" class="num">4</text>
+  <text x="623" y="326" class="txt" font-size="12">complete the payload:</text>
+  <text x="623" y="341" class="txt" font-size="12">context_managers.reuse_cluster</text>
+
+  <!-- 5 -->
+  <path class="hot" d="M 545 375 L 705 375"/>
+  <circle cx="570" cy="363" r="11" class="badgehot"/><text x="570" y="367" class="num">5</text>
+  <text x="590" y="357" class="hottxt" font-size="12">submit task #1</text>
+  <path class="hot" d="M 705 395 L 865 395"/>
+  <text x="722" y="389" class="hottxt" font-size="12">run task #1</text>
+  <text x="885" y="400" class="hottxt" font-size="12">task #1 holds</text>
+  <text x="885" y="415" class="hottxt" font-size="12">1 thread</text>
+
+  <!-- 6 -->
+  <path class="msg" d="M 875 450 L 1015 450"/>
+  <circle cx="893" cy="438" r="11" class="badge"/><text x="893" y="442" class="num">6</text>
+  <text x="911" y="432" class="txt" font-size="12">eopf trigger</text>
+  <text x="1045" y="450" class="txt" font-size="11">waits for</text>
+  <text x="1045" y="463" class="txt" font-size="11">the cluster</text>
+
+  <!-- 7 -->
+  <path class="hot" d="M 1015 500 L 705 500"/>
+  <circle cx="750" cy="488" r="11" class="badgehot"/><text x="750" y="492" class="num">7</text>
+  <text x="770" y="482" class="hottxt" font-size="12">submit task #2 (same cluster)</text>
+  <path class="hot" d="M 705 535 L 865 535"/>
+  <text x="722" y="529" class="hottxt" font-size="12">needs another thread</text>
+  <text x="885" y="540" class="hottxt" font-size="12">processor runs</text>
+
+  <!-- results -->
+  <path class="ret" d="M 1015 565 L 875 565"/>
+  <text x="900" y="559" class="txt" font-size="12">exit code + logs</text>
+  <path class="ret" d="M 855 600 L 555 600"/>
+  <text x="600" y="594" class="txt" font-size="12">result of task #1 + logs</text>
+  <path class="ret" d="M 545 640 L 395 640"/>
+  <text x="410" y="634" class="txt" font-size="12">job status: successful</text>
+
+  <!-- note -->
+  <rect x="10" y="425" width="320" height="100" rx="6" fill="#FFEBEE" stroke="#C62828" stroke-width="1.5"/>
+  <text x="22" y="446" class="hottxt">Why this is fragile</text>
+  <text x="22" y="466" class="txt" font-size="12">Task #1 does nothing but wait for task #2.</text>
+  <text x="22" y="483" class="txt" font-size="12">If every thread is held by a task #1, task #2</text>
+  <text x="22" y="500" class="txt" font-size="12">can never start: the cluster is deadlocked.</text>
+</svg>

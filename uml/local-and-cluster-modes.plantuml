@@ -1,0 +1,83 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml local-and-cluster-modes
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam component {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+skinparam node {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam package {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam linetype ortho
+left to right direction
+rectangle "Local mode (rs-demo/local-mode, Docker Compose)" as local {
+  component "Jupyter server\n+ Prefect flows" as ljupyter
+  component "Prefect server" as lprefect
+  component "rs-server services\n(no authentication)" as lserver
+  component "rs-dpr-service" as ldpr
+  component "Dask containers\n(one per cluster)" as ldask
+  component "Station mockups\n(rs-testmeans)" as lmock
+  database "SeaweedFS\n(S3)" as ls3
+  database "PostgreSQL\n(pgstac)" as lpg
+}
+rectangle "Cluster mode (Kubernetes)" as cluster {
+  component "JupyterHub" as cjupyter
+  component "Prefect server\nand workers" as cprefect
+  component "Envoy Gateway\n+ Keycloak" as cgw
+  component "rs-server services" as cserver
+  component "rs-dpr-service" as cdpr
+  component "Dask Gateway\n+ Dask clusters" as cdask
+  database "Object storage\n(S3)" as cs3
+  database "PostgreSQL\n(CloudNativePG)" as cpg
+}
+cloud "Copernicus\nground segment" as csc
+ljupyter --> lprefect
+ljupyter --> lserver
+ljupyter --> ldpr
+lserver --> lmock
+lserver --> ldask
+ldpr --> ldask
+lserver --> lpg
+ldask --> ls3
+cjupyter --> cprefect
+cprefect --> cgw
+cgw --> cserver
+cgw --> cdpr
+cserver --> cdask
+cdpr --> cdask
+cserver --> cpg
+cdask --> cs3
+cserver --> csc
+@enduml

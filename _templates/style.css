@@ -1,0 +1,114 @@
+/* Copyright 2023-2026 Airbus, CS Group
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
+
+/* MAIN STYLE */
+
+.md-main {
+  box-sizing: border-box;
+}
+
+.md-grid {
+    max-width: 100%;
+}
+
+@media (min-width: 1220px) {
+    .md-main__inner {
+    margin-top: 0;
+    }
+    .md-sidebar {
+    height: auto;
+    }
+    .md-sidebar--primary {
+    border-right: 1px solid var(--md-default-fg-color--lightest);
+    }
+    .md-nav {
+    font-size: 16px;
+    }
+    .md-nav .md-nav__title {
+    display: none;
+    }
+    .md-nav__icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-top: -.1rem;
+    }
+}
+
+
+/* HEADER STYLE */
+
+/* Horizontal menu and logos */
+.md-tabs {
+    display: flex;
+    align-items: stretch;
+}
+
+/* Keep the menu to the left */
+.md-tabs > *:first-child {
+    margin-left: 0;
+}
+
+/* Keep the logos to the right */
+.md-tabs-logos {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto; /* seul cet élément pousse à droite */
+    padding-right: 1rem;
+}
+
+.md-tabs-logo img {
+    height: 28px;
+    transition: all 0.1s ease-in-out;
+}
+
+
+/* SIDEBAR STYLE */
+
+/* Side menu container */
+.sidebar-navigation {
+    flex: 2 1 auto;
+    overflow-y: auto;
+    padding-bottom: 0.625rem;
+}
+
+
+/* FOOTER STYLE */
+
+/* Footer with black background and logos to the right */
+.md-footer {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    background-color: #000;
+    color: #fff;
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.footer-logos {
+    display: flex;
+    gap: 0.9375rem;
+    align-items: center;
+}
+
+.footer-logos img {
+    height: 2rem;
+    transition: all 0.1s ease-in-out;
+}

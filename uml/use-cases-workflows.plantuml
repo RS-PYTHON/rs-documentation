@@ -1,0 +1,68 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-workflows
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "RS user" as user
+actor "Operator" as operator
+rectangle "GitHub" as github
+rectangle "Stations\n(CADIP, AUXIP, PRIP, LTA)" as stations
+database "Object storage\n(S3)" as s3
+rectangle "Dask cluster" as dask
+rectangle "Workflow management (Prefect, rs-client-libraries)" {
+  usecase "Manage the workflows" as manage
+  usecase "Retrieve the flows" as retrieve
+  usecase "Start and stop flows" as startstop
+  usecase "Start and stop\non-demand flows" as ondemand
+  usecase "Start and stop\nsystematic flows" as systematic
+  usecase "Retrieve raw data" as raw
+  usecase "Read and write\nthe catalog" as catalog
+  usecase "Launch processing" as processing
+}
+operator -- manage
+user -- ondemand
+operator -- systematic
+manage ..> retrieve : <<include>>
+manage ..> startstop : <<include>>
+ondemand ..> startstop : <<extend>>
+systematic ..> startstop : <<extend>>
+startstop ..> raw : <<include>>
+startstop ..> catalog : <<include>>
+startstop ..> processing : <<include>>
+retrieve -- github
+raw -- stations
+raw -- s3
+processing -- dask
+@enduml

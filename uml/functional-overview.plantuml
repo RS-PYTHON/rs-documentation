@@ -1,0 +1,90 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml functional-overview
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam component {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+skinparam actor {
+  BorderColor #00796B
+}
+
+actor "User" as user
+actor "Administrator" as admin
+
+rectangle "User interfaces" {
+  component "JupyterHub" as jupyter
+  component "Prefect dashboard\n(flows)" as prefect
+  component "STAC browsers" as browser
+  component "Swagger\n(frontend)" as frontend
+}
+
+rectangle "Reference System web services" {
+  component "External data sources\nSTAC API\n(CADIP, AUXIP, PRIP)" as eds
+  component "Catalog\nSTAC API" as catalog
+  component "Staging\nOGC API - Processes" as staging
+  component "DPR service\nOGC API - Processes" as dpr
+  component "OSAM\n(S3 credentials)" as osam
+}
+
+rectangle "Platform" {
+  component "Dask clusters\n(DPR processors,\nstaging tasks)" as dask
+  database "Object storage\n(S3 buckets)" as s3
+  database "PostgreSQL\n(pgstac)" as pg
+  component "Keycloak\n(identity and\naccess management)" as keycloak
+  component "Grafana\n(monitoring)" as grafana
+}
+
+cloud "Copernicus ground segment\n(CADIP, AUXIP, PRIP, LTA,\nCDSE, EarthDataHub)" as csc
+
+user --> jupyter
+user --> prefect
+user --> browser
+user --> frontend
+admin --> keycloak
+admin --> grafana
+
+prefect --> eds
+prefect --> catalog
+prefect --> staging
+prefect --> dpr
+prefect --> osam
+
+eds --> csc
+staging --> csc
+staging --> dask
+dpr --> dask
+catalog --> pg
+dask --> s3
+osam --> s3
+@enduml

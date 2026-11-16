@@ -1,0 +1,61 @@
+' Copyright 2023-2026 Airbus, CS Group
+'
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+'     http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml use-cases-access-control
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #E0F2F1
+  BorderColor #00796B
+}
+skinparam rectangle {
+  BackgroundColor #F5F9FA
+  BorderColor #00796B
+}
+skinparam actor {
+  BorderColor #00796B
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+}
+left to right direction
+actor "RS user" as user
+rectangle "Identity and access management (Keycloak)" {
+  usecase "Authenticate" as auth
+  usecase "Retrieve the\nassociated roles" as roles
+  usecase "Control access" as access
+  usecase "Control access\nto the catalog" as catalog
+  usecase "Control access\nto a collection" as collection
+  usecase "Control access to the\nexternal data sources" as eds
+  usecase "Control access to the\nprocessing orchestrator" as prefect
+  usecase "Control access to the\nvirtual environment" as venv
+  usecase "Control access to the\nmonitoring tools" as monitoring
+  usecase "Control access to the\nsecurity components" as security
+}
+user -- auth
+auth ..> roles : <<include>>
+auth ..> access : <<include>>
+catalog ..> access : <<extend>>
+collection ..> catalog : <<extend>>
+eds ..> access : <<extend>>
+prefect ..> access : <<extend>>
+venv ..> access : <<extend>>
+monitoring ..> access : <<extend>>
+security ..> access : <<extend>>
+@enduml
