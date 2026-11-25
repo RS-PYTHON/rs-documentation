@@ -55,7 +55,7 @@ installed in the JupyterHub image (e.g. a development branch), either:
 
 - install its wheel package for your user only. Download it from the `Artifacts` section of the
   [publish workflow](https://github.com/RS-PYTHON/rs-client-libraries/actions/workflows/publish-binaries.yml)
-  run of your branch, or build it with `poetry build --format wheel`, upload it to your session, then from a
+  run of your branch, or build it with `uv build --wheel`, upload it to your session, then from a
   terminal:
 
     ```shell

@@ -12,11 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: python
-description: Install python with hardcoded version
-runs:
-  using: "composite"
-  steps:
-    - uses: actions/setup-python@v6
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  # Dependencies of pyproject.toml, locked in uv.lock: one pull request per update
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "daily"

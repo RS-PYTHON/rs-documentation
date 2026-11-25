@@ -13,11 +13,17 @@ actions of the [actions](../actions/README.md) repository.
 - The releases are identified by git tags, e.g. `v1.0a14` (alpha version of the sprint), `v1.0rc1` (release
   candidate) or `v1.0` (release). The same version is used by all the repositories of a release.
 - The version of the Python packages is computed from the git tag by
-  [poetry-dynamic-versioning](https://github.com/mtkennerly/poetry-dynamic-versioning), e.g. `1.0a14` for the
+  [uv-dynamic-versioning](https://github.com/ninoseki/uv-dynamic-versioning), e.g. `1.0a14` for the
   `v1.0a14` tag.
 - The Docker images are tagged with the branch name, plus `latest` for the `develop` branch, or with the version
   name for a git tag, e.g. `ghcr.io/rs-python/rs-server-catalog:1.0a14`.
-- [Dependabot](https://docs.github.com/en/code-security/dependabot) proposes the updates of the dependencies.
+- The Python dependencies are managed with [uv](https://docs.astral.sh/uv/): each project declares its dependencies
+  in its `pyproject.toml` file and their locked versions in a `uv.lock` file. rs-server is a
+  [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/): all its services share a single
+  `uv.lock` file at the root of the repository. The CI/CD installs the locked versions, and fails if `uv.lock` is
+  not up to date with `pyproject.toml`.
+- [Dependabot](https://docs.github.com/en/code-security/dependabot) proposes the updates of the dependencies: one
+  pull request for each update, that modifies both `pyproject.toml` and `uv.lock`.
 
 ## Workflows
 
