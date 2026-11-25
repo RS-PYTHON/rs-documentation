@@ -555,11 +555,11 @@ wheels = [
 
 [[package]]
 name = "symspellpy"
-version = "6.10.0"
+version = "6.10.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b2/99/f488bd2a64d4846dde560c6c1ad539aedba7fb95a21d21273b0c21a16762/symspellpy-6.10.0.tar.gz", hash = "sha256:7434e15c92b2af6ec0141df98f249b35a7ddc5496a410c2649c1ac74d84a3dfb", size = 2616545, upload-time = "2026-07-11T15:36:44.997Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/34/c7f195d5f22adfcccf5d661d7e902d1f802d09e877566fc798874ac93670/symspellpy-6.10.2.tar.gz", hash = "sha256:9f456c6fe374ec2a8bd5476ce7a81e6ab00d7e26ecbfb754dbf42c9d42db182e", size = 2617920, upload-time = "2026-11-07T01:07:00.021Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/02/1124824a3e2842f42f45278f8eef94c5cb989055064e3473e8281f5deb0c/symspellpy-6.10.0-py3-none-any.whl", hash = "sha256:e31707f6d6e06b89973588c02c0c7941c9ca1e3144859a8e2e46d8b815dda75e", size = 2612381, upload-time = "2026-07-11T15:36:43.279Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/e7/a685e9d0e90eecc832f2249946dde9e69c23d49a6ca1d23fd949d6ed0554/symspellpy-6.10.2-py3-none-any.whl", hash = "sha256:5a7cee286ef16e9ee25913ea5b9fb42ebc51ced60ce2b85c4d4be30ac3e81a51", size = 2612512, upload-time = "2026-11-07T01:06:57.442Z" },
 ]
 
 [[package]]
