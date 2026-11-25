@@ -26,7 +26,7 @@ dependencies = [
     "mkdocstrings>=1.0.7,<2",
     "mkdocstrings-python>=2.0.9,<3",
     "mkdocs-autorefs>=1.4.4,<2",
-    "pymdown-extensions>=12.3,<13",
+    "pymdown-extensions>=12.3,<14",
     "mkdocs-spellcheck>=1.2.2,<2",
     "symspellpy>=6.10.0,<7",
 ]
