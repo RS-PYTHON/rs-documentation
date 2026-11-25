@@ -23,7 +23,10 @@ actions of the [actions](../actions/README.md) repository.
   `uv.lock` file at the root of the repository. The CI/CD installs the locked versions, and fails if `uv.lock` is
   not up to date with `pyproject.toml`.
 - [Dependabot](https://docs.github.com/en/code-security/dependabot) proposes the updates of the dependencies: one
-  pull request for each update, that modifies both `pyproject.toml` and `uv.lock`.
+  pull request for each update, that modifies both `pyproject.toml` and `uv.lock`. A library update can break the
+  [rs-demo](../rs-demo/README.md) notebooks with side effects that pytest does not see, so these pull requests also
+  build the Docker images and run the rs-demo tests, except when they only update GitHub Actions or development
+  dependencies (pytest, linters...), that are not installed in the Docker images.
 
 ## Workflows
 
