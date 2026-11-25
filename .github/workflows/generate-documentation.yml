@@ -30,7 +30,7 @@ jobs:
       packages: read # to pull docker images when running build_aggregated_openapi.sh
       contents: write # to publish the generated documentation
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: RS-PYTHON/actions/.github/actions/setup-uv@develop
 
       - name: Clone the RS-PYTHON repositories
