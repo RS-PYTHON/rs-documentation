@@ -31,7 +31,7 @@ Only the Markdown pages and the images of the repositories are published, not th
 
 ## Generate the website locally
 
-Prerequisites: Python 3.13 and [Poetry](https://python-poetry.org/) 2.x.
+Prerequisites: [uv](https://docs.astral.sh/uv/).
 
 1. Clone rs-documentation:
 
@@ -64,7 +64,7 @@ Prerequisites: Python 3.13 and [Poetry](https://python-poetry.org/) 2.x.
    the repositories cloned under `docs/`, so they don't need to be installed:
 
     ```shell
-    poetry install
+    uv sync
     ```
 
 4. Generate the Python API documentation and the `mkdocs.yml` file:
@@ -76,8 +76,8 @@ Prerequisites: Python 3.13 and [Poetry](https://python-poetry.org/) 2.x.
 5. Build the website in the `site/` folder, or serve it on <http://127.0.0.1:8000> with live reload:
 
     ```shell
-    poetry run mkdocs build
-    poetry run mkdocs serve
+    uv run mkdocs build
+    uv run mkdocs serve
     ```
 
 Check the warnings displayed by MkDocs: they report the broken links and anchors.

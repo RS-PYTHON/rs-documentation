@@ -21,7 +21,7 @@ of using the issue tracker. We value your effort to improve the security and pri
     - unit tests (and integration tests if relevant),
     - the documentation, in the same pull request (see [Generate the documentation](generate-documentation.md)),
     - a new entry in the `CHANGELOG.md` file of the repository, if it has one.
-4. Check that the code quality checks pass: `poetry run pre-commit run --all-files` and the tests.
+4. Check that the code quality checks pass: `uv run pre-commit run --all-files` and the tests.
 5. Push your branch and open a [pull request](https://docs.github.com/en/pull-requests) to `develop`. The CI runs
    the checks, the tests and SonarQube. Fix the issues it reports.
 6. A team member reviews your pull request, then merges it.

@@ -12,20 +12,17 @@ and [PyCharm](https://www.jetbrains.com/pycharm/) are both used by the team.
 |---|---|
 | [git](https://git-scm.com/) | Get the source code. |
 | [Docker](https://docs.docker.com/engine/install/) | Run the [local mode](../rs-demo/docs/local-mode.md), build the Docker images. |
-| [pyenv](https://github.com/pyenv/pyenv) (recommended) | Install the Python versions used by the project. |
-| [pipx](https://pipx.pypa.io/) (recommended) | Install the Python tools in isolated environments. |
-| [Poetry](https://python-poetry.org/) | Manage the dependencies and the virtual environments of the projects. |
+| [uv](https://docs.astral.sh/uv/) | Install the Python versions, manage the dependencies and the virtual environments of the projects. |
 | [pre-commit](https://pre-commit.com/) | Run the code checks before each commit. |
 | [Trivy](https://trivy.dev/) | Security and license checks, run by pre-commit and the CI. |
 
 ```shell
-# Install the Python version used by the project (see the "python" constraint of each pyproject.toml)
-pyenv install 3.13.18
-pyenv global 3.13.18
-
-# Install Poetry (use the version of the CI, see the RS-PYTHON/actions repository)
-pipx install poetry
+# Install uv (use the version of the CI, see the setup-uv action of the RS-PYTHON/actions repository)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+uv automatically downloads the Python version required by each project (see the `requires-python` field of its
+`pyproject.toml` file).
 
 ## Get the source code
 
@@ -47,17 +44,18 @@ From each repository:
 ```shell
 cd ~/rspy/rs-server
 
-# Create the virtual environment and install the dependencies, including the development ones
-poetry install --with dev
+# Create the virtual environment (.venv/) and install the locked dependencies from uv.lock,
+# including the development ones. In rs-server, add --all-packages to install all the services.
+uv sync
 
 # Install the OpenTelemetry instrumentation of the installed libraries
-poetry run opentelemetry-bootstrap -a install
+uv pip install $(uv run opentelemetry-bootstrap -a requirements)
 
 # Install the git hooks
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
-Configure your IDE to use the Poetry virtual environment (`poetry env info --path`), and to run the formatters
+Configure your IDE to use the virtual environment of the project (`.venv/`), and to run the formatters
 ([black](https://black.readthedocs.io/), [isort](https://pycqa.github.io/isort/)) when you save a file.
 
 ## Run the tests
@@ -65,8 +63,8 @@ Configure your IDE to use the Poetry virtual environment (`poetry env info --pat
 The tests are written with [pytest](https://docs.pytest.org/) and categorised with markers:
 
 ```shell
-poetry run pytest -m unit         # fast unit tests, with mockup servers
-poetry run pytest -m integration  # integration tests
+uv run pytest -m unit         # fast unit tests, with mockup servers
+uv run pytest -m integration  # integration tests
 ```
 
 Tips:
@@ -83,11 +81,11 @@ The checks run by pre-commit and by the CI are described in [Contributing](contr
 all the files with:
 
 ```shell
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 If pre-commit fails after a dependency update or a git conflict resolution, reinstall it with
-`poetry run pre-commit uninstall && poetry run pre-commit install`.
+`uv run pre-commit uninstall && uv run pre-commit install`.
 
 ## Develop on the cluster
 

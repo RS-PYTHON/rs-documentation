@@ -14,30 +14,29 @@
 
 [project]
 name = "rs-documentation"
-version = "0.0.0" # see: https://github.com/mtkennerly/poetry-dynamic-versioning
-
-[tool.poetry]
-name = "rs-documentation"
 version = "0.0.0"
 description = "Documentation for Copernicus Sentinel rs-python projects."
-license = "Apache-2.0"
-authors = ["ESA under contract with Airbus and CS <ops_coprs@airbus.com>"]
 readme = "README.md"
-homepage = "https://home.rs-python.eu/rs-documentation"
-repository = "https://github.com/RS-PYTHON/rs-documentation"
-package-mode = false
+license = "Apache-2.0"
+requires-python = ">=3.13,<3.15"
+dependencies = [
+    # MkDocs 2.0 is not compatible with the Material theme and its plugins: stay on 1.x
+    "mkdocs>=1.6.1,<2",
+    "mkdocs-material>=9.7.7,<10",
+    "mkdocstrings>=1.0.7,<2",
+    "mkdocstrings-python>=2.0.9,<3",
+    "mkdocs-autorefs>=1.4.4,<2",
+    "pymdown-extensions>=12.3,<13",
+    "mkdocs-spellcheck>=1.2.2,<2",
+    "symspellpy>=6.10.0,<7",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.13,<3.15"
-# MkDocs 2.0 is not compatible with the Material theme and its plugins: stay on 1.x
-mkdocs = ">=1.6.1,<2"
-mkdocs-material = "^9.7.7"
-mkdocstrings = "^1.0.7"
-mkdocstrings-python = "^2.0.9"
-mkdocs-autorefs = "^1.4.4"
-pymdown-extensions = "^12.3"
-mkdocs-spellcheck = "^1.2.2"
-symspellpy = "^6.10.0"
+[project.urls]
+Homepage = "https://home.rs-python.eu/rs-documentation"
+Repository = "https://github.com/RS-PYTHON/rs-documentation"
+
+[tool.uv]
+package = false # only the documentation dependencies, nothing to build
 
 [tool.black]
 line-length = 120

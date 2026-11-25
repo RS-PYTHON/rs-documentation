@@ -31,7 +31,7 @@ jobs:
       contents: write # to publish the generated documentation
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/install-python
+      - uses: RS-PYTHON/actions/.github/actions/setup-uv@develop
 
       - name: Clone the RS-PYTHON repositories
         run: |
@@ -54,9 +54,9 @@ jobs:
         shell: bash
 
       - name: Install dependencies
-        uses: ./.github/actions/poetry-install
-        with:
-          options: '--verbose'
+        run: uv sync --locked --no-build
+        working-directory: .
+        shell: bash
 
       - name: Generate Pydoc in projects
         run: |
@@ -65,7 +65,7 @@ jobs:
         shell: bash
 
       - name: Build the HTML documentation
-        run: poetry run mkdocs build
+        run: uv run --no-sync mkdocs build
         working-directory: .
         shell: bash
 
@@ -73,6 +73,6 @@ jobs:
       # by the work in progress of other branches.
       - name: Deploy the HTML documentation to GitHub Pages
         if: github.ref == 'refs/heads/develop'
-        run: poetry run mkdocs gh-deploy --force
+        run: uv run --no-sync mkdocs gh-deploy --force
         working-directory: .
         shell: bash
